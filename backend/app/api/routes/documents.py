@@ -1,7 +1,12 @@
 from pathlib import Path
+
 # pyrefly: ignore [missing-import]
 from app.services.pdf_service import extract_text_from_pdf
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from app.core.database import get_db
+from app.models.document import Document
+
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from sqlalchemy.orm import Session
 
 
 router = APIRouter(
@@ -23,7 +28,10 @@ def get_documents():
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
     allowed_extensions = {".pdf", ".docx", ".txt"}
 
     if not file.filename:
@@ -47,16 +55,33 @@ async def upload_document(file: UploadFile = File(...)):
 
     with open(file_path, "wb") as buffer:
         buffer.write(file_content)
-    
+
     extracted_text = ""
 
     if file_extension == ".pdf":
         extracted_text = extract_text_from_pdf(file_path)
 
+    elif file_extension == ".txt":
+        extracted_text = file_content.decode("utf-8", errors="ignore")
+
+    document = Document(
+        filename=filename,
+        document_type=file_extension.replace(".", "").upper(),
+        file_path=str(file_path),
+        extracted_text=extracted_text,
+        text_length=len(extracted_text)
+    )
+
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+
     return {
         "message": "Document uploaded successfully!",
+        "document_id": document.id,
         "filename": filename,
         "size": len(file_content),
+        "document_type": document.document_type,
         "text_length": len(extracted_text),
         "extracted_text": extracted_text
     }

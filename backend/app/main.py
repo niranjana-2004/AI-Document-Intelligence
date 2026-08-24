@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from app.core.database import Base, engine
+from app.models.document import Document
 # pyrefly: ignore [missing-import]
 from app.api.routes.documents import router as documents_router
 
@@ -7,7 +9,7 @@ app = FastAPI(
     description="Backend API for the AI Document Intelligence platform",
     version="0.1.0"
 )
-
+Base.metadata.create_all(bind=engine)
 app.include_router(documents_router)
 
 @app.get("/")
