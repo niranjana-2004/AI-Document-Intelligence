@@ -1,11 +1,11 @@
 from pathlib import Path
 
 # pyrefly: ignore [missing-import]
-from app.services.pdf_service import extract_text_from_pdf
-from app.services.text_processing_service import clean_text, chunk_text
+from app.services.document_service import process_document
 from app.core.database import get_db
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
+from app.services.search_service import semantic_search
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -39,6 +39,38 @@ def get_documents(db: Session = Depends(get_db)):
             }
             for document in documents
         ]
+    }
+
+@router.get("/search")
+def search_documents(
+    query: str,
+    document_id: int | None = None,
+    top_k: int = 5,
+    db: Session = Depends(get_db)
+):
+    if not query.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Search query cannot be empty."
+        )
+
+    if top_k < 1 or top_k > 20:
+        raise HTTPException(
+            status_code=400,
+            detail="top_k must be between 1 and 20."
+        )
+
+    results = semantic_search(
+        query=query,
+        db=db,
+        document_id=document_id,
+        top_k=top_k
+    )
+
+    return {
+        "query": query,
+        "result_count": len(results),
+        "results": results
     }
 
 @router.get("/{document_id}")
@@ -95,13 +127,20 @@ async def upload_document(
     with open(file_path, "wb") as buffer:
         buffer.write(file_content)
 
-    extracted_text = ""
+    try:
+        processed_document = process_document(
+            file_path,
+            file_content
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
 
-    if file_extension == ".pdf":
-        extracted_text = extract_text_from_pdf(file_path)
-
-    elif file_extension == ".txt":
-        extracted_text = file_content.decode("utf-8", errors="ignore")
+    extracted_text = processed_document["text"]
+    chunks = processed_document["chunks"]
+    embeddings = processed_document["embeddings"]
 
     document = Document(
         filename=filename,
@@ -115,19 +154,12 @@ async def upload_document(
     db.commit()
     db.refresh(document)
 
-    cleaned_text = clean_text(extracted_text)
-
-    chunks = chunk_text(
-        cleaned_text,
-        chunk_size=1000,
-        overlap=200
-    )
-
     for index, chunk in enumerate(chunks):
         document_chunk = DocumentChunk(
             document_id=document.id,
             chunk_index=index,
-            content=chunk
+            content=chunk,
+            embedding=embeddings[index]
         )
 
         db.add(document_chunk)
@@ -135,15 +167,15 @@ async def upload_document(
     db.commit()
 
     return {
-    "message": "Document uploaded successfully!",
-    "document_id": document.id,
-    "filename": filename,
-    "size": len(file_content),
-    "document_type": document.document_type,
-    "text_length": len(extracted_text),
-    "chunk_count": len(chunks),
-    "extracted_text": extracted_text
-}
+        "message": "Document uploaded successfully!",
+        "document_id": document.id,
+        "filename": filename,
+        "size": len(file_content),
+        "document_type": document.document_type,
+        "text_length": len(extracted_text),
+        "chunk_count": len(chunks),
+        "extracted_text": extracted_text
+    }
 
 @router.delete("/{document_id}")
 def delete_document(
