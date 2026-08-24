@@ -1,11 +1,11 @@
-from app.models import document
 from pathlib import Path
 
 # pyrefly: ignore [missing-import]
 from app.services.pdf_service import extract_text_from_pdf
+from app.services.text_processing_service import clean_text, chunk_text
 from app.core.database import get_db
 from app.models.document import Document
-from fastapi import Depends
+from app.models.document_chunk import DocumentChunk
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -115,15 +115,35 @@ async def upload_document(
     db.commit()
     db.refresh(document)
 
+    cleaned_text = clean_text(extracted_text)
+
+    chunks = chunk_text(
+        cleaned_text,
+        chunk_size=1000,
+        overlap=200
+    )
+
+    for index, chunk in enumerate(chunks):
+        document_chunk = DocumentChunk(
+            document_id=document.id,
+            chunk_index=index,
+            content=chunk
+        )
+
+        db.add(document_chunk)
+
+    db.commit()
+
     return {
-        "message": "Document uploaded successfully!",
-        "document_id": document.id,
-        "filename": filename,
-        "size": len(file_content),
-        "document_type": document.document_type,
-        "text_length": len(extracted_text),
-        "extracted_text": extracted_text
-    }
+    "message": "Document uploaded successfully!",
+    "document_id": document.id,
+    "filename": filename,
+    "size": len(file_content),
+    "document_type": document.document_type,
+    "text_length": len(extracted_text),
+    "chunk_count": len(chunks),
+    "extracted_text": extracted_text
+}
 
 @router.delete("/{document_id}")
 def delete_document(

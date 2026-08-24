@@ -3,6 +3,7 @@ from app.core.database import Base, engine
 from app.models.document import Document
 # pyrefly: ignore [missing-import]
 from app.api.routes.documents import router as documents_router
+from app.models.document_chunk import DocumentChunk
 
 app = FastAPI(
     title="AI Document Intelligence API",
