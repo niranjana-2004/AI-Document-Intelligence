@@ -1,9 +1,11 @@
+from app.models import document
 from pathlib import Path
 
 # pyrefly: ignore [missing-import]
 from app.services.pdf_service import extract_text_from_pdf
 from app.core.database import get_db
 from app.models.document import Document
+from fastapi import Depends
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -20,12 +22,49 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 @router.get("/")
-def get_documents():
+def get_documents(db: Session = Depends(get_db)):
+    documents = db.query(Document).order_by(
+        Document.created_at.desc()
+    ).all()
+
     return {
-        "message": "Documents endpoint is working!",
-        "status": "success"
+        "count": len(documents),
+        "documents": [
+            {
+                "id": document.id,
+                "filename": document.filename,
+                "document_type": document.document_type,
+                "text_length": document.text_length,
+                "created_at": document.created_at
+            }
+            for document in documents
+        ]
     }
 
+@router.get("/{document_id}")
+def get_document(
+    document_id: int,
+    db: Session = Depends(get_db)
+):
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found."
+        )
+
+    return {
+        "id": document.id,
+        "filename": document.filename,
+        "document_type": document.document_type,
+        "file_path": document.file_path,
+        "text_length": document.text_length,
+        "extracted_text": document.extracted_text,
+        "created_at": document.created_at
+    }
 
 @router.post("/upload")
 async def upload_document(
@@ -84,4 +123,31 @@ async def upload_document(
         "document_type": document.document_type,
         "text_length": len(extracted_text),
         "extracted_text": extracted_text
+    }
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: int,
+    db: Session = Depends(get_db)
+):
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found."
+        )
+
+    file_path = Path(str(document.file_path))
+    if file_path.exists():
+        file_path.unlink()
+
+    db.delete(document)
+    db.commit()
+
+    return {
+        "message": "Document deleted successfully!",
+        "document_id": document_id
     }
