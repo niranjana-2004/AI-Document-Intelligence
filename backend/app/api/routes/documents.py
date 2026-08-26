@@ -6,7 +6,8 @@ from app.core.database import get_db
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.services.search_service import semantic_search
-
+from app.services.question_service import answer_question
+from app.schemas.question import QuestionRequest
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
 
@@ -72,6 +73,25 @@ def search_documents(
         "result_count": len(results),
         "results": results
     }
+
+@router.post("/ask")
+def ask_question(
+    request: QuestionRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        return answer_question(
+            query=request.query,
+            db=db,
+            document_id=request.document_id,
+            top_k=request.top_k
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
 
 @router.get("/{document_id}")
 def get_document(
