@@ -10,7 +10,8 @@ from app.services.question_service import answer_question
 from app.schemas.question import QuestionRequest
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
-
+from typing import cast
+from app.services.llm_service import generate_summary
 
 router = APIRouter(
     prefix="/documents",
@@ -92,6 +93,45 @@ def ask_question(
             status_code=400,
             detail=str(error)
         )
+
+@router.get("/{document_id}/summary")
+def get_document_summary(
+    document_id: int,
+    db: Session = Depends(get_db)
+):
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found."
+        )
+
+    if not document.extracted_text:
+        raise HTTPException(
+            status_code=400,
+            detail="Document does not contain extracted text."
+        )
+
+    try:
+        summary = generate_summary(
+            cast(str, document.extracted_text)
+        )
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate document summary: {str(error)}"
+        )
+
+    return {
+        "document_id": document.id,
+        "filename": document.filename,
+        "document_type": document.document_type,
+        "summary": summary
+    }
 
 @router.get("/{document_id}")
 def get_document(

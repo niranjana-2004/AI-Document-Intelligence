@@ -148,3 +148,50 @@ ANSWER:
         raise RuntimeError(
             f"Ollama request failed: {error}"
         )
+
+def generate_summary(text: str) -> str:
+    """
+    Generate a concise summary of the document using the local Ollama LLM.
+    """
+
+    prompt = f"""
+You are a document summarization assistant.
+
+Your task is to summarize the provided document.
+
+IMPORTANT RULES:
+
+1. Use ONLY information explicitly present in the document.
+2. Do NOT use your general knowledge.
+3. Do NOT invent, assume, or infer information.
+4. Include the most important information from the document.
+5. Preserve important factual details such as names, organizations,
+   qualifications, CGPAs, percentages, dates, project names, and roles.
+6. Do not confuse projects with internships, certifications, or workshops.
+7. Do not confuse programming languages with spoken languages.
+8. Organize the summary clearly.
+9. Keep the summary concise but informative.
+10. If the document contains multiple sections, summarize the important
+    information from each relevant section.
+
+DOCUMENT:
+
+{text}
+
+SUMMARY:
+"""
+
+    response = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL_NAME,
+            "prompt": prompt,
+            "stream": False
+        }
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+    return data["response"].strip()
