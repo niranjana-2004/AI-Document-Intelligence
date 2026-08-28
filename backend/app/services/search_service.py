@@ -18,6 +18,105 @@ QUERY_EXPANSIONS = {
 }
 
 
+# Query categories and the section keywords
+# that should receive a ranking boost.
+CATEGORY_KEYWORDS = {
+    "education": [
+        "education",
+        "educational",
+        "qualification",
+        "qualifications",
+        "degree",
+        "cgpa",
+        "percentage",
+        "bca",
+        "mca",
+        "bachelor",
+        "master"
+    ],
+
+    "projects": [
+        "project",
+        "projects"
+    ],
+
+    "internship": [
+        "internship",
+        "intern",
+        "internships"
+    ],
+
+    "workshops": [
+        "workshop",
+        "workshops",
+        "bootcamp"
+    ],
+
+    "certifications": [
+        "certification",
+        "certifications",
+        "certificate",
+        "certificates",
+        "course",
+        "courses"
+    ],
+
+    "awards": [
+        "award",
+        "awards",
+        "achievement",
+        "achievements"
+    ]
+}
+
+
+# Section headings that identify the actual document category.
+SECTION_MARKERS = {
+    "education": [
+        "educational qualifications",
+        "higher secondary education",
+        "secondary school education",
+        "master of computer applications",
+        "bachelor of computer applications",
+    ],
+
+    "projects": [
+        "projects done",
+        "title:",
+        "aim:",
+        "technical functionalities:",
+        "tools and technologies used:",
+    ],
+
+    "internship": [
+        "internships done",
+        "organization name:",
+        "data science intern",
+        "responsibilities:",
+    ],
+
+    "workshops": [
+        "workshops done",
+        "3 days session",
+        "bootcamp",
+        "drone workshop",
+    ],
+
+    "certifications": [
+        "certifications done",
+        "introduction to deep learning",
+        "introduction to artificial intelligence",
+        "data analytics job simulation",
+    ],
+
+    "awards": [
+        "awards and achievements",
+        "event volunteer",
+        "event coordinator",
+    ]
+}
+
+
 def expand_query(query: str) -> str:
     """
     Expand common abbreviations in the user's query
@@ -27,6 +126,7 @@ def expand_query(query: str) -> str:
     expanded_query = query
 
     for abbreviation, full_form in QUERY_EXPANSIONS.items():
+
         pattern = rf"\b{re.escape(abbreviation)}\b"
 
         expanded_query = re.sub(
@@ -39,6 +139,39 @@ def expand_query(query: str) -> str:
     return expanded_query
 
 
+def detect_query_category(query: str) -> str | None:
+    """
+    Detect the main category being requested by the user.
+    """
+
+    query_lower = query.lower()
+
+    category_scores = {}
+
+    for category, keywords in CATEGORY_KEYWORDS.items():
+
+        score = 0
+
+        for keyword in keywords:
+
+            if re.search(
+                rf"\b{re.escape(keyword)}\b",
+                query_lower
+            ):
+                score += 1
+
+        if score > 0:
+            category_scores[category] = score
+
+    if not category_scores:
+        return None
+
+    return max(
+        category_scores,
+        key=lambda category: category_scores[category]
+    )
+
+
 def calculate_keyword_score(query: str, content: str) -> float:
     """
     Calculate keyword/concept overlap between the query
@@ -49,17 +182,25 @@ def calculate_keyword_score(query: str, content: str) -> float:
     """
 
     query_words = set(
-        re.findall(r"\b[a-zA-Z0-9]+\b", query.lower())
+        re.findall(
+            r"\b[a-zA-Z0-9]+\b",
+            query.lower()
+        )
     )
 
     content_words = set(
-        re.findall(r"\b[a-zA-Z0-9]+\b", content.lower())
+        re.findall(
+            r"\b[a-zA-Z0-9]+\b",
+            content.lower()
+        )
     )
 
     if not query_words:
         return 0.0
 
-    matched_words = query_words.intersection(content_words)
+    matched_words = query_words.intersection(
+        content_words
+    )
 
     # Check abbreviation/full-form equivalence
     for abbreviation, full_form in QUERY_EXPANSIONS.items():
@@ -73,12 +214,49 @@ def calculate_keyword_score(query: str, content: str) -> float:
                 )
             )
 
-            # If the full form exists in the content,
-            # count the abbreviation as a matched concept.
-            if full_form_words.issubset(content_words):
-                matched_words.add(abbreviation)
+            if full_form_words.issubset(
+                content_words
+            ):
+                matched_words.add(
+                    abbreviation
+                )
 
     return len(matched_words) / len(query_words)
+
+
+def calculate_category_boost(
+    category: str | None,
+    content: str
+) -> float:
+    """
+    Give a ranking boost when a chunk contains
+    strong evidence that it belongs to the requested category.
+    """
+
+    if category is None:
+        return 0.0
+
+    content_lower = content.lower()
+
+    markers = SECTION_MARKERS.get(
+        category,
+        []
+    )
+
+    matches = 0
+
+    for marker in markers:
+
+        if marker in content_lower:
+            matches += 1
+
+    if matches == 0:
+        return 0.0
+
+    if matches >= 2:
+        return 0.30
+
+    return 0.20
 
 
 def semantic_search(
@@ -88,17 +266,23 @@ def semantic_search(
     top_k: int = 5
 ):
     """
-    Perform hybrid semantic + keyword search.
+    Perform hybrid semantic + keyword + category search.
     """
 
     # Expand abbreviations before generating the embedding.
     expanded_query = expand_query(query)
 
-    query_embedding = generate_embedding(expanded_query)
+    query_embedding = generate_embedding(
+        expanded_query
+    )
+
+    # Detect what type of information the user is asking for.
+    category = detect_query_category(query)
 
     query_db = db.query(DocumentChunk)
 
     if document_id is not None:
+
         query_db = query_db.filter(
             DocumentChunk.document_id == document_id
         )
@@ -117,18 +301,29 @@ def semantic_search(
             chunk.embedding
         )
 
-        # Ignore chunks that are not semantically relevant
-        if similarity < SIMILARITY_THRESHOLD:
-            continue
-
         keyword_score = calculate_keyword_score(
             query,
             chunk.content
         )
 
+        category_boost = calculate_category_boost(
+            category,
+            chunk.content
+        )
+
+        # Ignore chunks only when they have no meaningful
+        # semantic, keyword, or category relevance.
+        if (
+            similarity < SIMILARITY_THRESHOLD
+            and keyword_score == 0
+            and category_boost == 0
+        ):
+            continue
+
         final_score = (
             SEMANTIC_WEIGHT * similarity
             + KEYWORD_WEIGHT * keyword_score
+            + category_boost
         )
 
         if final_score >= FINAL_SCORE_THRESHOLD:
@@ -140,6 +335,8 @@ def semantic_search(
                 "content": chunk.content,
                 "similarity": similarity,
                 "keyword_score": keyword_score,
+                "category": category,
+                "category_boost": category_boost,
                 "final_score": final_score
             })
 

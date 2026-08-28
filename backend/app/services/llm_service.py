@@ -151,47 +151,160 @@ ANSWER:
 
 def generate_summary(text: str) -> str:
     """
-    Generate a concise summary of the document using the local Ollama LLM.
+    Generate a concise and factually faithful summary
+    of the document using the local Ollama LLM.
     """
+
+    if not text.strip():
+        return "I couldn't generate a summary because the document is empty."
 
     prompt = f"""
 You are a document summarization assistant.
 
-Your task is to summarize the provided document.
+Your task is to summarize the document provided below.
 
-IMPORTANT RULES:
+STRICT SOURCE RULES:
 
 1. Use ONLY information explicitly present in the document.
-2. Do NOT use your general knowledge.
-3. Do NOT invent, assume, or infer information.
-4. Include the most important information from the document.
-5. Preserve important factual details such as names, organizations,
-   qualifications, CGPAs, percentages, dates, project names, and roles.
-6. Do not confuse projects with internships, certifications, or workshops.
-7. Do not confuse programming languages with spoken languages.
-8. Organize the summary clearly.
-9. Keep the summary concise but informative.
-10. If the document contains multiple sections, summarize the important
-    information from each relevant section.
+
+2. Do NOT use general knowledge.
+
+3. Do NOT invent, assume, estimate, or infer information.
+
+4. Do NOT change, reinterpret, or reclassify information.
+
+5. Preserve the meaning and category of information exactly as it
+   appears in the document.
+
+SECTION ACCURACY RULES:
+
+6. Treat document sections as authoritative.
+
+7. If the document contains a section called "Programming Languages",
+   report ONLY the languages listed in that section as programming
+   languages.
+
+8. Do NOT move technologies, tools, frameworks, databases, or other
+   skills into the Programming Languages category.
+
+9. If the document says someone is "proficient in Python, SQL, and
+   Power BI" in a career summary, do NOT automatically classify SQL
+   or Power BI as programming languages.
+
+10. Treat the following categories separately:
+
+    - Programming Languages
+    - Web Technologies / Frameworks
+    - Databases
+    - Tools / Platforms
+    - IDEs
+    - Operating Systems
+    - Spoken / Human Languages
+    - Projects
+    - Internships
+    - Workshops
+    - Certifications
+    - Awards
+    - Education
+
+11. Do not move an item from one category to another.
+
+FACTUAL ACCURACY:
+
+12. Preserve exact numerical values.
+
+13. Preserve exact CGPAs and percentages.
+
+14. Preserve names of organizations, institutions, projects,
+    certifications, and internship roles.
+
+15. Preserve dates and durations when they are explicitly stated.
+
+16. Do not calculate, round, convert, or modify numerical information.
+
+SUMMARY STRUCTURE:
+
+Organize the summary using only sections that are actually present
+in the document.
+
+Use a structure such as:
+
+- Overview
+- Education
+- Technical Skills
+- Projects
+- Internships
+- Workshops
+- Certifications
+- Achievements
+- Other relevant information
+
+Do NOT create a section if the document does not contain relevant
+information for it.
+
+IMPORTANT:
+
+Before producing the summary, carefully distinguish information based
+on the section where it appears.
+
+For example, if the document contains:
+
+Programming Languages: C, Java, Python, R
+
+and elsewhere says:
+
+Proficient in Python, SQL, and Power BI
+
+the Programming Languages section MUST remain:
+
+C, Java, Python, R
+
+Do not replace it with Python, SQL, Power BI.
+
+Keep the summary concise but informative.
 
 DOCUMENT:
-
+-----------------
 {text}
+-----------------
 
 SUMMARY:
 """
 
-    response = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": MODEL_NAME,
-            "prompt": prompt,
-            "stream": False
-        }
-    )
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={
+                "model": MODEL_NAME,
+                "prompt": prompt,
+                "stream": False
+            },
+            timeout=120
+        )
 
-    response.raise_for_status()
+        response.raise_for_status()
 
-    data = response.json()
+        data = response.json()
 
-    return data["response"].strip()
+        summary = data.get("response", "").strip()
+
+        if not summary:
+            return "I couldn't generate a summary for this document."
+
+        return summary
+
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(
+            "Could not connect to Ollama. "
+            "Make sure Ollama is running."
+        )
+
+    except requests.exceptions.Timeout:
+        raise RuntimeError(
+            "Ollama took too long to generate the summary."
+        )
+
+    except requests.exceptions.RequestException as error:
+        raise RuntimeError(
+            f"Ollama request failed: {error}"
+        )

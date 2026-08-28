@@ -109,28 +109,17 @@ def get_document_summary(
             detail="Document not found."
         )
 
-    if not document.extracted_text:
-        raise HTTPException(
-            status_code=400,
-            detail="Document does not contain extracted text."
-        )
-
-    try:
-        summary = generate_summary(
-            cast(str, document.extracted_text)
-        )
-
-    except Exception as error:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate document summary: {str(error)}"
-        )
+    chunk_count = db.query(DocumentChunk).filter(
+        DocumentChunk.document_id == document_id
+    ).count()
 
     return {
         "document_id": document.id,
         "filename": document.filename,
         "document_type": document.document_type,
-        "summary": summary
+        "text_length": document.text_length,
+        "chunk_count": chunk_count,
+        "summary": document.summary
     }
 
 @router.get("/{document_id}")
@@ -165,6 +154,7 @@ async def upload_document(
 ):
     allowed_extensions = {".pdf", ".docx", ".txt"}
 
+    # Validate filename
     if not file.filename:
         raise HTTPException(
             status_code=400,
@@ -174,12 +164,14 @@ async def upload_document(
     filename = Path(file.filename).name
     file_extension = Path(filename).suffix.lower()
 
+    # Validate file type
     if file_extension not in allowed_extensions:
         raise HTTPException(
             status_code=400,
             detail="Only PDF, DOCX, and TXT files are allowed."
         )
 
+    # Save uploaded file
     file_path = UPLOAD_DIR / filename
 
     file_content = await file.read()
@@ -187,34 +179,51 @@ async def upload_document(
     with open(file_path, "wb") as buffer:
         buffer.write(file_content)
 
+    # Process document
     try:
         processed_document = process_document(
             file_path,
             file_content
         )
+
     except ValueError as error:
         raise HTTPException(
             status_code=400,
             detail=str(error)
         )
 
+    # Extract processed information
     extracted_text = processed_document["text"]
     chunks = processed_document["chunks"]
     embeddings = processed_document["embeddings"]
 
+    # Generate document summary
+    try:
+        summary = generate_summary(extracted_text)
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate document summary: {error}"
+        )
+
+    # Create document database record
     document = Document(
         filename=filename,
         document_type=file_extension.replace(".", "").upper(),
         file_path=str(file_path),
         extracted_text=extracted_text,
-        text_length=len(extracted_text)
+        text_length=len(extracted_text),
+        summary=summary
     )
 
     db.add(document)
     db.commit()
     db.refresh(document)
 
+    # Store document chunks and embeddings
     for index, chunk in enumerate(chunks):
+
         document_chunk = DocumentChunk(
             document_id=document.id,
             chunk_index=index,
@@ -226,6 +235,7 @@ async def upload_document(
 
     db.commit()
 
+    # Return upload result
     return {
         "message": "Document uploaded successfully!",
         "document_id": document.id,
@@ -234,6 +244,7 @@ async def upload_document(
         "document_type": document.document_type,
         "text_length": len(extracted_text),
         "chunk_count": len(chunks),
+        "summary": summary,
         "extracted_text": extracted_text
     }
 

@@ -6,7 +6,7 @@ def answer_question(
     query: str,
     db,
     document_id: int | None = None,
-    top_k: int = 5
+    top_k: int = 7
 ) -> dict:
     """
     Answer a question using relevant document context.
