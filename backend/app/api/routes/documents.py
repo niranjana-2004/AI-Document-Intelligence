@@ -12,6 +12,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import cast
 from app.services.llm_service import generate_summary
+from app.services.text_processing_service import detect_chunk_category
 
 router = APIRouter(
     prefix="/documents",
@@ -224,9 +225,12 @@ async def upload_document(
     # Store document chunks and embeddings
     for index, chunk in enumerate(chunks):
 
+        category = detect_chunk_category(chunk)
+
         document_chunk = DocumentChunk(
             document_id=document.id,
             chunk_index=index,
+            category=category,
             content=chunk,
             embedding=embeddings[index]
         )

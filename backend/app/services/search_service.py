@@ -141,35 +141,122 @@ def expand_query(query: str) -> str:
 
 def detect_query_category(query: str) -> str | None:
     """
-    Detect the main category being requested by the user.
+    Detect the primary information category being requested.
+
+    The function prioritizes the category that appears to be
+    the actual subject of the question rather than contextual
+    phrases such as "during their internship".
     """
 
     query_lower = query.lower()
 
-    category_scores = {}
+    # Strong explicit category phrases.
+    # These should take priority over contextual words.
+    explicit_categories = {
+        "certifications": [
+            "certification",
+            "certifications",
+            "certificate",
+            "certificates"
+        ],
 
-    for category, keywords in CATEGORY_KEYWORDS.items():
+        "projects": [
+            "project",
+            "projects"
+        ],
 
-        score = 0
+        "workshops": [
+            "workshop",
+            "workshops",
+            "bootcamp"
+        ],
 
-        for keyword in keywords:
+        "awards": [
+            "award",
+            "awards",
+            "achievement",
+            "achievements"
+        ],
+
+        "education": [
+            "education",
+            "qualification",
+            "qualifications",
+            "degree",
+            "cgpa",
+            "percentage",
+            "bca",
+            "mca",
+            "bachelor",
+            "master"
+        ],
+
+        "internship": [
+            "internship",
+            "internships",
+            "intern"
+        ]
+    }
+
+    # Check explicit requested categories first.
+    # This prevents phrases such as "during their internship"
+    # from incorrectly overriding certifications/projects/etc.
+    for category in [
+        "certifications",
+        "projects",
+        "workshops",
+        "awards",
+        "education"
+    ]:
+
+        for keyword in explicit_categories[category]:
 
             if re.search(
                 rf"\b{re.escape(keyword)}\b",
                 query_lower
             ):
-                score += 1
+                return category
 
-        if score > 0:
-            category_scores[category] = score
+    # Internship is checked after the other categories because
+    # it is frequently used as contextual information.
+    for keyword in explicit_categories["internship"]:
 
-    if not category_scores:
-        return None
+        if re.search(
+            rf"\b{re.escape(keyword)}\b",
+            query_lower
+        ):
+            return "internship"
 
-    return max(
-        category_scores,
-        key=lambda category: category_scores[category]
-    )
+    return None
+
+def detect_query_context(query: str) -> str | None:
+    """
+    Detect contextual constraints in the user's question.
+
+    For example:
+        "projects during their internship"
+        -> internship
+
+    The context is different from the primary category.
+    """
+
+    query_lower = query.lower()
+
+    internship_phrases = [
+        "during their internship",
+        "during the internship",
+        "in their internship",
+        "in the internship",
+        "while doing their internship",
+        "while on their internship",
+        "as part of their internship"
+    ]
+
+    for phrase in internship_phrases:
+        if phrase in query_lower:
+            return "internship"
+
+    return None
 
 
 def calculate_keyword_score(query: str, content: str) -> float:
@@ -278,6 +365,10 @@ def semantic_search(
 
     # Detect what type of information the user is asking for.
     category = detect_query_category(query)
+
+    # Detect contextual constraints such as
+    # "during their internship".
+    query_context = detect_query_context(query)
 
     query_db = db.query(DocumentChunk)
 

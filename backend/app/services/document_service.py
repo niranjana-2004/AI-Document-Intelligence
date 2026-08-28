@@ -2,7 +2,11 @@ from pathlib import Path
 
 # pyrefly: ignore [missing-import]
 from app.services.pdf_service import extract_text_from_pdf
-from app.services.text_processing_service import clean_text, chunk_text
+from app.services.text_processing_service import (
+    clean_text,
+    chunk_text,
+    detect_chunk_category
+)
 from app.services.embedding_services import generate_embedding
 
 
