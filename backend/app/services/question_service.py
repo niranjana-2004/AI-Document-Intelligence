@@ -30,6 +30,10 @@ def answer_question(
             "results": []
         }
 
+    print("\n========== CONTEXT SENT TO LLM ==========")
+    print(context_data["context"])
+    print("==========================================\n")
+
     answer = generate_response(
         query=query,
         context=context_data["context"]

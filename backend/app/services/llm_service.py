@@ -51,6 +51,11 @@ STRICT GROUNDING RULES:
 
 7. If multiple chunks are relevant, combine their information carefully.
 
+7a. Retrieved chunks may overlap or split a section across chunk
+boundaries. Treat adjacent chunks as parts of the same document section.
+If an item is incomplete in one chunk but completed in another adjacent
+chunk, combine the text rather than treating it as missing or duplicate.
+
 8. Never combine unrelated information merely because it appears in
    the same document.
 
@@ -83,9 +88,15 @@ unless the document explicitly connects that project to the internship.
 
 LIST QUESTIONS:
 
-- Include only items that belong to the requested category.
-- Do not add related but different items.
-- If the document explicitly provides a list, preserve the listed items.
+- Include ALL items from the requested category that are explicitly
+  present in DOCUMENT CONTEXT.
+- Do not return only one item when multiple items are explicitly listed.
+- If a section contains a list of items, carefully scan the entire
+  section across all relevant and adjacent chunks and include every item
+  that answers the question.
+- Preserve the wording, names, organizations, and dates from the document
+  whenever possible.
+- Do not omit an item merely because it appears later in the same chunk.
 
 FACTUAL QUESTIONS:
 
