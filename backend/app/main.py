@@ -1,10 +1,12 @@
 from fastapi import FastAPI
-from app.core.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.database import Base, engine
 from app.models.document import Document
 # pyrefly: ignore [missing-import]
 from app.api.routes.documents import router as documents_router
 from app.models.document_chunk import DocumentChunk
+
 
 app = FastAPI(
     title="AI Document Intelligence API",
@@ -12,6 +14,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
+# Enable CORS for the React frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -23,8 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 Base.metadata.create_all(bind=engine)
+
 app.include_router(documents_router)
+
 
 @app.get("/")
 def root():
