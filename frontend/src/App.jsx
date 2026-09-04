@@ -17,6 +17,7 @@ function App() {
 
   const [summary, setSummary] = useState('')
   const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryDocument, setSummaryDocument] = useState(null)
 
   const [showAskModal, setShowAskModal] = useState(false)
   const [question, setQuestion] = useState('')
@@ -215,6 +216,12 @@ function App() {
       setSummary('')
       setError('')
 
+      const selectedDoc = documents.find(
+        (document) => document.id === documentId
+      )
+
+      setSummaryDocument(selectedDoc || null)
+
       const response = await fetch(
         `${API_URL}/documents/${documentId}/summary`
       )
@@ -230,8 +237,8 @@ function App() {
     } catch (error) {
       console.error('Summary error:', error)
 
-      setSummary(
-        error.message || 'Failed to load summary.'
+      setError(
+        error.message || 'Failed to generate summary.'
       )
 
     } finally {
@@ -597,32 +604,33 @@ function App() {
 
                 <div className="document-list">
 
-                  {displayedDocuments.map(
-                    (document) => (
+                  {displayedDocuments.map((document) => (
 
-                      <div
-                        className="document-item"
-                        key={document.id}
-                      >
+                    <div
+                      className="document-item"
+                      key={document.id}
+                    >
 
-                        <div className="document-icon">
-                          📄
-                        </div>
+                      <div className="document-icon">
+                        📄
+                      </div>
 
-                        <div className="document-info">
+                      <div className="document-info">
 
-                          <h4>
-                            {document.filename}
-                          </h4>
+                        <h4>
+                          {document.filename}
+                        </h4>
 
-                          <p>
-                            {document.document_type}
-                            {' · '}
-                            {document.text_length}
-                            {' characters'}
-                          </p>
+                        <p>
+                          {document.document_type}
+                          {' · '}
+                          {document.text_length}
+                          {' characters'}
+                        </p>
 
-                        </div>
+                      </div>
+
+                      <div className="document-actions">
 
                         <button
                           className="document-action"
@@ -631,15 +639,22 @@ function App() {
                           Open
                         </button>
 
+                        <button
+                          className="document-action summarize-action"
+                          onClick={() => handleSummary(document.id)}
+                        >
+                          Summarize
+                        </button>
+
                       </div>
-                    )
-                  )}
+
+                    </div>
+
+                  ))}
 
                 </div>
               )}
-
           </div>
-
           {/* -------------------------------- */}
           {/* AI CAPABILITIES */}
           {/* -------------------------------- */}
