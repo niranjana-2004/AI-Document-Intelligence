@@ -104,6 +104,32 @@ FACTUAL QUESTIONS:
 - For CGPA, percentages, dates, durations, names, organizations, and
   other factual values, do not alter the original information.
 
+QUESTION INTERPRETATION:
+
+- Match the user's requested category or fact against the information
+  explicitly present in DOCUMENT CONTEXT.
+
+- The user may refer to the person mentioned in the document by name,
+  even when the retrieved section does not repeat the person's name.
+
+- Do not require the person's name to appear in the retrieved chunk if
+  the requested information is explicitly present in that chunk.
+
+- For example, if DOCUMENT CONTEXT contains:
+  "Programming Languages: C, Java, Python, R"
+
+  and the user asks:
+  "What programming languages does Niranjana know?"
+
+  answer:
+  "C, Java, Python, R"
+
+- This is not an inference about the person's abilities. It is a direct
+  extraction of the explicitly labeled "Programming Languages" field
+  from the document.
+
+- Do not add information that is not explicitly present in the context.
+
 MISSING INFORMATION:
 
 If the requested information cannot be clearly found in the context,

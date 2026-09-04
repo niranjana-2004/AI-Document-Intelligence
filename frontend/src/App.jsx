@@ -18,6 +18,7 @@ function App() {
   const [summary, setSummary] = useState('')
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryDocument, setSummaryDocument] = useState(null)
+  const [showSummaryDocuments, setShowSummaryDocuments] = useState(false)
 
   const [showAskModal, setShowAskModal] = useState(false)
   const [question, setQuestion] = useState('')
@@ -703,13 +704,9 @@ function App() {
               className="feature"
               onClick={() => {
                 if (documents.length > 0) {
-                  handleSummary(
-                    documents[0].id
-                  )
+                  setShowSummaryDocuments(true)
                 } else {
-                  setUploadMessage(
-                    'Upload a document first.'
-                  )
+                  setUploadMessage('Upload a document first.')
                 }
               }}
             >
@@ -820,6 +817,80 @@ function App() {
         </div>
       )}
 
+      {/* SUMMARY DOCUMENT SELECTION MODAL */}
+
+      {showSummaryDocuments && (
+        <div className="modal-overlay">
+
+          <div className="modal summary-selection-modal">
+
+            <div className="modal-header">
+
+              <div>
+                <h2>Select a Document</h2>
+
+                <p>
+                  Choose which document you want to summarize.
+                </p>
+              </div>
+
+              <button
+                className="modal-close"
+                onClick={() => setShowSummaryDocuments(false)}
+              >
+                ×
+              </button>
+
+            </div>
+
+            <div className="summary-document-list">
+
+              {documents.map((document) => (
+
+                <div
+                  className="summary-document-item"
+                  key={document.id}
+                >
+
+                  <div className="document-icon">
+                    📄
+                  </div>
+
+                  <div className="document-info">
+
+                    <h4>
+                      {document.filename}
+                    </h4>
+
+                    <p>
+                      {document.document_type}
+                      {' · '}
+                      {document.text_length}
+                      {' characters'}
+                    </p>
+
+                  </div>
+
+                  <button
+                    className="document-action"
+                    onClick={() => {
+                      setShowSummaryDocuments(false)
+                      handleSummary(document.id)
+                    }}
+                  >
+                    Summarize
+                  </button>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
       {/* ================================= */}
       {/* SUMMARY MODAL */}
       {/* ================================= */}

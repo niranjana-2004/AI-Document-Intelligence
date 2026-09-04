@@ -1,8 +1,15 @@
+from networkx.generators import internet_as_graphs
+from networkx.generators import internet_as_graphs
+import re
+
 from app.services.embedding_services import generate_embedding
 from app.services.similarity_service import cosine_similarity
 from app.models.document_chunk import DocumentChunk
-import re
 
+
+# --------------------------------------------------
+# SEARCH THRESHOLDS / WEIGHTS
+# --------------------------------------------------
 
 SIMILARITY_THRESHOLD = 0.20
 FINAL_SCORE_THRESHOLD = 0.20
@@ -11,16 +18,96 @@ SEMANTIC_WEIGHT = 0.70
 KEYWORD_WEIGHT = 0.30
 
 
-# Common abbreviations and their full forms
+# --------------------------------------------------
+# QUERY EXPANSIONS
+# --------------------------------------------------
+
 QUERY_EXPANSIONS = {
     "bca": "Bachelor of Computer Applications",
     "mca": "Master of Computer Applications",
 }
 
 
-# Query categories and the section keywords
-# that should receive a ranking boost.
-CATEGORY_KEYWORDS = {
+# --------------------------------------------------
+# SPECIFIC QUERY INTENTS
+# --------------------------------------------------
+
+QUERY_INTENTS = {
+    "programming_languages": [
+        "programming language",
+        "programming languages",
+        "coding language",
+        "coding languages",
+    ],
+
+    "web_frameworks": [
+        "web technology",
+        "web technologies",
+        "framework",
+        "frameworks",
+        "web framework",
+        "web frameworks",
+    ],
+
+    "databases": [
+        "database",
+        "databases",
+        "database management",
+    ],
+
+    "tools": [
+        "tools",
+        "tools and platforms",
+        "tools platforms",
+    ],
+
+    "ides": [
+        "ide",
+        "ides",
+        "integrated development environment",
+    ],
+
+    "operating_systems": [
+        "operating system",
+        "operating systems",
+    ],
+
+    "technical_skills": [
+        "technical skill",
+        "technical skills",
+    ],
+
+    "certifications": [
+        "certification",
+        "certifications",
+        "certificate",
+        "certificates",
+    ],
+
+    "projects": [
+        "project",
+        "projects",
+    ],
+
+    "internship": [
+        "internship",
+        "internships",
+        "intern",
+    ],
+
+    "workshops": [
+        "workshop",
+        "workshops",
+        "bootcamp",
+    ],
+
+    "awards": [
+        "award",
+        "awards",
+        "achievement",
+        "achievements",
+    ],
+
     "education": [
         "education",
         "educational",
@@ -32,95 +119,104 @@ CATEGORY_KEYWORDS = {
         "bca",
         "mca",
         "bachelor",
-        "master"
+        "master",
     ],
 
-    "projects": [
-        "project",
-        "projects"
+    "languages": [
+        "spoken language",
+        "spoken languages",
+        "human language",
+        "human languages",
+        "languages known",
     ],
-
-    "internship": [
-        "internship",
-        "intern",
-        "internships"
-    ],
-
-    "workshops": [
-        "workshop",
-        "workshops",
-        "bootcamp"
-    ],
-
-    "certifications": [
-        "certification",
-        "certifications",
-        "certificate",
-        "certificates",
-        "course",
-        "courses"
-    ],
-
-    "awards": [
-        "award",
-        "awards",
-        "achievement",
-        "achievements"
-    ]
 }
 
 
-# Section headings that identify the actual document category.
+# --------------------------------------------------
+# DOCUMENT SECTION MARKERS
+# --------------------------------------------------
+
 SECTION_MARKERS = {
+
     "education": [
         "educational qualifications",
         "higher secondary education",
         "secondary school education",
-        "master of computer applications",
-        "bachelor of computer applications",
     ],
 
     "projects": [
         "projects done",
-        "title:",
-        "aim:",
-        "technical functionalities:",
-        "tools and technologies used:",
     ],
 
     "internship": [
         "internships done",
-        "organization name:",
-        "data science intern",
-        "responsibilities:",
     ],
 
     "workshops": [
         "workshops done",
-        "3 days session",
-        "bootcamp",
-        "drone workshop",
     ],
 
-    "certifications": [
-        "certifications done",
-        "introduction to deep learning",
-        "introduction to artificial intelligence",
-        "data analytics job simulation",
+    "technical_skills": [
+        "technical skills",
     ],
 
     "awards": [
         "awards and achievements",
-        "event volunteer",
-        "event coordinator",
-    ]
+    ],
+
+    "languages": [
+        "languages known",
+    ],
+
+    "certifications": [
+        "certifications done",
+    ],
 }
 
 
+# --------------------------------------------------
+# SPECIFIC SUBSECTION MARKERS
+# --------------------------------------------------
+
+SUBSECTION_MARKERS = {
+
+    "programming_languages": [
+        "programming languages:",
+    ],
+
+    "web_frameworks": [
+        "web & frameworks:",
+        "web and frameworks:",
+    ],
+
+    "databases": [
+        "database management:",
+        "databases:",
+    ],
+
+    "tools": [
+        "tools & platforms:",
+        "tools and platforms:",
+    ],
+
+    "ides": [
+        "ides:",
+    ],
+
+    "operating_systems": [
+        "operating systems:",
+    ],
+}
+
+
+# --------------------------------------------------
+# QUERY EXPANSION
+# --------------------------------------------------
+
 def expand_query(query: str) -> str:
     """
-    Expand common abbreviations in the user's query
-    so that semantic search can match their full forms.
+    Expand common abbreviations before generating
+    the semantic embedding.
     """
 
     expanded_query = query
@@ -139,105 +235,83 @@ def expand_query(query: str) -> str:
     return expanded_query
 
 
-def detect_query_category(query: str) -> str | None:
+# --------------------------------------------------
+# QUERY INTENT DETECTION
+# --------------------------------------------------
+
+def detect_query_intent(query: str) -> str | None:
     """
-    Detect the primary information category being requested.
-
-    The function prioritizes the category that appears to be
-    the actual subject of the question rather than contextual
-    phrases such as "during their internship".
+    Detect the most specific information requested
+    by the user.
     """
 
-    query_lower = query.lower()
+    query_lower = query.lower().strip()
 
-    # Strong explicit category phrases.
-    # These should take priority over contextual words.
-    explicit_categories = {
-        "certifications": [
-            "certification",
-            "certifications",
-            "certificate",
-            "certificates"
-        ],
-
-        "projects": [
-            "project",
-            "projects"
-        ],
-
-        "workshops": [
-            "workshop",
-            "workshops",
-            "bootcamp"
-        ],
-
-        "awards": [
-            "award",
-            "awards",
-            "achievement",
-            "achievements"
-        ],
-
-        "education": [
-            "education",
-            "qualification",
-            "qualifications",
-            "degree",
-            "cgpa",
-            "percentage",
-            "bca",
-            "mca",
-            "bachelor",
-            "master"
-        ],
-
-        "internship": [
-            "internship",
-            "internships",
-            "intern"
-        ]
-    }
-
-    # Check explicit requested categories first.
-    # This prevents phrases such as "during their internship"
-    # from incorrectly overriding certifications/projects/etc.
-    for category in [
+    # Most specific categories first
+    priority = [
+        "programming_languages",
+        "web_frameworks",
+        "databases",
+        "operating_systems",
+        "ides",
+        "tools",
         "certifications",
         "projects",
         "workshops",
         "awards",
-        "education"
-    ]:
+        "education",
+        "internship",
+        "languages",
+        "technical_skills",
+    ]
 
-        for keyword in explicit_categories[category]:
+    for intent in priority:
+
+        for keyword in QUERY_INTENTS[intent]:
 
             if re.search(
                 rf"\b{re.escape(keyword)}\b",
                 query_lower
             ):
-                return category
-
-    # Internship is checked after the other categories because
-    # it is frequently used as contextual information.
-    for keyword in explicit_categories["internship"]:
-
-        if re.search(
-            rf"\b{re.escape(keyword)}\b",
-            query_lower
-        ):
-            return "internship"
+                return intent
 
     return None
+
+
+# --------------------------------------------------
+# BACKWARD COMPATIBILITY
+# --------------------------------------------------
+
+def detect_query_category(query: str) -> str | None:
+    """
+    Return the broader document category.
+
+    This keeps compatibility with existing code.
+    """
+
+    intent = detect_query_intent(query)
+
+    if intent in {
+        "programming_languages",
+        "web_frameworks",
+        "databases",
+        "tools",
+        "ides",
+        "operating_systems",
+        "technical_skills",
+    }:
+        return "technical_skills"
+
+    return intent
+
+
+# --------------------------------------------------
+# QUERY CONTEXT
+# --------------------------------------------------
 
 def detect_query_context(query: str) -> str | None:
     """
     Detect contextual constraints in the user's question.
-
-    For example:
-        "projects during their internship"
-        -> internship
-
-    The context is different from the primary category.
     """
 
     query_lower = query.lower()
@@ -249,23 +323,27 @@ def detect_query_context(query: str) -> str | None:
         "in the internship",
         "while doing their internship",
         "while on their internship",
-        "as part of their internship"
+        "as part of their internship",
     ]
 
     for phrase in internship_phrases:
+
         if phrase in query_lower:
             return "internship"
 
     return None
 
 
-def calculate_keyword_score(query: str, content: str) -> float:
-    """
-    Calculate keyword/concept overlap between the query
-    and document chunk.
+# --------------------------------------------------
+# KEYWORD SCORE
+# --------------------------------------------------
 
-    Known abbreviations such as BCA/MCA are treated as
-    equivalent to their full forms.
+def calculate_keyword_score(
+    query: str,
+    content: str
+) -> float:
+    """
+    Calculate keyword overlap between query and content.
     """
 
     query_words = set(
@@ -289,7 +367,7 @@ def calculate_keyword_score(query: str, content: str) -> float:
         content_words
     )
 
-    # Check abbreviation/full-form equivalence
+    # Abbreviation/full-form matching
     for abbreviation, full_form in QUERY_EXPANSIONS.items():
 
         if abbreviation in query_words:
@@ -301,9 +379,8 @@ def calculate_keyword_score(query: str, content: str) -> float:
                 )
             )
 
-            if full_form_words.issubset(
-                content_words
-            ):
+            if full_form_words.issubset(content_words):
+
                 matched_words.add(
                     abbreviation
                 )
@@ -311,13 +388,17 @@ def calculate_keyword_score(query: str, content: str) -> float:
     return len(matched_words) / len(query_words)
 
 
+# --------------------------------------------------
+# CATEGORY BOOST
+# --------------------------------------------------
+
 def calculate_category_boost(
     category: str | None,
     content: str
 ) -> float:
     """
-    Give a ranking boost when a chunk contains
-    strong evidence that it belongs to the requested category.
+    Boost chunks belonging to the requested
+    broad document category.
     """
 
     if category is None:
@@ -341,10 +422,48 @@ def calculate_category_boost(
         return 0.0
 
     if matches >= 2:
-        return 0.30
+        return 0.50
 
-    return 0.20
+    return 0.40
 
+
+# --------------------------------------------------
+# SUBSECTION BOOST
+# --------------------------------------------------
+
+def calculate_subsection_boost(
+    intent: str | None,
+    content: str
+) -> float:
+    """
+    Strongly boost chunks containing the exact
+    subsection requested by the user.
+    """
+
+    if intent is None:
+        return 0.0
+
+    markers = SUBSECTION_MARKERS.get(
+        intent,
+        []
+    )
+
+    if not markers:
+        return 0.0
+
+    content_lower = content.lower()
+
+    for marker in markers:
+
+        if marker in content_lower:
+            return 0.80
+
+    return 0.0
+
+
+# --------------------------------------------------
+# SEARCH
+# --------------------------------------------------
 
 def semantic_search(
     query: str,
@@ -353,21 +472,20 @@ def semantic_search(
     top_k: int = 5
 ):
     """
-    Perform hybrid semantic + keyword + category search.
+    Perform hybrid semantic + keyword +
+    category + subsection search.
     """
 
-    # Expand abbreviations before generating the embedding.
     expanded_query = expand_query(query)
 
     query_embedding = generate_embedding(
         expanded_query
     )
 
-    # Detect what type of information the user is asking for.
+    intent = detect_query_intent(query)
+
     category = detect_query_category(query)
 
-    # Detect contextual constraints such as
-    # "during their internship".
     query_context = detect_query_context(query)
 
     query_db = db.query(DocumentChunk)
@@ -402,19 +520,67 @@ def semantic_search(
             chunk.content
         )
 
-        # Ignore chunks only when they have no meaningful
-        # semantic, keyword, or category relevance.
+        subsection_boost = calculate_subsection_boost(
+            intent,
+            chunk.content
+        )
+
+        # --------------------------------------------------
+        # Context filtering
+        # --------------------------------------------------
+
+        if query_context == "internship":
+
+            chunk_category = (
+                chunk.category or ""
+            ).lower()
+
+            if chunk_category != "internship":
+                continue
+
+        # --------------------------------------------------
+        # Strong subsection filtering
+        # --------------------------------------------------
+
+
+        if intent in SUBSECTION_MARKERS:
+
+            subsection_present = False
+
+            content_lower = chunk.content.lower()
+
+            for marker in SUBSECTION_MARKERS[intent]:
+
+                if marker in content_lower:
+                    subsection_present = True
+                    break
+
+            # For specific subsection queries, only return
+            # chunks that actually contain that subsection.
+            if not subsection_present:
+                continue
+
+        # --------------------------------------------------
+        # General relevance filtering
+        # --------------------------------------------------
+
         if (
             similarity < SIMILARITY_THRESHOLD
             and keyword_score == 0
             and category_boost == 0
+            and subsection_boost == 0
         ):
             continue
+
+        # --------------------------------------------------
+        # Final score
+        # --------------------------------------------------
 
         final_score = (
             SEMANTIC_WEIGHT * similarity
             + KEYWORD_WEIGHT * keyword_score
             + category_boost
+            + subsection_boost
         )
 
         if final_score >= FINAL_SCORE_THRESHOLD:
@@ -427,7 +593,9 @@ def semantic_search(
                 "similarity": similarity,
                 "keyword_score": keyword_score,
                 "category": category,
+                "query_intent": intent,
                 "category_boost": category_boost,
+                "subsection_boost": subsection_boost,
                 "final_score": final_score
             })
 
