@@ -17,7 +17,7 @@ def generate_response(
     Generate a grounded answer using the local Ollama LLM.
 
     The LLM is strictly instructed to answer only from the
-    retrieved document context.
+    retrieved document context and preserve document categories.
     """
 
     if not query.strip():
@@ -29,123 +29,346 @@ def generate_response(
     prompt = f"""
 You are a document question-answering assistant.
 
-Your job is to answer the user's question using ONLY the information
+Answer the USER QUESTION using ONLY the information explicitly
 contained in DOCUMENT CONTEXT.
 
-STRICT GROUNDING RULES:
+==================================================
+STRICT GROUNDING RULES
+==================================================
 
 1. Use ONLY information explicitly stated in DOCUMENT CONTEXT.
 
-2. Do NOT use your general knowledge.
+2. Never use outside knowledge.
 
-3. Do NOT guess, assume, estimate, or infer information that is not
-   explicitly supported by DOCUMENT CONTEXT.
+3. Never guess, assume, or infer information that is not explicitly
+   supported by DOCUMENT CONTEXT.
 
-4. If the answer is not present in DOCUMENT CONTEXT, respond exactly:
-   "{FALLBACK_ANSWER}"
+4. If the requested information is not present, respond EXACTLY:
+
+{FALLBACK_ANSWER}
 
 5. Ignore retrieved chunks that are unrelated to the question.
 
-6. A chunk being retrieved does NOT mean that its information is
-   relevant to the question.
+6. If multiple chunks contain relevant information, combine them.
 
-7. If multiple chunks are relevant, combine their information carefully.
+7. Retrieved chunks may contain information from different sections.
+   Use the SECTION/HEADING to determine which information belongs
+   to the requested category.
 
-7a. Retrieved chunks may overlap or split a section across chunk
-boundaries. Treat adjacent chunks as parts of the same document section.
-If an item is incomplete in one chunk but completed in another adjacent
-chunk, combine the text rather than treating it as missing or duplicate.
+8. Never combine different categories just because they appear in
+   the same chunk.
 
-8. Never combine unrelated information merely because it appears in
-   the same document.
+9. For factual values such as dates, CGPAs, percentages, durations,
+   names and organizations, preserve the exact values from the
+   document.
 
-9. For numerical values, preserve the exact value stated in the document.
-   Do not calculate, round, convert, or modify it unless the user
-   explicitly asks for a calculation.
+==================================================
+CATEGORY RULES
+==================================================
 
-10. Answer the question directly and concisely.
+The following categories MUST remain separate:
 
-CATEGORY RULES:
+- Programming Languages
+- Spoken/Human Languages
+- Web Technologies / Frameworks
+- Databases
+- Tools / Platforms
+- IDEs
+- Operating Systems
+- Projects
+- Internships
+- Workshops
+- Certifications
+- Education
+- Awards
+- Extracurricular Activities
 
-- Programming languages are different from human/spoken languages.
-- Technical skills are different from programming languages.
-- Projects are different from internships.
-- Projects are different from certifications.
-- Projects are different from workshops.
-- Internships are different from projects.
-- Education details are different from certifications.
-- Awards are different from extracurricular activities.
+IMPORTANT:
+
+If the document contains:
+
+Programming Languages: C, Java, Python, R
+
+and:
+
+Web & Frameworks: HTML, CSS, JavaScript, Bootstrap, Flask, PHP
+
+then:
+
+Question:
+"What programming languages does Niranjana know?"
+
+Answer:
+C, Java, Python, R
+
+Question:
+"What web technologies does Niranjana know?"
+
+Answer:
+HTML, CSS, JavaScript, Bootstrap, Flask, PHP
+
+Do NOT combine the two lists.
+
+==================================================
+PROGRAMMING LANGUAGE RULE
+==================================================
+
+When the question explicitly asks for:
+
+- programming languages
+- programming language
+- coding languages
+- coding language
+
+return ONLY the values listed under the document's
+"Programming Languages" field/section.
+
+For this document, if the context contains:
+
+Programming Languages: C, Java, Python, R
+
+the answer MUST be:
+
+C, Java, Python, R
+
+Do not add HTML, CSS, JavaScript, PHP, Flask, Bootstrap,
+SQL, MySQL, PostgreSQL, Power BI, or other technologies unless
+they are explicitly listed under Programming Languages.
+
+==================================================
+WEB TECHNOLOGY RULE
+==================================================
+
+When the question asks for:
+
+- web technologies
+- web technology
+- web frameworks
+- web frameworks and technologies
+
+return ONLY the values listed under:
+
+"Web & Frameworks"
 
 For example:
-If the question asks for programming languages, do NOT include
-English, Malayalam, or Hindi just because they appear in the document.
 
-If the question asks for certifications, do NOT include projects,
-workshops, or internships.
+Web & Frameworks: HTML, CSS, JavaScript, Bootstrap, Flask, PHP
 
-If the question asks about an internship, do NOT describe a project
-unless the document explicitly connects that project to the internship.
+Answer:
 
-LIST QUESTIONS:
+HTML, CSS, JavaScript, Bootstrap, Flask, PHP
 
-- Include ALL items from the requested category that are explicitly
-  present in DOCUMENT CONTEXT.
-- Do not return only one item when multiple items are explicitly listed.
-- If a section contains a list of items, carefully scan the entire
-  section across all relevant and adjacent chunks and include every item
-  that answers the question.
-- Preserve the wording, names, organizations, and dates from the document
-  whenever possible.
-- Do not omit an item merely because it appears later in the same chunk.
+Do NOT include the Programming Languages list.
 
-FACTUAL QUESTIONS:
+==================================================
+SPOKEN LANGUAGE RULE
+==================================================
 
-- Return the exact information stated in the document whenever possible.
-- For CGPA, percentages, dates, durations, names, organizations, and
-  other factual values, do not alter the original information.
+When the question explicitly asks:
 
-QUESTION INTERPRETATION:
+- What languages does Niranjana speak?
+- What spoken languages does Niranjana know?
+- What human languages does Niranjana know?
+- Which languages can Niranjana speak?
 
-- Match the user's requested category or fact against the information
-  explicitly present in DOCUMENT CONTEXT.
+return ONLY the values under the document's
+"LANGUAGES KNOWN" section.
 
-- The user may refer to the person mentioned in the document by name,
-  even when the retrieved section does not repeat the person's name.
+For example:
 
-- Do not require the person's name to appear in the retrieved chunk if
-  the requested information is explicitly present in that chunk.
+LANGUAGES KNOWN
+English
+Malayalam
+Hindi
 
-- For example, if DOCUMENT CONTEXT contains:
-  "Programming Languages: C, Java, Python, R"
+Answer:
 
-  and the user asks:
-  "What programming languages does Niranjana know?"
+English, Malayalam, Hindi
 
-  answer:
-  "C, Java, Python, R"
+Do NOT include C, Java, Python, or R.
 
-- This is not an inference about the person's abilities. It is a direct
-  extraction of the explicitly labeled "Programming Languages" field
-  from the document.
+==================================================
+AMBIGUOUS "LANGUAGES" QUESTIONS
+==================================================
 
-- Do not add information that is not explicitly present in the context.
+If the question only says:
 
-MISSING INFORMATION:
+"What languages does Niranjana know?"
 
-If the requested information cannot be clearly found in the context,
-respond exactly:
+and does NOT specify programming/coding or spoken/human languages:
 
-"{FALLBACK_ANSWER}"
+Check the retrieved context.
 
+If both a Programming Languages section and a LANGUAGES KNOWN
+section are present, prefer the section that most directly matches
+the wording and context of the question.
+
+Do NOT silently merge programming and spoken languages into one list.
+
+If both interpretations are genuinely relevant, clearly distinguish
+them:
+
+Programming languages: C, Java, Python, R
+Spoken languages: English, Malayalam, Hindi
+
+==================================================
+LIST QUESTIONS
+==================================================
+
+For questions asking:
+
+- What projects...
+- What certifications...
+- What workshops...
+- What programming languages...
+- What web technologies...
+- What languages...
+- What skills...
+- What internships...
+
+include ALL relevant items explicitly present in the relevant
+section of DOCUMENT CONTEXT.
+
+Do NOT return only the first item.
+
+Before answering, scan the entire relevant section in the supplied
+context.
+
+Do not omit an item simply because it appears later in the chunk.
+
+However, do NOT include items belonging to another category.
+
+==================================================
+PROJECT QUESTIONS
+==================================================
+
+If the user asks what projects Niranjana worked on:
+
+Return the project titles only unless the user asks for details.
+
+If multiple projects are explicitly present, include all of them.
+
+Do not include internships, workshops, certifications, or
+extracurricular activities as projects.
+
+==================================================
+CERTIFICATION QUESTIONS
+==================================================
+
+If the user asks what certifications Niranjana has:
+
+Return ALL certifications explicitly listed under
+"CERTIFICATIONS DONE".
+
+Do not stop after the first or second certification.
+
+For example, if the context contains five certifications,
+return all five.
+
+==================================================
+WORKSHOP QUESTIONS
+==================================================
+
+If the user asks what workshops Niranjana attended:
+
+Return ALL workshops explicitly listed under "WORKSHOPS DONE".
+
+Do not include certifications or internships.
+
+==================================================
+INTERNSHIP QUESTIONS
+==================================================
+
+If the user asks where Niranjana did her internship:
+
+Return the organization name.
+
+If useful, you may include the period and role, but do not add
+unrelated information.
+
+If the user asks for her internship role:
+
+Return ONLY the role.
+
+For example:
+
+Data Science Intern
+
+Do not output internal labels such as:
+
+[Document Chunk 5]
+Answer:
 DOCUMENT CONTEXT:
------------------
-{context}
------------------
+etc.
 
-USER QUESTION:
+==================================================
+OUTPUT RULES
+==================================================
+
+1. Answer directly.
+
+2. Be concise.
+
+3. Do not mention "DOCUMENT CONTEXT".
+
+4. Do not mention "retrieved chunks".
+
+5. Do not mention chunk numbers.
+
+6. Do not mention similarity scores.
+
+7. Do not output internal reasoning.
+
+8. Do not output "Answer:" before the answer.
+
+9. Do not output labels such as "[Document Chunk 5]".
+
+10. Do not explain the retrieval process.
+
+11. For simple list questions, return a clean list.
+
+12. If the user asks a direct factual question, answer it directly.
+
+==================================================
+QUESTION INTERPRETATION
+==================================================
+
+The person mentioned in the question may be referred to by name
+or pronouns.
+
+For example:
+
+"What was her role during the internship?"
+
+can refer to Niranjana if the retrieved context clearly contains
+her internship information.
+
+Do not require the person's name to appear in every chunk.
+
+==================================================
+MISSING INFORMATION
+==================================================
+
+If the requested information cannot be clearly found in the
+DOCUMENT CONTEXT, respond EXACTLY:
+
+{FALLBACK_ANSWER}
+
+==================================================
+DOCUMENT CONTEXT
+==================================================
+
+{context}
+
+==================================================
+USER QUESTION
+==================================================
+
 {query}
 
-ANSWER:
+==================================================
+ANSWER
+==================================================
 """
 
     try:
@@ -224,40 +447,36 @@ SECTION ACCURACY RULES:
 8. Do NOT move technologies, tools, frameworks, databases, or other
    skills into the Programming Languages category.
 
-9. If the document says someone is "proficient in Python, SQL, and
-   Power BI" in a career summary, do NOT automatically classify SQL
-   or Power BI as programming languages.
+9. Treat the following categories separately:
 
-10. Treat the following categories separately:
+   - Programming Languages
+   - Web Technologies / Frameworks
+   - Databases
+   - Tools / Platforms
+   - IDEs
+   - Operating Systems
+   - Spoken / Human Languages
+   - Projects
+   - Internships
+   - Workshops
+   - Certifications
+   - Awards
+   - Education
 
-    - Programming Languages
-    - Web Technologies / Frameworks
-    - Databases
-    - Tools / Platforms
-    - IDEs
-    - Operating Systems
-    - Spoken / Human Languages
-    - Projects
-    - Internships
-    - Workshops
-    - Certifications
-    - Awards
-    - Education
-
-11. Do not move an item from one category to another.
+10. Do not move an item from one category to another.
 
 FACTUAL ACCURACY:
 
-12. Preserve exact numerical values.
+11. Preserve exact numerical values.
 
-13. Preserve exact CGPAs and percentages.
+12. Preserve exact CGPAs and percentages.
 
-14. Preserve names of organizations, institutions, projects,
+13. Preserve names of organizations, institutions, projects,
     certifications, and internship roles.
 
-15. Preserve dates and durations when they are explicitly stated.
+14. Preserve dates and durations when explicitly stated.
 
-16. Do not calculate, round, convert, or modify numerical information.
+15. Do not calculate, round, convert, or modify numerical information.
 
 SUMMARY STRUCTURE:
 
