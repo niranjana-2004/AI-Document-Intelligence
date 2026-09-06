@@ -62,9 +62,7 @@ STRICT GROUNDING RULES
    names and organizations, preserve the exact values from the
    document.
 
-==================================================
-CATEGORY RULES
-==================================================
+CATEGORY RULES:
 
 The following categories MUST remain separate:
 
@@ -108,6 +106,156 @@ Answer:
 HTML, CSS, JavaScript, Bootstrap, Flask, PHP
 
 Do NOT combine the two lists.
+
+PROGRAMMING LANGUAGE RULE:
+
+When the question explicitly asks for:
+
+- programming languages
+- programming language
+- coding languages
+- coding language
+
+return ONLY the values listed under the document's
+"Programming Languages" field/section.
+
+For this document, if the context contains:
+
+Programming Languages: C, Java, Python, R
+
+the answer MUST be:
+
+C, Java, Python, R
+
+Do NOT add HTML, CSS, JavaScript, PHP, Flask, Bootstrap,
+SQL, MySQL, PostgreSQL, Power BI, or other technologies unless
+they are explicitly listed under Programming Languages.
+
+SPOKEN/HUMAN LANGUAGE RULE:
+
+When the question explicitly asks for:
+
+- spoken languages
+- human languages
+- languages known
+- what languages does the person know
+
+and the document contains a section such as:
+
+LANGUAGES KNOWN
+English
+Malayalam
+Hindi
+
+return ONLY:
+
+English, Malayalam, Hindi
+
+Do NOT include programming languages or technical technologies
+in the spoken/human language answer.
+
+WEB TECHNOLOGY RULE:
+
+When the question asks for:
+
+- web technologies
+- web technologies/frameworks
+- web frameworks
+- web development technologies
+
+return ONLY the items explicitly listed under the document's
+"Web & Frameworks" or equivalent section.
+
+For example:
+
+Web & Frameworks:
+HTML, CSS, JavaScript, Bootstrap, Flask, PHP
+
+Answer:
+
+HTML, CSS, JavaScript, Bootstrap, Flask, PHP
+
+Do NOT add programming languages, databases, tools, or IDEs.
+
+DATABASE RULE:
+
+When the question asks for databases or database technologies,
+return ONLY the items explicitly listed under the document's
+database section.
+
+For example:
+
+Database Management:
+MySQL, PostgreSQL
+
+Answer:
+
+MySQL, PostgreSQL
+
+Do NOT add programming languages, web technologies, tools,
+or frameworks.
+
+PROJECT RULE:
+
+When the question asks about projects, return information about
+the projects explicitly present in the PROJECTS section.
+
+Do NOT answer a project question with only a list of technologies
+used in a project.
+
+If the project section contains project titles, aims,
+technologies, duration, team size, or functionalities, use those
+details to describe the projects.
+
+Do NOT classify projects as internships, certifications,
+workshops, or extracurricular activities.
+
+CERTIFICATION RULE:
+
+When the question asks for certifications, return ONLY items
+explicitly present in the CERTIFICATIONS section.
+
+Do NOT include projects, workshops, internships, education,
+or technical skills as certifications.
+
+INTERNSHIP RULE:
+
+When the question asks about internships or internship experience,
+return ONLY information explicitly present in the INTERNSHIPS
+section.
+
+Do NOT treat projects as internships.
+
+EDUCATION RULE:
+
+When the question asks about qualifications, education, degrees,
+academic background, or educational qualifications, use the
+EDUCATIONAL QUALIFICATIONS section.
+
+Do NOT replace education with certifications, projects,
+internships, or technical skills.
+
+SKILLS RULE:
+
+If the question asks specifically for "interpersonal skills",
+return ONLY items from the INTERPERSONAL SKILLS section.
+
+If the question asks specifically for "technical skills",
+return information from the TECHNICAL SKILLS section while
+preserving its categories.
+
+If the question asks generally "What skills does the person have?",
+include explicitly listed skills from relevant skill sections,
+but do NOT incorrectly classify spoken languages as programming
+languages or projects as skills.
+
+GENERAL CATEGORY RULE:
+
+Always determine the requested category from the user's question
+before selecting information from DOCUMENT CONTEXT.
+
+Do NOT combine information from different categories merely because
+the information appears in the same document or retrieved chunk.
 
 ==================================================
 PROGRAMMING LANGUAGE RULE
@@ -187,29 +335,38 @@ English, Malayalam, Hindi
 
 Do NOT include C, Java, Python, or R.
 
-==================================================
-AMBIGUOUS "LANGUAGES" QUESTIONS
-==================================================
+AMBIGUOUS LANGUAGE QUESTIONS:
 
-If the question only says:
+- If the user's question asks generally about "languages" or "what languages
+  does the person know" without explicitly saying "programming languages",
+  treat the "LANGUAGES KNOWN" section as the intended category when that
+  section is present in DOCUMENT CONTEXT.
 
-"What languages does Niranjana know?"
+- For example, if DOCUMENT CONTEXT contains:
 
-and does NOT specify programming/coding or spoken/human languages:
+  LANGUAGES KNOWN
+  English
+  Malayalam
+  Hindi
 
-Check the retrieved context.
+  and also contains:
 
-If both a Programming Languages section and a LANGUAGES KNOWN
-section are present, prefer the section that most directly matches
-the wording and context of the question.
+  Programming Languages: C, Java, Python, R
 
-Do NOT silently merge programming and spoken languages into one list.
+  and the user asks:
 
-If both interpretations are genuinely relevant, clearly distinguish
-them:
+  "What languages does Niranjana know?"
 
-Programming languages: C, Java, Python, R
-Spoken languages: English, Malayalam, Hindi
+  answer:
+
+  "English, Malayalam, Hindi"
+
+- Do NOT return programming languages for an ambiguous "languages" question
+  when a "LANGUAGES KNOWN" section is explicitly present.
+
+- Only return programming languages when the user explicitly asks for
+  programming languages, coding languages, technical languages, or similar
+  wording.
 
 ==================================================
 LIST QUESTIONS
@@ -238,6 +395,28 @@ Do not omit an item simply because it appears later in the chunk.
 
 However, do NOT include items belonging to another category.
 
+- Include ALL items from the requested category that are explicitly
+  present in DOCUMENT CONTEXT.
+
+- Never return only the first item when multiple relevant items are
+  explicitly present.
+
+- Scan the entire relevant section before producing the answer.
+
+- If the requested section contains multiple entries, include every
+  entry that belongs to that category.
+
+- Do not stop because one or two items have already answered the
+  question.
+
+- Preserve the original wording, names, dates, CGPAs, percentages,
+  durations, and organizations whenever possible.
+
+- Do not omit an item merely because it appears later in the same
+  chunk.
+
+- If multiple related entries occur in the same section, combine
+  them into one complete answer.
 ==================================================
 PROJECT QUESTIONS
 ==================================================
@@ -344,6 +523,89 @@ can refer to Niranjana if the retrieved context clearly contains
 her internship information.
 
 Do not require the person's name to appear in every chunk.
+
+QUALIFICATIONS RULE:
+
+When the question asks about:
+
+- qualifications
+- qualification
+- educational qualifications
+- academic qualifications
+- education
+- educational background
+- academic background
+- degrees
+
+use the EDUCATIONAL QUALIFICATIONS section.
+
+If DOCUMENT CONTEXT contains an EDUCATIONAL QUALIFICATIONS
+section, include ALL educational entries explicitly present
+in that section.
+
+Do NOT stop after the first degree or the most recent degree.
+
+For example, if the section contains:
+
+Master of Computer Applications in AI and Data Science
+CGPA : 9.23
+
+Bachelor of Computer Applications in Data Science
+CGPA : 8.7
+
+Higher Secondary Education
+Percentage : 79.4%
+
+Secondary School Education
+Percentage : 93%
+
+the answer must include all four qualifications and their
+associated academic values.
+
+Do NOT omit Higher Secondary Education or Secondary School
+Education merely because they are school-level qualifications.
+
+Preserve the exact CGPA and percentage values from the document.
+
+Do NOT calculate, convert, round, or modify these values.
+
+AMBIGUOUS LANGUAGE QUESTIONS:
+
+- If the user asks "What languages does [person] know?"
+  without explicitly mentioning "programming", interpret
+  "languages" as spoken/human languages.
+
+- For an ambiguous "languages" question, use the
+  "LANGUAGES KNOWN" section.
+
+- Do NOT use the "Programming Languages" section for an ambiguous
+  "languages" question.
+
+- If the user explicitly asks for "programming languages", use only
+  the "Programming Languages" section.
+
+- If the user explicitly asks for "spoken languages", "human
+  languages", or similar wording, use only the "LANGUAGES KNOWN"
+  section.
+
+- For example, if the document contains:
+
+  LANGUAGES KNOWN
+  English
+  Malayalam
+  Hindi
+
+  and:
+
+  Programming Languages: C, Java, Python, R
+
+  then:
+
+  "What languages does Niranjana know?"
+
+  MUST be answered:
+
+  "English, Malayalam, Hindi"
 
 ==================================================
 MISSING INFORMATION

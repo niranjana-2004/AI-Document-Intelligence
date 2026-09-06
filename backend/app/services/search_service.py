@@ -1,3 +1,9 @@
+from app.models import document_chunk
+from app.models import document_chunk
+from app.models import document_chunk
+from app.models import document_chunk
+from app.models import document_chunk
+from app.models import document_chunk
 from networkx.generators import internet_as_graphs
 from networkx.generators import internet_as_graphs
 import re
@@ -123,12 +129,17 @@ QUERY_INTENTS = {
     ],
 
     "languages": [
-        "spoken language",
-        "spoken languages",
-        "human language",
-        "human languages",
-        "languages known",
+    "spoken language",
+    "spoken languages",
+    "human language",
+    "human languages",
+    "languages known",
     ],
+
+    "ambiguous_languages": [
+    "what languages",
+    "which languages",
+    ]
 }
 
 
@@ -261,6 +272,7 @@ def detect_query_intent(query: str) -> str | None:
         "awards",
         "education",
         "internship",
+        "ambiguous_languages",
         "languages",
         "technical_skills",
     ]
@@ -277,6 +289,42 @@ def detect_query_intent(query: str) -> str | None:
 
     return None
 
+def is_ambiguous_language_query(query: str) -> bool:
+    """
+    Detect questions that ask generally about "languages"
+    without specifying programming or spoken languages.
+    """
+
+    query_lower = query.lower().strip()
+
+    # Explicit programming-language queries are not ambiguous
+    programming_phrases = [
+        "programming language",
+        "programming languages",
+        "coding language",
+        "coding languages",
+    ]
+
+    # Explicit spoken-language queries are not ambiguous
+    spoken_phrases = [
+        "spoken language",
+        "spoken languages",
+        "human language",
+        "human languages",
+    ]
+
+    if any(
+        phrase in query_lower
+        for phrase in programming_phrases + spoken_phrases
+    ):
+        return False
+
+    # General language question
+    return bool(
+        re.search(r"\bwhat languages\b", query_lower)
+        or re.search(r"\bwhich languages\b", query_lower)
+        or re.search(r"\blanguages does\b", query_lower)
+    )
 
 # --------------------------------------------------
 # BACKWARD COMPATIBILITY
@@ -488,6 +536,14 @@ def semantic_search(
 
     query_context = detect_query_context(query)
 
+    ambiguous_language_query = is_ambiguous_language_query(query)
+
+    # Ambiguous "languages" queries should search both
+    # programming languages and spoken languages.
+    if intent == "ambiguous_languages":
+        intent = None
+        category = None
+
     query_db = db.query(DocumentChunk)
 
     if document_id is not None:
@@ -500,10 +556,68 @@ def semantic_search(
 
     results = []
 
-    for chunk in chunks:
+    # --------------------------------------------------
+    # Ambiguous language query
+    # --------------------------------------------------
+
+    if ambiguous_language_query:
+
+        programming_chunks = []
+        spoken_language_chunks = []
+
+        for chunk in chunks:
+
+            if not chunk.embedding:
+                continue
+
+            content_lower = chunk.content.lower()
+
+            # Programming Languages section
+            if "programming languages:" in content_lower:
+                programming_chunks.append(chunk)
+
+            # Spoken Languages section
+            elif "languages known" in content_lower:
+                spoken_language_chunks.append(chunk)
+
+        # Force both language categories into the result set
+        special_chunks = (
+            programming_chunks +
+            spoken_language_chunks
+        )
+
+    else:
+        special_chunks = []
+
+    # --------------------------------------------------
+    # Resolve ambiguous "language" queries
+    # --------------------------------------------------
+
+    if ambiguous_language_query:
+        query_intent = "languages"
+        category = "languages"
+
+    chunks_to_search = special_chunks if ambiguous_language_query else chunks
+
+    for chunk in chunks_to_search:
 
         if not chunk.embedding:
             continue
+        
+        # --------------------------------------------------
+        # Ambiguous language query boost
+        # --------------------------------------------------
+
+        language_category_boost = 0.0
+
+        if ambiguous_language_query:
+            content_lower = chunk.content.lower()
+
+            if "languages known" in content_lower:
+                language_category_boost = 0.80
+
+            elif "programming languages:" in content_lower:
+                language_category_boost = 0.40
 
         similarity = cosine_similarity(
             query_embedding,
@@ -581,6 +695,7 @@ def semantic_search(
             + KEYWORD_WEIGHT * keyword_score
             + category_boost
             + subsection_boost
+            + language_category_boost
         )
 
         if final_score >= FINAL_SCORE_THRESHOLD:
