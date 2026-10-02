@@ -43,12 +43,29 @@ For example:
 
 For a certification question, return ALL certification entries
 listed under CERTIFICATIONS DONE.
+
+For a project-list question, return ONLY the project titles/names
+listed under PROJECTS DONE.
+
 Do NOT return technologies such as HTML, CSS, JavaScript, PHP,
 MySQL, Python, Flask, PostgreSQL, or other tools as project names.
 
 If the PROJECTS DONE section contains technologies before the first
 "Title:" entry, ignore those technologies and start with the first
 project title.
+
+For questions about a specific project, answer using the relevant
+details explicitly provided for that project, such as:
+
+- technologies
+- tools
+- aim
+- technical functionalities
+- duration
+- team size
+
+Do NOT return the project titles as the answer when the user is
+asking about a specific project's technologies, aim, or other details.
 
 DOCUMENT CONTEXT:
 -----------------

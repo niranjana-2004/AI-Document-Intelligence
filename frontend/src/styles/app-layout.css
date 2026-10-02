@@ -1,0 +1,472 @@
+/* ========================================
+   MAIN APPLICATION LAYOUT
+   ======================================== */
+
+.app-layout {
+    min-height: 100vh;
+    background: #f4fbfa;
+    color: #16343a;
+}
+
+
+/* ========================================
+   SIDEBAR
+   ======================================== */
+
+.app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 250px;
+    height: 100vh;
+
+    background: #ffffff;
+    border-right: 1px solid #d9ebe8;
+
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+
+    z-index: 1000;
+}
+
+
+/* Brand */
+
+.app-brand {
+    height: 76px;
+    padding: 0 20px;
+
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    border-bottom: 1px solid #e5efed;
+
+    box-sizing: border-box;
+}
+
+.app-logo {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 11px;
+
+    background: #18b8a6;
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    flex-shrink: 0;
+
+    box-shadow:
+        0 5px 15px rgba(24, 184, 166, 0.18);
+}
+
+.app-brand-text {
+    min-width: 0;
+}
+
+.app-brand-text h1 {
+    margin: 0;
+
+    color: #16343a;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.app-brand-text span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #8a9ea2;
+
+    font-size: 10px;
+}
+
+
+/* ========================================
+   NAVIGATION
+   ======================================== */
+
+.app-navigation {
+    flex: 1;
+
+    padding: 24px 13px;
+
+    overflow-y: auto;
+}
+
+.nav-section-title {
+    margin: 0 10px 9px;
+
+    color: #91a4a7;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.nav-section-spaced {
+    margin-top: 28px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    width: 100%;
+    height: 42px;
+
+    padding: 0 11px;
+    margin-bottom: 4px;
+
+    box-sizing: border-box;
+
+    color: #60777c;
+    background: transparent;
+
+    border-radius: 9px;
+
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    transition:
+        background 0.2s,
+        color 0.2s;
+}
+
+.nav-item:hover {
+    background: #eef9f7;
+    color: #168f83;
+}
+
+.nav-item.active {
+    background: #e6f7f4;
+    color: #129d90;
+    font-weight: 700;
+}
+
+.nav-icon {
+    width: 20px;
+
+    text-align: center;
+
+    font-size: 16px;
+    line-height: 1;
+}
+
+
+/* ========================================
+   SIDEBAR BOTTOM
+   ======================================== */
+
+.sidebar-bottom {
+    padding: 15px 13px;
+
+    border-top: 1px solid #e5efed;
+
+    flex-shrink: 0;
+}
+
+.logout-button {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    width: 100%;
+    height: 42px;
+
+    padding: 0 11px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: transparent;
+    color: #71868a;
+
+    font-family: inherit;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    transition:
+        background 0.2s,
+        color 0.2s;
+}
+
+.logout-button:hover {
+    background: #fff0f0;
+    color: #d65c5c;
+}
+
+
+/* ========================================
+   MAIN AREA
+   ======================================== */
+
+.app-main {
+    min-width: 0;
+
+    min-height: 100vh;
+
+    margin-left: 250px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ========================================
+   TOP BAR
+   ======================================== */
+
+.app-topbar {
+    height: 76px;
+
+    padding: 0 28px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #d9ebe8;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    box-sizing: border-box;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+}
+
+.topbar-icon-button {
+    width: 36px;
+    height: 36px;
+
+    border: 1px solid #d9ebe8;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #6d8286;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+    transition:
+        background 0.2s,
+        color 0.2s;
+}
+
+.topbar-icon-button:hover {
+    background: #eef9f7;
+    color: #129d90;
+}
+
+.profile-button {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #29464c;
+
+    font-family: inherit;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.profile-avatar {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    background: #dff5f1;
+    color: #129d90;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.profile-name {
+    white-space: nowrap;
+}
+
+
+/* ========================================
+   CONTENT
+   ======================================== */
+
+.app-content {
+    flex: 1;
+
+    padding: 30px;
+
+    box-sizing: border-box;
+}
+
+
+/* Mobile brand hidden on desktop */
+
+.mobile-brand {
+    display: none;
+}
+
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 900px) {
+
+    .app-sidebar {
+        width: 220px;
+    }
+
+    .app-main {
+        margin-left: 220px;
+    }
+
+    .app-content {
+        padding: 24px;
+    }
+
+    .profile-name {
+        display: none;
+    }
+}
+
+
+@media (max-width: 700px) {
+
+    .app-sidebar {
+        width: 68px;
+    }
+
+    .app-main {
+        margin-left: 68px;
+    }
+
+    .app-brand {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .app-brand-text {
+        display: none;
+    }
+
+    .app-navigation {
+        padding: 20px 10px;
+    }
+
+    .nav-section-title {
+        display: none;
+    }
+
+    .nav-item {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .nav-item span:last-child {
+        display: none;
+    }
+
+    .logout-button {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .logout-button span:last-child {
+        display: none;
+    }
+
+    .app-topbar {
+        padding: 0 18px;
+    }
+
+    .mobile-brand {
+        display: flex;
+        align-items: center;
+
+        gap: 9px;
+
+        color: #16343a;
+
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .small-logo {
+        width: 32px;
+        height: 32px;
+
+        border-radius: 9px;
+
+        font-size: 11px;
+    }
+
+    .app-content {
+        padding: 20px;
+    }
+}
+
+
+@media (max-width: 480px) {
+
+    .app-sidebar {
+        width: 58px;
+    }
+
+    .app-main {
+        margin-left: 58px;
+    }
+
+    .app-content {
+        padding: 16px;
+    }
+
+    .topbar-icon-button {
+        display: none;
+    }
+}

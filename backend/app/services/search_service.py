@@ -1,13 +1,7 @@
-from app.models import document_chunk
-from app.models import document_chunk
-from app.models import document_chunk
-from app.models import document_chunk
-from app.models import document_chunk
-from app.models import document_chunk
 from networkx.generators import internet_as_graphs
-from networkx.generators import internet_as_graphs
+from app.models import document_chunk
 import re
-
+from typing import cast
 from app.services.embedding_services import generate_embedding
 from app.services.similarity_service import cosine_similarity
 from app.models.document_chunk import DocumentChunk
@@ -653,6 +647,38 @@ def semantic_search(
                 continue
 
         # --------------------------------------------------
+        # Strong document section filtering
+        # --------------------------------------------------
+
+        SECTION_FILTER_INTENTS = {
+            "projects": "projects",
+            "certifications": "certifications",
+            "internship": "internship",
+            "workshops": "workshops",
+            "awards": "awards",
+            "education": "education",
+            "languages": "languages",
+        }
+
+        if intent in SECTION_FILTER_INTENTS:
+
+            required_category = SECTION_FILTER_INTENTS[intent]
+
+            section_markers = SECTION_MARKERS.get(
+                required_category,
+                []
+            )
+
+            content_lower = chunk.content.lower()
+
+            section_present = any(
+            marker in content_lower 
+            for marker in section_markers
+            )
+
+            if not section_present:
+                continue
+        # --------------------------------------------------
         # Strong subsection filtering
         # --------------------------------------------------
 
@@ -715,8 +741,8 @@ def semantic_search(
             })
 
     results.sort(
-        key=lambda x: x["final_score"],
-        reverse=True
-    )
+    key=lambda x: cast(float, x["final_score"]),
+    reverse=True
+)
 
     return results[:top_k]
