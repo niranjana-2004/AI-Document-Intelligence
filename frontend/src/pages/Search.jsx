@@ -1,7 +1,6 @@
 import { useState } from 'react'
+import { apiRequest } from '../services/api'
 import '../App.css'
-
-const API_URL = 'http://127.0.0.1:8000'
 
 function Search() {
     const [query, setQuery] = useState('')
@@ -23,25 +22,11 @@ function Search() {
             setResults([])
             setHasSearched(true)
 
-            const response = await fetch(
-                `${API_URL}/documents/search?query=${encodeURIComponent(
+            const data = await apiRequest(
+                `/documents/search?query=${encodeURIComponent(
                     query
                 )}&top_k=5`
             )
-
-            if (!response.ok) {
-                const errorData =
-                    await response
-                        .json()
-                        .catch(() => null)
-
-                throw new Error(
-                    errorData?.detail ||
-                    'Search failed.'
-                )
-            }
-
-            const data = await response.json()
 
             setResults(data.results || [])
 
@@ -85,8 +70,8 @@ function Search() {
         <main className="search-page">
 
             {/* =================================
-          PAGE HEADER
-      ================================= */}
+                PAGE HEADER
+            ================================= */}
 
             <section className="search-page-header">
 
@@ -111,8 +96,8 @@ function Search() {
 
 
             {/* =================================
-          SEARCH BOX
-      ================================= */}
+                SEARCH BOX
+            ================================= */}
 
             <section className="search-box-card">
 
@@ -182,8 +167,8 @@ function Search() {
 
 
             {/* =================================
-          ERROR
-      ================================= */}
+                ERROR
+            ================================= */}
 
             {error && (
 
@@ -195,8 +180,8 @@ function Search() {
 
 
             {/* =================================
-          LOADING
-      ================================= */}
+                LOADING
+            ================================= */}
 
             {loading && (
 
@@ -229,8 +214,8 @@ function Search() {
 
 
             {/* =================================
-          RESULTS
-      ================================= */}
+                RESULTS
+            ================================= */}
 
             {!loading &&
                 hasSearched &&
@@ -349,8 +334,8 @@ function Search() {
 
 
             {/* =================================
-          NO RESULTS
-      ================================= */}
+                NO RESULTS
+            ================================= */}
 
             {!loading &&
                 hasSearched &&
@@ -379,8 +364,8 @@ function Search() {
 
 
             {/* =================================
-          INITIAL STATE
-      ================================= */}
+                INITIAL STATE
+            ================================= */}
 
             {!hasSearched && (
 

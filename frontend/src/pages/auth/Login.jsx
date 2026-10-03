@@ -1,15 +1,51 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
 
 function Login() {
     const navigate = useNavigate()
 
-    const handleLogin = (event) => {
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
+
+    const handleLogin = async (event) => {
         event.preventDefault()
 
-        // Temporary navigation.
-        // Real authentication will be connected later.
-        navigate('/dashboard')
+        setError('')
+        setLoading(true)
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail || 'Login failed. Please try again.'
+                )
+            }
+
+            // Store authentication information
+            localStorage.setItem('access_token', data.access_token)
+            localStorage.setItem('user', JSON.stringify(data.user))
+
+            navigate('/dashboard')
+        } catch (error) {
+            setError(error.message)
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -33,6 +69,8 @@ function Login() {
                             id="email"
                             type="email"
                             placeholder="you@example.com"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
                             required
                         />
                     </div>
@@ -52,15 +90,24 @@ function Login() {
                             id="password"
                             type="password"
                             placeholder="Enter your password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
                             required
                         />
                     </div>
 
+                    {error && (
+                        <div className="auth-error">
+                            {error}
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         className="auth-primary-button"
+                        disabled={loading}
                     >
-                        Sign in
+                        {loading ? 'Signing in...' : 'Sign in'}
                     </button>
                 </form>
 

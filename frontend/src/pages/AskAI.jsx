@@ -1,7 +1,6 @@
 import { useState } from 'react'
+import { apiRequest } from '../services/api'
 import '../App.css'
-
-const API_URL = 'http://127.0.0.1:8000'
 
 function AskAI() {
     const [question, setQuestion] = useState('')
@@ -26,13 +25,10 @@ function AskAI() {
             setAnswer('')
             setError('')
 
-            const response = await fetch(
-                `${API_URL}/documents/ask`,
+            const data = await apiRequest(
+                '/documents/ask',
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
                     body: JSON.stringify({
                         query: question,
                         document_id: null,
@@ -40,18 +36,6 @@ function AskAI() {
                     }),
                 }
             )
-
-            if (!response.ok) {
-                const errorData =
-                    await response.json().catch(() => null)
-
-                throw new Error(
-                    errorData?.detail ||
-                    'Failed to get an AI answer.'
-                )
-            }
-
-            const data = await response.json()
 
             const aiAnswer =
                 data.answer ||
@@ -93,8 +77,8 @@ function AskAI() {
         <main className="ask-ai-page">
 
             {/* =================================
-          PAGE HEADER
-      ================================= */}
+                PAGE HEADER
+            ================================= */}
 
             <section className="ask-ai-header">
 
@@ -119,8 +103,8 @@ function AskAI() {
 
 
             {/* =================================
-          SUGGESTED QUESTIONS
-      ================================= */}
+                SUGGESTED QUESTIONS
+            ================================= */}
 
             <section className="suggestions-section">
 
@@ -166,8 +150,8 @@ function AskAI() {
 
 
             {/* =================================
-          QUESTION SECTION
-      ================================= */}
+                QUESTION SECTION
+            ================================= */}
 
             <section className="ask-ai-card">
 
@@ -247,8 +231,8 @@ function AskAI() {
 
 
             {/* =================================
-          ERROR
-      ================================= */}
+                ERROR
+            ================================= */}
 
             {error && (
 
@@ -260,8 +244,8 @@ function AskAI() {
 
 
             {/* =================================
-          AI ANSWER
-      ================================= */}
+                AI ANSWER
+            ================================= */}
 
             {loading && (
 
@@ -336,8 +320,8 @@ function AskAI() {
 
 
             {/* =================================
-          EMPTY STATE
-      ================================= */}
+                EMPTY STATE
+            ================================= */}
 
             {!loading &&
                 !answer &&

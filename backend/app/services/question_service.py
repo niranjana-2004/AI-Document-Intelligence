@@ -58,7 +58,8 @@ def answer_question(
     query: str,
     db,
     document_id: int | None = None,
-    top_k: int = 7
+    top_k: int = 7,
+    user_id: int | None = None
 ) -> dict:
     """
     Answer a question using relevant document context.
@@ -71,7 +72,8 @@ def answer_question(
         query=query,
         db=db,
         document_id=document_id,
-        top_k=top_k
+        top_k=top_k,
+        user_id=user_id
     )
 
     if context_data["result_count"] == 0:

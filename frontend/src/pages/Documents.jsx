@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { apiRequest } from '../services/api'
 import '../App.css'
-
-const API_URL = 'http://127.0.0.1:8000'
 
 function Documents() {
     const fileInputRef = useRef(null)
@@ -41,17 +40,7 @@ function Documents() {
             setLoading(true)
             setError('')
 
-            const response = await fetch(
-                `${API_URL}/documents/`
-            )
-
-            if (!response.ok) {
-                throw new Error(
-                    'Failed to fetch documents'
-                )
-            }
-
-            const data = await response.json()
+            const data = await apiRequest('/documents/')
 
             const documentList = Array.isArray(data)
                 ? data
@@ -66,6 +55,7 @@ function Documents() {
             )
 
             setError(
+                error.message ||
                 'Unable to connect to the backend.'
             )
 
@@ -115,27 +105,10 @@ function Documents() {
 
             formData.append('file', file)
 
-            const response = await fetch(
-                `${API_URL}/documents/upload`,
-                {
-                    method: 'POST',
-                    body: formData,
-                }
-            )
-
-            if (!response.ok) {
-                const errorData =
-                    await response
-                        .json()
-                        .catch(() => null)
-
-                throw new Error(
-                    errorData?.detail ||
-                    'Upload failed.'
-                )
-            }
-
-            await response.json()
+            await apiRequest('/documents/upload', {
+                method: 'POST',
+                body: formData,
+            })
 
             setUploadMessage(
                 `${file.name} uploaded successfully.`
@@ -172,17 +145,9 @@ function Documents() {
             setSelectedDocument(null)
             setError('')
 
-            const response = await fetch(
-                `${API_URL}/documents/${documentId}`
+            const data = await apiRequest(
+                `/documents/${documentId}`
             )
-
-            if (!response.ok) {
-                throw new Error(
-                    'Failed to open document'
-                )
-            }
-
-            const data = await response.json()
 
             setSelectedDocument(data)
 
@@ -213,17 +178,9 @@ function Documents() {
             setSummary('')
             setError('')
 
-            const response = await fetch(
-                `${API_URL}/documents/${documentId}/summary`
+            const data = await apiRequest(
+                `/documents/${documentId}/summary`
             )
-
-            if (!response.ok) {
-                throw new Error(
-                    'Failed to generate summary'
-                )
-            }
-
-            const data = await response.json()
 
             setSummary(
                 data.summary ||
@@ -263,24 +220,12 @@ function Documents() {
         try {
             setError('')
 
-            const response = await fetch(
-                `${API_URL}/documents/${documentId}`,
+            await apiRequest(
+                `/documents/${documentId}`,
                 {
                     method: 'DELETE',
                 }
             )
-
-            if (!response.ok) {
-                const errorData =
-                    await response
-                        .json()
-                        .catch(() => null)
-
-                throw new Error(
-                    errorData?.detail ||
-                    'Failed to delete document.'
-                )
-            }
 
             setDocuments((currentDocuments) =>
                 currentDocuments.filter(
@@ -335,8 +280,8 @@ function Documents() {
             <main className="documents-page">
 
                 {/* =================================
-            PAGE HEADER
-        ================================= */}
+                    PAGE HEADER
+                ================================= */}
 
                 <section className="documents-page-header">
 
@@ -382,8 +327,8 @@ function Documents() {
 
 
                 {/* =================================
-            UPLOAD MESSAGE
-        ================================= */}
+                    UPLOAD MESSAGE
+                ================================= */}
 
                 {uploadMessage && (
 
@@ -395,8 +340,8 @@ function Documents() {
 
 
                 {/* =================================
-            ERROR
-        ================================= */}
+                    ERROR
+                ================================= */}
 
                 {error && (
 
@@ -408,8 +353,8 @@ function Documents() {
 
 
                 {/* =================================
-            SEARCH + COUNT
-        ================================= */}
+                    SEARCH + COUNT
+                ================================= */}
 
                 <section className="documents-toolbar">
 
@@ -444,8 +389,8 @@ function Documents() {
 
 
                 {/* =================================
-            DOCUMENT LIST
-        ================================= */}
+                    DOCUMENT LIST
+                ================================= */}
 
                 <section className="documents-library">
 
@@ -605,8 +550,8 @@ function Documents() {
 
 
             {/* =================================
-          DOCUMENT MODAL
-      ================================= */}
+                DOCUMENT MODAL
+            ================================= */}
 
             {selectedDocument && (
 
@@ -664,8 +609,8 @@ function Documents() {
 
 
             {/* =================================
-          SUMMARY MODAL
-      ================================= */}
+                SUMMARY MODAL
+            ================================= */}
 
             {(summaryLoading || summary) && (
 

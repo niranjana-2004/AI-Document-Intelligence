@@ -6,6 +6,9 @@ from app.models.document import Document
 # pyrefly: ignore [missing-import]
 from app.api.routes.documents import router as documents_router
 from app.models.document_chunk import DocumentChunk
+from app.models.user import User
+from app.models.otp import OTPVerification
+from app.api.routes.auth import router as auth_router
 
 
 app = FastAPI(
@@ -30,7 +33,7 @@ app.add_middleware(
 Base.metadata.create_all(bind=engine)
 
 app.include_router(documents_router)
-
+app.include_router(auth_router)
 
 @app.get("/")
 def root():

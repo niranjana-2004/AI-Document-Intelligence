@@ -345,3 +345,13 @@
     box-sizing: border-box;
     text-decoration: none;
 }
+
+.auth-error {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fff1f1;
+    color: #b42318;
+    border: 1px solid #f5c2c0;
+    font-size: 14px;
+}

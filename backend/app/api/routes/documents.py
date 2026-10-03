@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from typing import cast
 from app.services.llm_service import generate_summary
 from app.services.text_processing_service import detect_chunk_category
+from app.api.dependencies import get_current_user
+from app.models.user import User
 
 router = APIRouter(
     prefix="/documents",
@@ -25,10 +27,15 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 @router.get("/")
-def get_documents(db: Session = Depends(get_db)):
-    documents = db.query(Document).order_by(
-        Document.created_at.desc()
-    ).all()
+def get_documents(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    documents = (
+    db.query(Document)
+    .filter(Document.user_id == current_user.id)
+    .all()
+)
 
     return {
         "count": len(documents),
@@ -49,7 +56,8 @@ def search_documents(
     query: str,
     document_id: int | None = None,
     top_k: int = 5,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     if not query.strip():
         raise HTTPException(
@@ -64,10 +72,11 @@ def search_documents(
         )
 
     results = semantic_search(
-        query=query,
-        db=db,
-        document_id=document_id,
-        top_k=top_k
+    query=query,
+    db=db,
+    document_id=document_id,
+    top_k=top_k,
+    user_id=cast(int,current_user.id)
     )
 
     return {
@@ -79,15 +88,17 @@ def search_documents(
 @router.post("/ask")
 def ask_question(
     request: QuestionRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     try:
         return answer_question(
-            query=request.query,
-            db=db,
-            document_id=request.document_id,
-            top_k=request.top_k
-        )
+    query=request.query,
+    db=db,
+    document_id=request.document_id,
+    top_k=request.top_k,
+    user_id=cast(int, current_user.id)
+)
 
     except ValueError as error:
         raise HTTPException(
@@ -98,11 +109,17 @@ def ask_question(
 @router.get("/{document_id}/summary")
 def get_document_summary(
     document_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+    db.query(Document)
+    .filter(
+        Document.id == document_id,
+        Document.user_id == current_user.id
+    )
+    .first()
+)
 
     if not document:
         raise HTTPException(
@@ -126,11 +143,17 @@ def get_document_summary(
 @router.get("/{document_id}")
 def get_document(
     document_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+    db.query(Document)
+    .filter(
+        Document.id == document_id,
+        Document.user_id == current_user.id
+    )
+    .first()
+)
 
     if not document:
         raise HTTPException(
@@ -151,7 +174,8 @@ def get_document(
 @router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     allowed_extensions = {".pdf", ".docx", ".txt"}
 
@@ -215,7 +239,8 @@ async def upload_document(
         file_path=str(file_path),
         extracted_text=extracted_text,
         text_length=len(extracted_text),
-        summary=summary
+        summary=summary,
+        user_id=current_user.id
     )
 
     db.add(document)
@@ -255,11 +280,17 @@ async def upload_document(
 @router.delete("/{document_id}")
 def delete_document(
     document_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    document = db.query(Document).filter(
-        Document.id == document_id
-    ).first()
+    document = (
+    db.query(Document)
+    .filter(
+        Document.id == document_id,
+        Document.user_id == current_user.id
+    )
+    .first()
+)
 
     if not document:
         raise HTTPException(

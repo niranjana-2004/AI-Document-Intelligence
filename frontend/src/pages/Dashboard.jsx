@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { apiRequest } from '../services/api'
 import '../App.css'
-
-const API_URL = 'http://127.0.0.1:8000'
 
 function Dashboard() {
   const navigate = useNavigate()
@@ -42,15 +41,7 @@ function Dashboard() {
       setLoading(true)
       setError('')
 
-      const response = await fetch(
-        `${API_URL}/documents/`
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch documents')
-      }
-
-      const data = await response.json()
+      const data = await apiRequest('/documents/')
 
       const documentList = Array.isArray(data)
         ? data
@@ -61,16 +52,9 @@ function Dashboard() {
       const summaryResults = await Promise.all(
         documentList.map(async (document) => {
           try {
-            const summaryResponse = await fetch(
-              `${API_URL}/documents/${document.id}/summary`
+            const summaryData = await apiRequest(
+              `/documents/${document.id}/summary`
             )
-
-            if (!summaryResponse.ok) {
-              return false
-            }
-
-            const summaryData =
-              await summaryResponse.json()
 
             return Boolean(summaryData.summary)
           } catch {
@@ -90,6 +74,7 @@ function Dashboard() {
       )
 
       setError(
+        error.message ||
         'Unable to connect to the backend.'
       )
 
@@ -103,17 +88,9 @@ function Dashboard() {
       setDocumentLoading(true)
       setError('')
 
-      const response = await fetch(
-        `${API_URL}/documents/${documentId}`
+      const data = await apiRequest(
+        `/documents/${documentId}`
       )
-
-      if (!response.ok) {
-        throw new Error(
-          'Failed to open document'
-        )
-      }
-
-      const data = await response.json()
 
       setSelectedDocument(data)
 
@@ -139,17 +116,9 @@ function Dashboard() {
       setSummary('')
       setError('')
 
-      const response = await fetch(
-        `${API_URL}/documents/${documentId}/summary`
+      const data = await apiRequest(
+        `/documents/${documentId}/summary`
       )
-
-      if (!response.ok) {
-        throw new Error(
-          'Failed to generate summary'
-        )
-      }
-
-      const data = await response.json()
 
       setSummary(
         data.summary ||
@@ -181,13 +150,10 @@ function Dashboard() {
       setQuestionLoading(true)
       setQuestionAnswer('')
 
-      const response = await fetch(
-        `${API_URL}/documents/ask`,
+      const data = await apiRequest(
+        '/documents/ask',
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             query: question,
             document_id: null,
@@ -195,21 +161,6 @@ function Dashboard() {
           }),
         }
       )
-
-      if (!response.ok) {
-        const errorData =
-          await response
-            .json()
-            .catch(() => null)
-
-        throw new Error(
-          errorData?.detail ||
-          'Failed to get AI answer.'
-        )
-      }
-
-      const data =
-        await response.json()
 
       const answer =
         data.answer ||
@@ -244,26 +195,11 @@ function Dashboard() {
       setSearchLoading(true)
       setSearchResults([])
 
-      const response = await fetch(
-        `${API_URL}/documents/search?query=${encodeURIComponent(
+      const data = await apiRequest(
+        `/documents/search?query=${encodeURIComponent(
           searchQuery
         )}&top_k=5`
       )
-
-      if (!response.ok) {
-        const errorData =
-          await response
-            .json()
-            .catch(() => null)
-
-        throw new Error(
-          errorData?.detail ||
-          'Search failed.'
-        )
-      }
-
-      const data =
-        await response.json()
 
       setSearchResults(
         data.results || []

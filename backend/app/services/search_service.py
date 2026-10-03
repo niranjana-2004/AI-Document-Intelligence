@@ -2,6 +2,7 @@ from networkx.generators import internet_as_graphs
 from app.models import document_chunk
 import re
 from typing import cast
+from app.models.document import Document
 from app.services.embedding_services import generate_embedding
 from app.services.similarity_service import cosine_similarity
 from app.models.document_chunk import DocumentChunk
@@ -511,7 +512,8 @@ def semantic_search(
     query: str,
     db,
     document_id: int | None = None,
-    top_k: int = 5
+    top_k: int = 5,
+    user_id: int | None = None
 ):
     """
     Perform hybrid semantic + keyword +
@@ -539,9 +541,13 @@ def semantic_search(
         category = None
 
     query_db = db.query(DocumentChunk)
-
+    if user_id is not None:
+        query_db = (
+            query_db
+            .join(Document, Document.id == DocumentChunk.document_id)
+            .filter(Document.user_id == user_id)
+        )
     if document_id is not None:
-
         query_db = query_db.filter(
             DocumentChunk.document_id == document_id
         )

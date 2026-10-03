@@ -23,3 +23,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Import models so SQLAlchemy knows about all tables
+from app.models.user import User
+from app.models.otp import OTPVerification
