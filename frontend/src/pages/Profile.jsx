@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../App.css'
 
@@ -5,8 +6,25 @@ function Profile() {
     const navigate = useNavigate()
 
     const handleLogout = () => {
-        navigate('/login')
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user')
+
+        navigate('/login', { replace: true })
     }
+
+    const [user, setUser] = useState(null)
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user')
+
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser))
+            } catch {
+                setUser(null)
+            }
+        }
+    }, [])
 
     return (
         <main className="profile-page">
@@ -20,7 +38,9 @@ function Profile() {
                 <div className="profile-header-content">
 
                     <div className="profile-large-avatar">
-                        N
+                        {user?.full_name
+                            ? user.full_name.charAt(0).toUpperCase()
+                            : 'U'}
                     </div>
 
                     <div>
@@ -30,11 +50,11 @@ function Profile() {
                         </p>
 
                         <h2>
-                            User
+                            {user?.full_name || 'User'}
                         </h2>
 
                         <p>
-                            user@example.com
+                            {user?.email || 'No email available'}
                         </p>
 
                     </div>
@@ -89,7 +109,7 @@ function Profile() {
                             </span>
 
                             <strong>
-                                User
+                                {user?.full_name || 'Not available'}
                             </strong>
 
                         </div>
@@ -102,7 +122,7 @@ function Profile() {
                             </span>
 
                             <strong>
-                                user@example.com
+                                {user?.email || 'Not available'}
                             </strong>
 
                         </div>

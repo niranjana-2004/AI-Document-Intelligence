@@ -355,3 +355,13 @@
     border: 1px solid #f5c2c0;
     font-size: 14px;
 }
+
+.auth-success-message {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #eefbf8;
+    color: #087f73;
+    border: 1px solid #b7e8df;
+    font-size: 14px;
+}

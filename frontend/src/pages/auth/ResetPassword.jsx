@@ -225,6 +225,28 @@ function ResetPassword() {
                         />
                     </div>
 
+                    <div className="otp-resend">
+                        <p>
+                            Didn't receive the code?
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={handleResendOTP}
+                            className="otp-resend-button"
+                            disabled={loading || resending}
+                        >
+                            {resending
+                                ? 'Resending...'
+                                : 'Resend OTP'}
+                        </button>
+                    </div>
+                    {resendMessage && (
+                        <div className="auth-success-message">
+                            {resendMessage}
+                        </div>
+                    )}
+
                     <div className="form-group">
                         <label htmlFor="newPassword">
                             New password
