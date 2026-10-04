@@ -5,7 +5,9 @@ function AppLayout({ children }) {
     const navigate = useNavigate()
 
     const handleLogout = () => {
-        navigate('/login')
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user')
+        navigate('/login', { replace: true })
     }
 
     return (
