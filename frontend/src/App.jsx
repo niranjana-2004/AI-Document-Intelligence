@@ -19,6 +19,7 @@ import Search from './pages/Search'
 import Profile from './pages/Profile'
 import About from './pages/About'
 import AppLayout from './layouts/AppLayout'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (

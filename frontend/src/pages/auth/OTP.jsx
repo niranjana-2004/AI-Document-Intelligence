@@ -14,6 +14,9 @@ function OTP() {
         '',
     ])
 
+    const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
+
     const inputRefs = useRef([])
 
     const handleChange = (index, value) => {
@@ -26,6 +29,7 @@ function OTP() {
         newOtp[index] = value.slice(-1)
 
         setOtp(newOtp)
+        setError('')
 
         // Move to next box
         if (value && index < 5) {
@@ -43,24 +47,79 @@ function OTP() {
         }
     }
 
-    const handleVerify = (event) => {
+    const handleVerify = async (event) => {
         event.preventDefault()
+
+        setError('')
 
         const enteredOtp = otp.join('')
 
+        // OTP validation
         if (enteredOtp.length !== 6) {
+            setError('Please enter the complete 6-digit OTP.')
             return
         }
 
-        // Temporary navigation.
-        // Real OTP verification will be connected later.
-        navigate('/login')
+        if (!/^\d{6}$/.test(enteredOtp)) {
+            setError('OTP must contain exactly 6 digits.')
+            return
+        }
+
+        // Get the email saved during registration
+        const registrationEmail =
+            localStorage.getItem('registration_email')
+
+        if (!registrationEmail) {
+            setError(
+                'Registration session not found. Please register again.'
+            )
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const response = await fetch(
+                'http://127.0.0.1:8000/auth/verify-otp',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: registrationEmail,
+                        otp: enteredOtp,
+                    }),
+                }
+            )
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail ||
+                    'OTP verification failed. Please try again.'
+                )
+            }
+
+            // Verification successful.
+            localStorage.removeItem('registration_email')
+
+            navigate('/login')
+        } catch (error) {
+            setError(
+                error.message ||
+                'Something went wrong. Please try again.'
+            )
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleResend = () => {
-        // Temporary action.
-        // Real OTP resend will be connected later.
-        console.log('OTP resent')
+        setError(
+            'Resend OTP is not available yet. We will connect it next.'
+        )
     }
 
     return (
@@ -71,9 +130,15 @@ function OTP() {
 
                     <p>
                         We've sent a 6-digit verification code to your
-                        email or phone number.
+                        email address.
                     </p>
                 </div>
+
+                {error && (
+                    <div className="auth-error">
+                        {error}
+                    </div>
+                )}
 
                 <form onSubmit={handleVerify}>
                     <div className="otp-input-container">
@@ -88,13 +153,17 @@ function OTP() {
                                 maxLength="1"
                                 value={digit}
                                 onChange={(event) =>
-                                    handleChange(index, event.target.value)
+                                    handleChange(
+                                        index,
+                                        event.target.value
+                                    )
                                 }
                                 onKeyDown={(event) =>
                                     handleKeyDown(index, event)
                                 }
                                 className="otp-input"
                                 aria-label={`OTP digit ${index + 1}`}
+                                disabled={loading}
                             />
                         ))}
                     </div>
@@ -102,8 +171,11 @@ function OTP() {
                     <button
                         type="submit"
                         className="auth-primary-button"
+                        disabled={loading}
                     >
-                        Verify OTP
+                        {loading
+                            ? 'Verifying...'
+                            : 'Verify OTP'}
                     </button>
                 </form>
 
@@ -116,6 +188,7 @@ function OTP() {
                         type="button"
                         onClick={handleResend}
                         className="otp-resend-button"
+                        disabled={loading}
                     >
                         Resend OTP
                     </button>
