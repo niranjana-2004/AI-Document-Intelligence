@@ -1,9 +1,12 @@
+import os
 from datetime import datetime, timedelta, timezone
-
+from pathlib import Path
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-
+BASE_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(BASE_DIR / ".env")
 # ---------------------------------------------------------
 # Password hashing
 # ---------------------------------------------------------
@@ -32,11 +35,14 @@ def verify_password(
 # JWT configuration
 # ---------------------------------------------------------
 
-SECRET_KEY = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_KEY"
+SECRET_KEY=os.getenv("SECRET_KEY")
+ALGORITHM=os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES=int(
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+)
 
-ALGORITHM = "HS256"
-
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY is not configured.")
 
 
 # ---------------------------------------------------------

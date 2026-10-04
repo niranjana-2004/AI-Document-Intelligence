@@ -1,3 +1,4 @@
+from app.core import database
 from pathlib import Path
 
 # pyrefly: ignore [missing-import]
@@ -93,12 +94,12 @@ def ask_question(
 ):
     try:
         return answer_question(
-    query=request.query,
-    db=db,
-    document_id=request.document_id,
-    top_k=request.top_k,
-    user_id=cast(int, current_user.id)
-)
+            query=request.query,
+            db=db,
+            document_id=request.document_id,
+            top_k=request.top_k,
+            user_id=cast(int, current_user.id)
+        )
 
     except ValueError as error:
         raise HTTPException(
@@ -301,6 +302,10 @@ def delete_document(
     file_path = Path(str(document.file_path))
     if file_path.exists():
         file_path.unlink()
+
+    db.query(DocumentChunk).filter(
+        DocumentChunk.document_id == document.id
+    ).delete(synchronize_session=False)
 
     db.delete(document)
     db.commit()
