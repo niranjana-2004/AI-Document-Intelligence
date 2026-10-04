@@ -75,53 +75,71 @@ function App() {
             APPLICATION
         ========================== */}
 
+        {/* =========================
+            APPLICATION
+        ========================== */}
+
         <Route
           path="/dashboard"
-          element={<DashboardPage />}
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
         />
 
         <Route
           path="/documents"
           element={
-            <AppLayout>
-              <Documents />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <Documents />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/ask-ai"
           element={
-            <AppLayout>
-              <AskAI />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <AskAI />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/search"
           element={
-            <AppLayout>
-              <Search />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <Search />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile"
           element={
-            <AppLayout>
-              <Profile />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <Profile />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/about"
           element={
-            <AppLayout>
-              <About />
-            </AppLayout>
+            <ProtectedRoute>
+              <AppLayout>
+                <About />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
 
