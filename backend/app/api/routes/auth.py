@@ -249,6 +249,53 @@ def forgot_password(
         "email": user.email
     }
 
+@router.post("/resend-reset-otp")
+def resend_reset_otp(
+    request: ResendOTPRequest,
+    db: Session = Depends(get_db)
+):
+    user = (
+        db.query(User)
+        .filter(User.email == request.email.lower())
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="No account found with this email address."
+        )
+
+    otp = generate_otp()
+
+    otp_hash = hash_password(otp)
+
+    expires_at = (
+        datetime.now(timezone.utc)
+        + timedelta(minutes=5)
+    )
+
+    otp_record = OTPVerification(
+        user_id=user.id,
+        otp_hash=otp_hash,
+        purpose="password_reset",
+        expires_at=expires_at,
+        is_used=False
+    )
+
+    db.add(otp_record)
+    db.commit()
+
+    print(
+        f"[DEV OTP] Resent password reset OTP "
+        f"for {user.email}: {otp}"
+    )
+
+    return {
+        "message": "A new password reset OTP has been generated.",
+        "email": user.email
+    }
+
 @router.post("/reset-password")
 def reset_password(
     request: ResetPasswordRequest,
