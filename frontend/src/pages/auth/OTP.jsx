@@ -116,10 +116,62 @@ function OTP() {
         }
     }
 
-    const handleResend = () => {
-        setError(
-            'Resend OTP is not available yet. We will connect it next.'
-        )
+    const handleResend = async () => {
+        setError('')
+
+        const registrationEmail =
+            localStorage.getItem('registration_email')
+
+        if (!registrationEmail) {
+            setError(
+                'Registration session not found. Please register again.'
+            )
+            return
+        }
+
+        setLoading(true)
+
+        try {
+            const response = await fetch(
+                'http://127.0.0.1:8000/auth/resend-otp',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: registrationEmail,
+                    }),
+                }
+            )
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail ||
+                    'Unable to resend OTP. Please try again.'
+                )
+            }
+
+            setOtp([
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+            ])
+
+            setError('A new OTP has been sent. Please check your email.')
+        } catch (error) {
+            setError(
+                error.message ||
+                'Something went wrong. Please try again.'
+            )
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (

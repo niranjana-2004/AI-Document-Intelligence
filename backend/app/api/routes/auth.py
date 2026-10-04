@@ -13,6 +13,9 @@ from app.schemas.auth import (
     RegisterRequest,
     OTPVerifyRequest,
     LoginRequest,
+    ResendOTPRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 from app.core.security import (
     hash_password,
@@ -145,6 +148,173 @@ def verify_otp(
         "message": "Email verified successfully.",
         "email": user.email
     }
+
+@router.post("/resend-otp")
+def resend_otp(
+    request: ResendOTPRequest,
+    db: Session = Depends(get_db)
+):
+    user = (
+        db.query(User)
+        .filter(User.email == request.email.lower())
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found."
+        )
+
+    if user.is_verified:
+        raise HTTPException(
+            status_code=400,
+            detail="This account is already verified."
+        )
+
+    otp = generate_otp()
+
+    otp_hash = hash_password(otp)
+
+    expires_at = (
+        datetime.now(timezone.utc)
+        + timedelta(minutes=5)
+    )
+
+    otp_record = OTPVerification(
+        user_id=user.id,
+        otp_hash=otp_hash,
+        purpose="registration",
+        expires_at=expires_at,
+        is_used=False
+    )
+
+    db.add(otp_record)
+    db.commit()
+
+    print(
+        f"[DEV OTP] Resent registration OTP "
+        f"for {user.email}: {otp}"
+    )
+
+    return {
+        "message": "A new OTP has been generated.",
+        "email": user.email
+    }
+
+@router.post("/forgot-password")
+def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    user = (
+        db.query(User)
+        .filter(User.email == request.email.lower())
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="No account found with this email address."
+        )
+
+    otp = generate_otp()
+
+    otp_hash = hash_password(otp)
+
+    expires_at = (
+        datetime.now(timezone.utc)
+        + timedelta(minutes=5)
+    )
+
+    otp_record = OTPVerification(
+        user_id=user.id,
+        otp_hash=otp_hash,
+        purpose="password_reset",
+        expires_at=expires_at,
+        is_used=False
+    )
+
+    db.add(otp_record)
+    db.commit()
+
+    print(
+        f"[DEV OTP] Password reset OTP "
+        f"for {user.email}: {otp}"
+    )
+
+    return {
+        "message": "Password reset OTP has been generated.",
+        "email": user.email
+    }
+
+@router.post("/reset-password")
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    user = (
+        db.query(User)
+        .filter(User.email == request.email.lower())
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found."
+        )
+
+    otp_record = (
+        db.query(OTPVerification)
+        .filter(
+            OTPVerification.user_id == user.id,
+            OTPVerification.purpose == "password_reset",
+            OTPVerification.is_used == False
+        )
+        .order_by(OTPVerification.created_at.desc())
+        .first()
+    )
+
+    if not otp_record:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid password reset OTP found."
+        )
+
+    expires_at = otp_record.expires_at
+
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(
+            tzinfo=timezone.utc
+        )
+
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired. Please request a new one."
+        )
+
+    if not verify_password(
+        request.otp,
+        str(otp_record.otp_hash)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid OTP."
+        )
+
+    user.password_hash = hash_password(request.new_password)  # type: ignore[assignment]
+
+    otp_record.is_used = True  # type: ignore[assignment]
+
+    db.commit()
+
+    return {
+        "message": "Password reset successfully."
+    }
+
 @router.post("/login")
 def login(
     request: LoginRequest,
