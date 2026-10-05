@@ -1,3 +1,199 @@
+:root {
+  /* Theme colors */
+  --bg-primary: #f4fbfa;
+  --surface: #ffffff;
+  --surface-secondary: #f7fbfa;
+
+  --text-primary: #16343a;
+  --text-secondary: #60777c;
+  --text-muted: #858f92;
+
+  --accent: #18b8a6;
+  --accent-hover: #129f92;
+  --accent-soft: #e6f7f4;
+
+  --border: #d9ebe8;
+  --border-light: #e2eeec;
+
+  --danger: #d65c5c;
+  --danger-soft: #fff0f0;
+
+  --error: #c0392b;
+  --error-soft: #fff1f1;
+
+  --shadow-color: rgba(22, 52, 58, 0.08);
+}
+
+/* ========================================
+   THEMES
+   ======================================== */
+
+/* 🌊 Ocean Teal — Default */
+:root,
+[data-theme="ocean"] {
+  --bg-primary: #f4fbfa;
+  --surface: #ffffff;
+  --surface-secondary: #f7fbfa;
+
+  --text-primary: #16343a;
+  --text-secondary: #60777c;
+  --text-muted: #858f92;
+
+  --accent: #18b8a6;
+  --accent-hover: #129f92;
+  --accent-soft: #e6f7f4;
+
+  --border: #d9ebe8;
+  --border-light: #e2eeec;
+
+  --danger: #d65c5c;
+  --danger-soft: #fff0f0;
+
+  --error: #c0392b;
+  --error-soft: #fff1f1;
+
+  --shadow-color: rgba(22, 52, 58, 0.08);
+}
+
+
+/* 🌙 Dark */
+[data-theme="dark"] {
+  --bg-primary: #0f1f24;
+  --surface: #172c32;
+  --surface-secondary: #1d363d;
+
+  --text-primary: #edf7f5;
+  --text-secondary: #b5ccca;
+  --text-muted: #8fa9a7;
+
+  --accent: #2dd4bf;
+  --accent-hover: #20b8a5;
+  --accent-soft: #1d4542;
+
+  --border: #29464c;
+  --border-light: #315158;
+
+  --danger: #f07b7b;
+  --danger-soft: #45292c;
+
+  --error: #ff8c82;
+  --error-soft: #472c2a;
+
+  --shadow-color: rgba(0, 0, 0, 0.28);
+}
+
+
+/* 🌿 Forest */
+[data-theme="forest"] {
+  --bg-primary: #f4f8f1;
+  --surface: #ffffff;
+  --surface-secondary: #f7faf5;
+
+  --text-primary: #24352a;
+  --text-secondary: #5d7062;
+  --text-muted: #89968c;
+
+  --accent: #4f8a5b;
+  --accent-hover: #3f744a;
+  --accent-soft: #e4f0e5;
+
+  --border: #d7e4d8;
+  --border-light: #e5ede5;
+
+  --danger: #c75b5b;
+  --danger-soft: #fceeee;
+
+  --error: #b74336;
+  --error-soft: #fcebea;
+
+  --shadow-color: rgba(36, 53, 42, 0.08);
+}
+
+
+/* 🌸 Rose */
+[data-theme="rose"] {
+  --bg-primary: #fff7f8;
+  --surface: #ffffff;
+  --surface-secondary: #fffafb;
+
+  --text-primary: #42252d;
+  --text-secondary: #73535c;
+  --text-muted: #a1888e;
+
+  --accent: #b85c72;
+  --accent-hover: #9f4960;
+  --accent-soft: #f9e5ea;
+
+  --border: #ecd5db;
+  --border-light: #f1e1e5;
+
+  --danger: #c94f5f;
+  --danger-soft: #fcebed;
+
+  --error: #b83e45;
+  --error-soft: #fbe8e9;
+
+  --shadow-color: rgba(66, 37, 45, 0.08);
+}
+
+
+/* 💜 Lavender */
+[data-theme="lavender"] {
+  --bg-primary: #f8f6fc;
+  --surface: #ffffff;
+  --surface-secondary: #faf9fd;
+
+  --text-primary: #302842;
+  --text-secondary: #625a75;
+  --text-muted: #918ba0;
+
+  --accent: #8064b8;
+  --accent-hover: #6d51a2;
+  --accent-soft: #eee8f8;
+
+  --border: #ded6ec;
+  --border-light: #e9e3f1;
+
+  --danger: #c75d68;
+  --danger-soft: #fcebed;
+
+  --error: #b8474d;
+  --error-soft: #fbe8e9;
+
+  --shadow-color: rgba(48, 40, 66, 0.08);
+}
+
+
+/* 🌅 Warm Sand */
+[data-theme="sand"] {
+  --bg-primary: #faf7f0;
+  --surface: #ffffff;
+  --surface-secondary: #fcfaf6;
+
+  --text-primary: #3d3428;
+  --text-secondary: #6f6252;
+  --text-muted: #9a8e7e;
+
+  --accent: #b78345;
+  --accent-hover: #9e6d35;
+  --accent-soft: #f5eadb;
+
+  --border: #e7dccb;
+  --border-light: #eee6d9;
+
+  --danger: #c65c52;
+  --danger-soft: #fcedea;
+
+  --error: #b7473c;
+  --error-soft: #fbe9e7;
+
+  --shadow-color: rgba(61, 52, 40, 0.08);
+}
+
+/* ========================================
+   GLOBAL
+   ======================================== */
+
 * {
   box-sizing: border-box;
 }
@@ -18,4 +214,7 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }

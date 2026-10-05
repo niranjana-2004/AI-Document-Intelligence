@@ -4,6 +4,17 @@ import '../styles/app-layout.css'
 function AppLayout({ children }) {
     const navigate = useNavigate()
 
+    let user = null
+    const storedUser = localStorage.getItem('user')
+
+    if (storedUser) {
+        try {
+            user = JSON.parse(storedUser)
+        } catch {
+            user = null
+        }
+    }
+
     const handleLogout = () => {
         localStorage.removeItem('access_token')
         localStorage.removeItem('user')
@@ -139,11 +150,13 @@ function AppLayout({ children }) {
                             onClick={() => navigate('/profile')}
                         >
                             <span className="profile-avatar">
-                                N
+                                {user?.full_name
+                                    ? user.full_name.charAt(0).toUpperCase()
+                                    : 'U'}
                             </span>
 
                             <span className="profile-name">
-                                User
+                                {user?.full_name || 'User'}
                             </span>
                         </button>
 
