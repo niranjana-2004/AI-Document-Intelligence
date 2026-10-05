@@ -20,8 +20,13 @@ import Profile from './pages/Profile'
 import About from './pages/About'
 import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import { useEffect } from 'react'
 
 function App() {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('app_theme') || 'ocean'
+    document.documentElement.dataset.theme = savedTheme
+  }, [])
   return (
     <BrowserRouter>
 

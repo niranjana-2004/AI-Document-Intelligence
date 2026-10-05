@@ -13,6 +13,9 @@ function Profile() {
     }
 
     const [user, setUser] = useState(null)
+    const [theme, setTheme] = useState(
+        () => localStorage.getItem('app_theme') || 'ocean'
+    )
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user')
@@ -297,19 +300,21 @@ function Profile() {
 
                             <select
                                 className="profile-select"
-                                defaultValue="light"
+                                value={theme}
+                                onChange={(e) => {
+                                    const newTheme = e.target.value
+
+                                    setTheme(newTheme)
+                                    localStorage.setItem('app_theme', newTheme)
+                                    document.documentElement.dataset.theme = newTheme
+                                }}
                             >
-                                <option value="light">
-                                    Light
-                                </option>
-
-                                <option value="dark">
-                                    Dark
-                                </option>
-
-                                <option value="system">
-                                    System
-                                </option>
+                                <option value="ocean">🌊 Ocean Teal</option>
+                                <option value="dark">🌙 Dark</option>
+                                <option value="forest">🌿 Forest</option>
+                                <option value="rose">🌸 Rose</option>
+                                <option value="lavender">💜 Lavender</option>
+                                <option value="sand">🌅 Warm Sand</option>
                             </select>
 
                         </div>

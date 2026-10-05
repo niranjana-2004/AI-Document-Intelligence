@@ -1,11 +1,11 @@
-/* ========================================
+﻿/* ========================================
    MAIN APPLICATION LAYOUT
    ======================================== */
 
 .app-layout {
     min-height: 100vh;
-    background: #f4fbfa;
-    color: #16343a;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 
@@ -21,8 +21,8 @@
     width: 250px;
     height: 100vh;
 
-    background: #ffffff;
-    border-right: 1px solid #d9ebe8;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
 
     display: flex;
     flex-direction: column;
@@ -43,7 +43,7 @@
     align-items: center;
     gap: 11px;
 
-    border-bottom: 1px solid #e5efed;
+    border-bottom: 1px solid var(--border-light);
 
     box-sizing: border-box;
 }
@@ -54,8 +54,8 @@
 
     border-radius: 11px;
 
-    background: #18b8a6;
-    color: #ffffff;
+    background: var(--accent);
+    color: var(--hero-text);
 
     display: flex;
     align-items: center;
@@ -77,7 +77,7 @@
 .app-brand-text h1 {
     margin: 0;
 
-    color: #16343a;
+    color: var(--text-primary);
 
     font-size: 13px;
     font-weight: 700;
@@ -138,7 +138,7 @@
 
     box-sizing: border-box;
 
-    color: #60777c;
+    color: var(--text-secondary);
     background: transparent;
 
     border-radius: 9px;
@@ -154,12 +154,12 @@
 }
 
 .nav-item:hover {
-    background: #eef9f7;
+    background: var(--surface-secondary);
     color: #168f83;
 }
 
 .nav-item.active {
-    background: #e6f7f4;
+    background: var(--accent-soft);
     color: #129d90;
     font-weight: 700;
 }
@@ -181,7 +181,7 @@
 .sidebar-bottom {
     padding: 15px 13px;
 
-    border-top: 1px solid #e5efed;
+    border-top: 1px solid var(--border-light);
 
     flex-shrink: 0;
 }
@@ -201,7 +201,7 @@
     border-radius: 9px;
 
     background: transparent;
-    color: #71868a;
+    color: var(--text-muted);
 
     font-family: inherit;
 
@@ -248,9 +248,9 @@
 
     padding: 0 28px;
 
-    background: #ffffff;
+    background: var(--surface);
 
-    border-bottom: 1px solid #d9ebe8;
+    border-bottom: 1px solid var(--border);
 
     display: flex;
     align-items: center;
@@ -270,10 +270,10 @@
     width: 36px;
     height: 36px;
 
-    border: 1px solid #d9ebe8;
+    border: 1px solid var(--border);
     border-radius: 9px;
 
-    background: #ffffff;
+    background: var(--surface);
     color: #6d8286;
 
     cursor: pointer;
@@ -286,7 +286,7 @@
 }
 
 .topbar-icon-button:hover {
-    background: #eef9f7;
+    background: var(--surface-secondary);
     color: #129d90;
 }
 
@@ -431,7 +431,7 @@
 
         gap: 9px;
 
-        color: #16343a;
+        color: var(--text-primary);
 
         font-size: 13px;
         font-weight: 700;
@@ -470,3 +470,4 @@
         display: none;
     }
 }
+

@@ -17,8 +17,8 @@
 .welcome {
   padding: 32px;
   border-radius: 18px;
-  background: var(--text-primary);
-  color: var(--surface);
+  background: var(--hero-bg);
+  color: var(--hero-text);
 
   display: flex;
   align-items: center;
@@ -63,7 +63,7 @@
   padding: 13px 20px;
   border-radius: 9px;
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 
   transition:
     background 0.2s,
@@ -213,7 +213,7 @@
   padding: 10px 16px;
   border-radius: 9px;
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .upload-secondary:hover {
@@ -559,7 +559,7 @@
   border-radius: 9px;
 
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-family: inherit;
   font-weight: 600;
@@ -751,7 +751,7 @@
 .welcome-action-primary {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .welcome-action-primary:hover {
@@ -761,7 +761,7 @@
 .welcome-action-secondary {
   border: 1px solid #5b777d;
   background: transparent;
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .welcome-action-secondary:hover {
@@ -830,7 +830,7 @@
 .welcome-action-primary {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .welcome-action-primary:hover {
@@ -840,7 +840,7 @@
 .welcome-action-secondary {
   border: 1px solid #5b777d;
   background: transparent;
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .welcome-action-secondary:hover {
@@ -1072,10 +1072,10 @@
 
   margin-bottom: 22px;
 
-  background: var(--text-primary);
+  background: var(--hero-bg);
   border-radius: 14px;
 
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .documents-page-header .eyebrow {
@@ -1088,7 +1088,7 @@
   font-size: 25px;
   font-weight: 700;
 
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .documents-page-header p:last-child {
@@ -1107,7 +1107,7 @@
   padding: 12px 18px;
 
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-family: inherit;
 
@@ -1504,10 +1504,10 @@
   padding: 26px 28px;
   margin-bottom: 20px;
 
-  background: var(--text-primary);
+  background: var(--hero-bg);
   border-radius: 14px;
 
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .ask-ai-header .eyebrow {
@@ -1517,7 +1517,7 @@
 .ask-ai-header h2 {
   margin: 0 0 7px;
 
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-size: 25px;
   font-weight: 700;
@@ -1728,7 +1728,7 @@
   border-radius: 8px;
 
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-family: inherit;
 
@@ -1813,7 +1813,7 @@
   border-radius: 10px;
 
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 
   display: flex;
   align-items: center;
@@ -2017,10 +2017,10 @@
   padding: 26px 28px;
   margin-bottom: 20px;
 
-  background: var(--text-primary);
+  background: var(--hero-bg);
   border-radius: 14px;
 
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .search-page-header .eyebrow {
@@ -2030,7 +2030,7 @@
 .search-page-header h2 {
   margin: 0 0 7px;
 
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-size: 25px;
   font-weight: 700;
@@ -2162,7 +2162,7 @@
   border-radius: 9px;
 
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-family: inherit;
 
@@ -2577,10 +2577,10 @@
   padding: 26px 28px;
   margin-bottom: 20px;
 
-  background: var(--text-primary);
+  background: var(--hero-bg);
   border-radius: 14px;
 
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .profile-header-content {
@@ -2597,7 +2597,7 @@
   border-radius: 15px;
 
   background: var(--accent);
-  color: var(--surface);
+  color: var(--hero-text);
 
   display: flex;
   align-items: center;
@@ -2616,7 +2616,7 @@
 .profile-header h2 {
   margin: 0 0 4px;
 
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-size: 23px;
 }
@@ -2636,7 +2636,7 @@
   border-radius: 8px;
 
   background: transparent;
-  color: var(--surface);
+  color: var(--hero-text);
 
   font-family: inherit;
 
@@ -3223,7 +3223,7 @@
   padding: 48px;
   border-radius: 24px;
   background: #07141c;
-  color: var(--surface);
+  color: var(--hero-text);
   overflow: hidden;
   position: relative;
 }
@@ -3307,7 +3307,7 @@
 
 .about-hero .about-secondary-button {
   background: transparent;
-  color: var(--surface);
+  color: var(--hero-text);
   border-color: #4b6267;
 }
 
@@ -3601,7 +3601,7 @@
   align-items: center;
   border-radius: 20px;
   background: #07141c;
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .about-rag-content .eyebrow {
@@ -3609,7 +3609,7 @@
 }
 
 .about-rag-content h3 {
-  color: var(--surface);
+  color: var(--hero-text);
 }
 
 .about-rag-content p:not(.eyebrow) {
@@ -3636,7 +3636,7 @@
 
 .rag-box strong {
   display: block;
-  color: var(--surface);
+  color: var(--hero-text);
   font-size: 11px;
 }
 
@@ -3817,4 +3817,151 @@
     width: 100%;
     flex-direction: column;
   }
+}
+
+/* ========================================
+   PROFILE - THEME VISIBILITY FIX
+   ======================================== */
+
+.profile-page {
+  color: var(--text-primary);
+}
+
+.profile-page .profile-card,
+.profile-page .profile-header {
+  color: var(--text-primary);
+}
+
+/* Main headings */
+.profile-page h2,
+.profile-page h3,
+.profile-page h4,
+.profile-page strong {
+  color: var(--text-primary);
+}
+
+/* Secondary text */
+.profile-page p,
+.profile-page .profile-field span,
+.profile-page .security-status,
+.profile-page .profile-stat span,
+.profile-page .account-details span {
+  color: var(--text-secondary);
+}
+
+/* Theme-aware borders */
+.profile-page .profile-card,
+.profile-page .profile-header,
+.profile-page .profile-field,
+.profile-page .security-item,
+.profile-page .preference-item {
+  border-color: var(--border);
+}
+
+/* Appearance dropdown */
+.profile-page .profile-select {
+  background: var(--surface);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.profile-page .profile-select option {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* Activity boxes */
+.profile-page .profile-stat {
+  background: var(--surface-secondary);
+  border-color: var(--border);
+}
+
+/* Security button */
+.profile-page .profile-secondary-button {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: transparent;
+}
+
+.profile-page .profile-secondary-button:hover {
+  background: var(--accent-soft);
+}
+
+/* Verification */
+.profile-page .verification-badge {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ========================================
+   ABOUT - HOW IT WORKS
+   ======================================== */
+
+.about-workflow-section .about-section-heading h3 {
+  color: var(--text-primary);
+}
+
+.about-workflow-section .about-section-heading>p:not(.eyebrow) {
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   FIX ABOUT PAGE WORKFLOW TEXT
+   ======================================== */
+
+.about-page .about-workflow-section .about-section-heading {
+  color: var(--text-primary) !important;
+}
+
+.about-page .about-workflow-section .about-section-heading h3 {
+  color: var(--text-primary) !important;
+}
+
+.about-page .about-workflow-section .about-section-heading>p:not(.eyebrow) {
+  color: var(--text-secondary) !important;
+}
+
+.about-page .about-workflow-section .about-section-heading .eyebrow {
+  color: var(--accent) !important;
+}
+
+/* ========================================
+   DARK THEME - ABOUT PAGE SECTIONS
+   ======================================== */
+
+[data-theme="dark"] .about-page .about-section {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .about-page .about-section-heading {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .about-page .about-section-heading h3 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .about-page .about-section-heading>p:not(.eyebrow) {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .about-page .about-section-heading .eyebrow {
+  color: var(--accent) !important;
+}
+
+/* ========================================
+   OCEAN THEME - PROFILE HEADER
+   ======================================== */
+
+[data-theme="ocean"] .profile-header h2 {
+  color: #ffffff !important;
+}
+
+[data-theme="ocean"] .profile-header-content>div>p:not(.eyebrow) {
+  color: #dcefeb !important;
+}
+
+[data-theme="ocean"] .profile-header .eyebrow {
+  color: #65d8cb !important;
 }
