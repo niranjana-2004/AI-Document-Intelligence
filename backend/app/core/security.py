@@ -4,6 +4,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import hashlib
+import secrets
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(BASE_DIR / ".env")
@@ -96,3 +98,16 @@ def decode_access_token(token: str) -> dict | None:
     except JWTError:
 
         return None
+
+def generate_password_reset_token() -> str:
+    """
+    Generate a cryptographically secure password-reset token.
+    """
+    return secrets.token_urlsafe(32)
+
+
+def hash_password_reset_token(token: str) -> str:
+    """
+    Hash a password-reset token before storing it in the database.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

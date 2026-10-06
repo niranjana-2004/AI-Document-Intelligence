@@ -9,7 +9,7 @@ from app.models.document_chunk import DocumentChunk
 from app.models.user import User
 from app.models.otp import OTPVerification
 from app.api.routes.auth import router as auth_router
-
+from app.models.password_reset_token import PasswordResetToken
 
 app = FastAPI(
     title="AI Document Intelligence API",

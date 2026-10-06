@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-
 DATABASE_URL = "sqlite:///./documents.db"
 
 engine = create_engine(
@@ -27,3 +26,4 @@ def get_db():
 # Import models so SQLAlchemy knows about all tables
 from app.models.user import User
 from app.models.otp import OTPVerification
+from app.models.password_reset_token import PasswordResetToken

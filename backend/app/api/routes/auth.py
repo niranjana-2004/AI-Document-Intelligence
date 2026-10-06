@@ -1,10 +1,10 @@
 from app.core import database
 import secrets
+import os
+from typing import cast
 from datetime import datetime, timedelta, timezone
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password
 from app.models.user import User
@@ -22,7 +22,18 @@ from app.core.security import (
     verify_password,
     create_access_token,
 )
+from datetime import datetime, timedelta, timezone
+from app.models.password_reset_token import PasswordResetToken
+from app.services.email_service import send_password_reset_email
+from app.core.security import (
+    generate_password_reset_token,
+    hash_password_reset_token,
+)
 
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:5173"
+)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
@@ -219,34 +230,53 @@ def forgot_password(
             detail="No account found with this email address."
         )
 
-    otp = generate_otp()
+    # Generate a secure, random reset token
+    reset_token = generate_password_reset_token()
 
-    otp_hash = hash_password(otp)
+    # Store only the hashed token in the database
+    token_hash = hash_password_reset_token(reset_token)
 
+    # Token expires after 30 minutes
     expires_at = (
         datetime.now(timezone.utc)
-        + timedelta(minutes=5)
+        + timedelta(minutes=30)
     )
 
-    otp_record = OTPVerification(
+    # Invalidate any previous unused reset tokens
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.is_used == False
+    ).update(
+        {"is_used": True},
+        synchronize_session=False
+    )
+
+    reset_record = PasswordResetToken(
         user_id=user.id,
-        otp_hash=otp_hash,
-        purpose="password_reset",
+        token_hash=token_hash,
         expires_at=expires_at,
         is_used=False
     )
 
-    db.add(otp_record)
+    db.add(reset_record)
     db.commit()
 
-    print(
-        f"[DEV OTP] Password reset OTP "
-        f"for {user.email}: {otp}"
+    # Create the link that will be sent by email
+    reset_link = (
+        f"{FRONTEND_URL}/reset-password"
+        f"?token={reset_token}"
+    )
+
+    # Send the reset email
+    send_password_reset_email(
+        recipient_email=cast(str, user.email),
+        recipient_name=cast(str, user.full_name),
+        reset_link=reset_link
     )
 
     return {
-        "message": "Password reset OTP has been generated.",
-        "email": user.email
+        "message": "If an account exists with this email address, "
+                   "a password reset link has been sent."
     }
 
 @router.post("/resend-reset-otp")
@@ -301,60 +331,58 @@ def reset_password(
     request: ResetPasswordRequest,
     db: Session = Depends(get_db)
 ):
-    user = (
-        db.query(User)
-        .filter(User.email == request.email.lower())
-        .first()
-    )
+    # Hash the token received from the reset link
+    token_hash = hash_password_reset_token(request.token)
 
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found."
-        )
-
-    otp_record = (
-        db.query(OTPVerification)
+    # Find the corresponding reset token
+    reset_record = (
+        db.query(PasswordResetToken)
         .filter(
-            OTPVerification.user_id == user.id,
-            OTPVerification.purpose == "password_reset",
-            OTPVerification.is_used == False
+            PasswordResetToken.token_hash == token_hash,
+            PasswordResetToken.is_used == False
         )
-        .order_by(OTPVerification.created_at.desc())
         .first()
     )
 
-    if not otp_record:
+    if not reset_record:
         raise HTTPException(
             status_code=400,
-            detail="No valid password reset OTP found."
+            detail="Invalid or already used password reset link."
         )
 
-    expires_at = otp_record.expires_at
+    # Make the expiry timezone-aware if SQLite returned a naive datetime
+    expires_at = reset_record.expires_at
 
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(
             tzinfo=timezone.utc
         )
 
+    # Check whether the reset link has expired
     if datetime.now(timezone.utc) > expires_at:
         raise HTTPException(
             status_code=400,
-            detail="OTP has expired. Please request a new one."
+            detail="Password reset link has expired. Please request a new one."
         )
 
-    if not verify_password(
-        request.otp,
-        str(otp_record.otp_hash)
-    ):
+    # Find the user associated with this reset token
+    user = (
+        db.query(User)
+        .filter(User.id == reset_record.user_id)
+        .first()
+    )
+
+    if not user:
         raise HTTPException(
             status_code=400,
-            detail="Invalid OTP."
+            detail="Invalid password reset request."
         )
 
+    # Update the password
     user.password_hash = hash_password(request.new_password)  # type: ignore[assignment]
 
-    otp_record.is_used = True  # type: ignore[assignment]
+    # Mark the reset token as used
+    reset_record.is_used = True  # type: ignore[assignment]
 
     db.commit()
 
