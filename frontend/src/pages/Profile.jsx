@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { apiRequest } from '../services/api'
 import '../App.css'
 
 function Profile() {
@@ -150,7 +151,7 @@ function Profile() {
                             </span>
 
                             <strong>
-                                Not added
+                                {user?.phone || 'Not added'}
                             </strong>
 
                         </div>
@@ -626,14 +627,32 @@ function Profile() {
                             <button
                                 type="button"
                                 className="profile-primary-button"
-                                onClick={() => {
+                                onClick={async () => {
                                     if (!/^\d{10}$/.test(editPhone)) {
                                         setPhoneError('Phone number must contain exactly 10 digits.')
                                         return
                                     }
 
-                                    setPhoneError('')
-                                    setShowEditModal(false)
+                                    try {
+                                        setPhoneError('')
+
+                                        const data = await apiRequest('/auth/profile', {
+                                            method: 'PUT',
+                                            body: JSON.stringify({
+                                                full_name: editName.trim(),
+                                                phone: editPhone,
+                                            }),
+                                        })
+
+                                        const updatedUser = data.user
+
+                                        setUser(updatedUser)
+                                        localStorage.setItem('user', JSON.stringify(updatedUser))
+
+                                        setShowEditModal(false)
+                                    } catch (error) {
+                                        setPhoneError(error.message)
+                                    }
                                 }}
                             >
                                 Save Changes
