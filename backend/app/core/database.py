@@ -24,6 +24,8 @@ def get_db():
         db.close()
 
 # Import models so SQLAlchemy knows about all tables
+# Import models so SQLAlchemy knows about all tables
 from app.models.user import User
 from app.models.otp import OTPVerification
 from app.models.password_reset_token import PasswordResetToken
+from app.models.activity import ActivityLog

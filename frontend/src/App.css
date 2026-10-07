@@ -4111,3 +4111,42 @@
   font-size: 13px;
   border-radius: 4px;
 }
+
+.delete-account-warning {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-left: 3px solid #dc3545;
+  background: rgba(220, 53, 69, 0.08);
+  color: #6c1f27;
+  border-radius: 4px;
+}
+
+.delete-account-warning strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #dc3545;
+}
+
+.delete-account-warning p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.delete-account-confirm-button {
+  border: 1px solid #dc3545;
+  background: #dc3545;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete-account-confirm-button:hover {
+  background: #bb2d3b;
+}
+
+.delete-account-confirm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -26,6 +26,9 @@ function Profile() {
     const [passwordError, setPasswordError] = useState('')
     const [passwordSuccess, setPasswordSuccess] = useState('')
     const [passwordLoading, setPasswordLoading] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [deleteLoading, setDeleteLoading] = useState(false)
+    const [deleteError, setDeleteError] = useState('')
     const [theme, setTheme] = useState(
         () => localStorage.getItem('app_theme') || 'ocean'
     )
@@ -534,6 +537,10 @@ function Profile() {
                     <button
                         className="delete-account-button"
                         type="button"
+                        onClick={() => {
+                            setDeleteError('')
+                            setShowDeleteModal(true)
+                        }}
                     >
                         Delete Account
                     </button>
@@ -837,6 +844,88 @@ function Profile() {
                                 {passwordLoading
                                     ? 'Changing...'
                                     : 'Change Password'}
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            )}
+            {showDeleteModal && (
+                <div className="profile-modal-overlay">
+                    <div className="profile-modal delete-account-modal">
+
+                        <div className="profile-modal-header">
+                            <div>
+                                <h3>Delete Account</h3>
+                                <p>
+                                    Are you sure you want to permanently delete your account?
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="profile-modal-close"
+                                onClick={() => setShowDeleteModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="delete-account-warning">
+                            <strong>This action cannot be undone.</strong>
+                            <p>
+                                Your account and associated account information will be
+                                permanently deleted.
+                            </p>
+                        </div>
+
+                        {deleteError && (
+                            <p className="profile-form-error">
+                                {deleteError}
+                            </p>
+                        )}
+
+                        <div className="profile-modal-actions">
+
+                            <button
+                                type="button"
+                                className="profile-secondary-button"
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={deleteLoading}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="delete-account-confirm-button"
+                                disabled={deleteLoading}
+                                onClick={async () => {
+
+                                    setDeleteError('')
+                                    setDeleteLoading(true)
+
+                                    try {
+                                        await apiRequest('/auth/account', {
+                                            method: 'DELETE',
+                                        })
+
+                                        localStorage.removeItem('access_token')
+                                        localStorage.removeItem('user')
+
+                                        navigate('/login', { replace: true })
+
+                                    } catch (error) {
+                                        setDeleteError(error.message)
+                                    } finally {
+                                        setDeleteLoading(false)
+                                    }
+                                }}
+                            >
+                                {deleteLoading
+                                    ? 'Deleting...'
+                                    : 'Delete Account'}
                             </button>
 
                         </div>

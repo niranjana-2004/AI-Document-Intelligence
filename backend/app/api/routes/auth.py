@@ -1,5 +1,4 @@
 from app.core import database
-from app.core import database
 import secrets
 import os
 from typing import cast
@@ -10,6 +9,8 @@ from app.core.database import get_db
 from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.models.otp import OTPVerification
+from app.models.document import Document
+from app.models.activity import ActivityLog
 from app.schemas.auth import (
     RegisterRequest,
     OTPVerifyRequest,
@@ -433,10 +434,14 @@ def login(
 
     access_token = create_access_token(
         data={
-            "sub": str(user.id),
-            "email": user.email
-        }
+        "sub": str(user.id),
+        "email": user.email
+            }
     )
+
+    # Record the latest successful login time
+    user.last_login = datetime.now(timezone.utc)  # type: ignore[assignment]
+    db.commit()
 
     return {
         "message": "Login successful.",
@@ -512,4 +517,68 @@ def change_password(
 
     return {
         "message": "Password changed successfully."
+    }
+
+@router.get("/activity")
+def get_activity(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    documents_count = (
+        db.query(Document)
+        .filter(Document.user_id == current_user.id)
+        .count()
+    )
+
+    ai_questions_count = (
+        db.query(ActivityLog)
+        .filter(
+            ActivityLog.user_id == current_user.id,
+            ActivityLog.activity_type == "ai_question"
+        )
+        .count()
+    )
+
+    searches_count = (
+        db.query(ActivityLog)
+        .filter(
+            ActivityLog.user_id == current_user.id,
+            ActivityLog.activity_type == "search"
+        )
+        .count()
+    )
+
+    summaries_count = (
+        db.query(ActivityLog)
+        .filter(
+            ActivityLog.user_id == current_user.id,
+            ActivityLog.activity_type == "summary"
+        )
+        .count()
+    )
+
+    return {
+        "documents": documents_count,
+        "ai_questions": ai_questions_count,
+        "searches": searches_count,
+        "summaries": summaries_count,
+        "account_created": current_user.created_at,
+        "last_login": current_user.last_login,
+    }
+
+@router.delete("/account")
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Remove activity history belonging to this account
+    db.query(ActivityLog).filter(
+        ActivityLog.user_id == current_user.id
+    ).delete(synchronize_session=False)
+
+    db.delete(current_user)
+    db.commit()
+
+    return {
+        "message": "Account deleted successfully."
     }

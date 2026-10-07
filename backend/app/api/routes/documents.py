@@ -1,3 +1,4 @@
+from dns import asyncquery
 from app.core import database
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from app.services.llm_service import generate_summary
 from app.services.text_processing_service import detect_chunk_category
 from app.api.dependencies import get_current_user
 from app.models.user import User
+from app.models.activity import ActivityLog
 
 router = APIRouter(
     prefix="/documents",
@@ -77,13 +79,22 @@ def search_documents(
     db=db,
     document_id=document_id,
     top_k=top_k,
-    user_id=cast(int,current_user.id)
+    user_id=cast(int, current_user.id)
     )
 
+    # Record successful search activity
+    activity = ActivityLog(
+    user_id=current_user.id,
+    activity_type="search"
+    )
+
+    db.add(activity)
+    db.commit()
+
     return {
-        "query": query,
-        "result_count": len(results),
-        "results": results
+    "query": query,
+    "result_count": len(results),
+    "results": results
     }
 
 @router.post("/ask")
@@ -93,19 +104,30 @@ def ask_question(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        return answer_question(
-            query=request.query,
-            db=db,
-            document_id=request.document_id,
-            top_k=request.top_k,
-            user_id=cast(int, current_user.id)
+        answer = answer_question(
+        query=request.query,
+        db=db,
+        document_id=request.document_id,
+        top_k=request.top_k,
+        user_id=cast(int, current_user.id)
         )
+
+        # Record successful AI question activity
+        activity = ActivityLog(
+        user_id=current_user.id,
+        activity_type="ai_question"
+        )
+
+        db.add(activity)
+        db.commit()
+
+        return answer
 
     except ValueError as error:
         raise HTTPException(
-            status_code=400,
-            detail=str(error)
-        )
+        status_code=400,
+        detail=str(error)
+    )
 
 @router.get("/{document_id}/summary")
 def get_document_summary(
