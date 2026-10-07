@@ -4,9 +4,6 @@ import '../App.css'
 
 function Profile() {
     const navigate = useNavigate()
-
-    const [showEditModal, setShowEditModal] = useState(false)
-
     const handleLogout = () => {
         localStorage.removeItem('access_token')
         localStorage.removeItem('user')
@@ -15,6 +12,11 @@ function Profile() {
     }
 
     const [user, setUser] = useState(null)
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [editName, setEditName] = useState('')
+    const [editEmail, setEditEmail] = useState('')
+    const [editPhone, setEditPhone] = useState('')
+    const [editError, setEditError] = useState('')
     const [theme, setTheme] = useState(
         () => localStorage.getItem('app_theme') || 'ocean'
     )
@@ -69,6 +71,13 @@ function Profile() {
                 <button
                     className="profile-edit-button"
                     type="button"
+                    onClick={() => {
+                        setEditName(user?.full_name || '')
+                        setEditEmail(user?.email || '')
+                        setEditPhone(user?.phone || '')
+                        setEditError('')
+                        setShowEditModal(true)
+                    }}
                 >
                     Edit Profile
                 </button>
@@ -512,6 +521,115 @@ function Profile() {
                 </div>
 
             </section>
+            {showEditModal && (
+                <div className="profile-modal-overlay">
+                    <div className="profile-modal">
+
+                        <div className="profile-modal-header">
+                            <div>
+                                <p className="eyebrow">
+                                    ACCOUNT
+                                </p>
+
+                                <h3>Edit Profile</h3>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="profile-modal-close"
+                                onClick={() => setShowEditModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="profile-modal-body">
+
+                            <div className="profile-form-field">
+                                <label htmlFor="edit-name">
+                                    Full Name
+                                </label>
+
+                                <input
+                                    id="edit-name"
+                                    type="text"
+                                    value={editName}
+                                    onChange={(event) => setEditName(event.target.value)}
+                                    placeholder="Enter your full name"
+                                />
+                            </div>
+
+
+                            <div className="profile-form-field">
+                                <label htmlFor="edit-email">
+                                    Email
+                                </label>
+
+                                <input
+                                    id="edit-email"
+                                    type="email"
+                                    value={editEmail}
+                                    onChange={(event) => setEditEmail(event.target.value)}
+                                    placeholder="Enter your email address"
+                                />
+
+                                <small>
+                                    Changing your email may require verification.
+                                </small>
+                            </div>
+
+
+                            <div className="profile-form-field">
+                                <label htmlFor="edit-phone">
+                                    Phone Number
+                                </label>
+
+                                <input
+                                    id="edit-phone"
+                                    type="tel"
+                                    value={editPhone}
+                                    onChange={(event) => setEditPhone(event.target.value)}
+                                    placeholder="Enter your phone number"
+                                />
+
+                                <small>
+                                    Example: 9876543210
+                                </small>
+                            </div>
+
+                        </div>
+
+                        <div className="profile-modal-actions">
+
+                            <button
+                                type="button"
+                                className="profile-secondary-button"
+                                onClick={() => setShowEditModal(false)}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="profile-primary-button"
+                                onClick={() => {
+                                    if (!/^\d{10}$/.test(editPhone)) {
+                                        setEditError('Phone number must contain exactly 10 digits.')
+                                        return
+                                    }
+
+                                    setEditError('')
+                                    setShowEditModal(false)
+                                }}
+                            >
+                                Save Changes
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            )}
 
         </main>
     )
