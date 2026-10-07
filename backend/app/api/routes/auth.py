@@ -17,6 +17,7 @@ from app.schemas.auth import (
     ResendOTPRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    UpdateProfileRequest
 )
 from app.core.security import (
     hash_password,
@@ -33,6 +34,7 @@ from app.core.security import (
     generate_password_reset_token,
     hash_password_reset_token,
 )
+from app.api.dependencies import get_current_user
 
 FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
@@ -444,4 +446,27 @@ def login(
             "full_name": user.full_name,
             "email": user.email,
         }
+    }
+
+@router.put("/profile")
+def update_profile(
+    profile_data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    setattr(current_user, "full_name", profile_data.full_name.strip())
+    setattr(current_user, "phone", profile_data.phone)
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "Profile updated successfully.",
+        "user": {
+            "id": current_user.id,
+            "full_name": current_user.full_name,
+            "email": current_user.email,
+            "phone": current_user.phone,
+            "is_verified": current_user.is_verified,
+        },
     }
