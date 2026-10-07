@@ -1,4 +1,5 @@
 from app.core import database
+from app.core import database
 import secrets
 import os
 from typing import cast
@@ -24,7 +25,10 @@ from app.core.security import (
 )
 from datetime import datetime, timedelta, timezone
 from app.models.password_reset_token import PasswordResetToken
-from app.services.email_service import send_password_reset_email
+from app.services.email_service import (
+    send_password_reset_email,
+    send_registration_otp_email,
+)
 from app.core.security import (
     generate_password_reset_token,
     hash_password_reset_token,
@@ -85,14 +89,17 @@ def register(
     db.add(otp_record)
     db.commit()
 
-    print(f"[DEV OTP] Registration OTP for {user.email}: {otp}")
+    send_registration_otp_email(
+        recipient_email=cast(str, user.email),
+        recipient_name=cast(str, user.full_name),
+        otp=otp
+    )
 
     return {
-        "message": "Registration successful. Please verify your email with the OTP.",
-        "user_id": user.id,
-        "email": user.email
+       "message": "Registration successful. Please verify your email with the OTP.",
+       "user_id": user.id,
+       "email": user.email
     }
-
 
 @router.post("/verify-otp")
 def verify_otp(
@@ -203,14 +210,15 @@ def resend_otp(
     db.add(otp_record)
     db.commit()
 
-    print(
-        f"[DEV OTP] Resent registration OTP "
-        f"for {user.email}: {otp}"
+    send_registration_otp_email(
+    recipient_email=cast(str, user.email),
+    recipient_name=cast(str, user.full_name),
+    otp=otp
     )
 
     return {
-        "message": "A new OTP has been generated.",
-        "email": user.email
+    "message": "A new OTP has been sent to your email.",
+    "email": user.email
     }
 
 @router.post("/forgot-password")

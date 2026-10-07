@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
 
 function ForgotPassword() {
-    const navigate = useNavigate()
-
     const [email, setEmail] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false)
+    const [linkSent, setLinkSent] = useState(false)
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -50,18 +50,14 @@ function ForgotPassword() {
             if (!response.ok) {
                 throw new Error(
                     data.detail ||
-                    'Unable to process your request. Please try again.'
+                    'Unable to send the reset link. Please try again.'
                 )
             }
 
-            // Store the email so the reset-password page
-            // knows which account is being reset.
-            localStorage.setItem(
-                'password_reset_email',
-                trimmedEmail.toLowerCase()
-            )
+            // The reset link has been successfully requested.
+            setLinkSent(true)
+            setShowSuccessPopup(true)
 
-            navigate('/reset-password')
         } catch (error) {
             setError(
                 error.message ||
@@ -80,7 +76,7 @@ function ForgotPassword() {
 
                     <p>
                         Enter your registered email address and we'll
-                        send you a password reset OTP.
+                        send you a password reset link.
                     </p>
                 </div>
 
@@ -101,9 +97,10 @@ function ForgotPassword() {
                             type="email"
                             placeholder="you@example.com"
                             value={email}
-                            onChange={(event) =>
+                            onChange={(event) => {
                                 setEmail(event.target.value)
-                            }
+                                setError('')
+                            }}
                             autoComplete="email"
                             disabled={loading}
                         />
@@ -115,8 +112,10 @@ function ForgotPassword() {
                         disabled={loading}
                     >
                         {loading
-                            ? 'Sending OTP...'
-                            : 'Send Reset OTP'}
+                            ? 'Sending reset link...'
+                            : linkSent
+                                ? 'Resend reset link'
+                                : 'Send reset link'}
                     </button>
                 </form>
 
@@ -131,6 +130,43 @@ function ForgotPassword() {
                     </Link>
                 </p>
             </div>
+
+            {/* Success Popup */}
+            {showSuccessPopup && (
+                <div
+                    className="reset-success-overlay"
+                    onClick={() => setShowSuccessPopup(false)}
+                >
+                    <div
+                        className="reset-success-popup"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="reset-success-icon">
+                            ✓
+                        </div>
+
+                        <h3>Reset link sent!</h3>
+
+                        <p>
+                            We've sent a password reset link to
+                            <strong> {email.trim()}</strong>.
+                        </p>
+
+                        <p>
+                            Please check your inbox and click the
+                            link to create a new password.
+                        </p>
+
+                        <button
+                            type="button"
+                            className="auth-primary-button"
+                            onClick={() => setShowSuccessPopup(false)}
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
         </AuthLayout>
     )
 }

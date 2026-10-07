@@ -20,6 +20,11 @@ SMTP_FROM_NAME = os.getenv(
     "AI Document Intelligence"
 )
 
+if not SMTP_USERNAME:
+    raise RuntimeError("SMTP_USERNAME is not configured.")
+
+if not SMTP_PASSWORD:
+    raise RuntimeError("SMTP_PASSWORD is not configured.")
 
 def send_password_reset_email(
     recipient_email: str,
@@ -118,6 +123,123 @@ AI Document Intelligence
     """,
     subtype="html"
 )
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(message)
+
+def send_registration_otp_email(
+    recipient_email: str,
+    recipient_name: str,
+    otp: str
+):
+    """
+    Send the registration verification OTP by email.
+    """
+
+    message = EmailMessage()
+
+    message["Subject"] = "Verify your AI Document Intelligence account"
+    message["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+    message["To"] = recipient_email
+
+    message.set_content(
+        f"""Hi {recipient_name},
+
+Welcome to AI Document Intelligence!
+
+Your email verification OTP is:
+
+{otp}
+
+This OTP will expire in 5 minutes.
+
+If you did not create an account, you can safely ignore this email.
+
+Regards,
+AI Document Intelligence
+"""
+    )
+
+    message.add_alternative(
+        f"""
+        <html>
+            <body style="
+                margin: 0;
+                padding: 0;
+                background-color: #f8fafc;
+                font-family: Arial, sans-serif;
+                color: #0f172a;
+            ">
+                <div style="
+                    max-width: 520px;
+                    margin: 40px auto;
+                    background-color: #ffffff;
+                    border-radius: 16px;
+                    padding: 32px;
+                    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+                ">
+
+                    <h2 style="
+                        margin-top: 0;
+                        color: #0f766e;
+                    ">
+                        Verify your account
+                    </h2>
+
+                    <p>
+                        Hi {recipient_name},
+                    </p>
+
+                    <p>
+                        Welcome to
+                        <strong>AI Document Intelligence</strong>!
+                    </p>
+
+                    <p>
+                        Use the verification code below to verify
+                        your email address:
+                    </p>
+
+                    <div style="
+                        margin: 24px 0;
+                        padding: 18px;
+                        background-color: #f0fdfa;
+                        border-radius: 12px;
+                        text-align: center;
+                        font-size: 32px;
+                        font-weight: bold;
+                        letter-spacing: 8px;
+                        color: #0f766e;
+                    ">
+                        {otp}
+                    </div>
+
+                    <p>
+                        This OTP will expire in
+                        <strong>5 minutes</strong>.
+                    </p>
+
+                    <p style="
+                        color: #64748b;
+                        font-size: 14px;
+                    ">
+                        If you did not create an account, you can
+                        safely ignore this email.
+                    </p>
+
+                    <p>
+                        Regards,<br>
+                        <strong>AI Document Intelligence</strong>
+                    </p>
+
+                </div>
+            </body>
+        </html>
+        """,
+        subtype="html"
+    )
 
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
         server.starttls()

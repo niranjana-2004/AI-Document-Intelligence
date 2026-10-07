@@ -5,6 +5,8 @@ import '../App.css'
 function Profile() {
     const navigate = useNavigate()
 
+    const [showEditModal, setShowEditModal] = useState(false)
+
     const handleLogout = () => {
         localStorage.removeItem('access_token')
         localStorage.removeItem('user')
