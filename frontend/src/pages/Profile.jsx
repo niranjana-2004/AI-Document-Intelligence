@@ -16,6 +16,7 @@ function Profile() {
     const [editName, setEditName] = useState('')
     const [editEmail, setEditEmail] = useState('')
     const [editPhone, setEditPhone] = useState('')
+    const [phoneError, setPhoneError] = useState('')
     const [editError, setEditError] = useState('')
     const [theme, setTheme] = useState(
         () => localStorage.getItem('app_theme') || 'ocean'
@@ -588,13 +589,26 @@ function Profile() {
                                     id="edit-phone"
                                     type="tel"
                                     value={editPhone}
-                                    onChange={(event) => setEditPhone(event.target.value)}
+                                    onChange={(event) => {
+                                        const value = event.target.value
+                                        setEditPhone(value)
+
+                                        if (!/^\d*$/.test(value)) {
+                                            setPhoneError('Phone number can contain digits only.')
+                                        } else if (value.length > 10) {
+                                            setPhoneError('Phone number must contain exactly 10 digits.')
+                                        } else {
+                                            setPhoneError('')
+                                        }
+                                    }}
                                     placeholder="Enter your phone number"
                                 />
 
-                                <small>
-                                    Example: 9876543210
-                                </small>
+                                {phoneError && (
+                                    <p className="profile-form-error">
+                                        {phoneError}
+                                    </p>
+                                )}
                             </div>
 
                         </div>
@@ -614,11 +628,11 @@ function Profile() {
                                 className="profile-primary-button"
                                 onClick={() => {
                                     if (!/^\d{10}$/.test(editPhone)) {
-                                        setEditError('Phone number must contain exactly 10 digits.')
+                                        setPhoneError('Phone number must contain exactly 10 digits.')
                                         return
                                     }
 
-                                    setEditError('')
+                                    setPhoneError('')
                                     setShowEditModal(false)
                                 }}
                             >
