@@ -4101,3 +4101,13 @@
   background: rgba(220, 53, 69, 0.08);
   color: #dc3545;
 }
+
+.profile-form-success {
+  margin: 4px 0 12px;
+  padding: 8px 10px;
+  border-left: 3px solid #198754;
+  background: rgba(25, 135, 84, 0.08);
+  color: #198754;
+  font-size: 13px;
+  border-radius: 4px;
+}

@@ -19,6 +19,13 @@ function Profile() {
     const [editPhone, setEditPhone] = useState('')
     const [phoneError, setPhoneError] = useState('')
     const [editError, setEditError] = useState('')
+    const [showPasswordModal, setShowPasswordModal] = useState(false)
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [passwordError, setPasswordError] = useState('')
+    const [passwordSuccess, setPasswordSuccess] = useState('')
+    const [passwordLoading, setPasswordLoading] = useState(false)
     const [theme, setTheme] = useState(
         () => localStorage.getItem('app_theme') || 'ocean'
     )
@@ -217,6 +224,14 @@ function Profile() {
                             <button
                                 className="profile-secondary-button"
                                 type="button"
+                                onClick={() => {
+                                    setCurrentPassword('')
+                                    setNewPassword('')
+                                    setConfirmPassword('')
+                                    setPasswordError('')
+                                    setPasswordSuccess('')
+                                    setShowPasswordModal(true)
+                                }}
                             >
                                 Change
                             </button>
@@ -666,7 +681,169 @@ function Profile() {
                     </div>
                 </div>
             )}
+            {showPasswordModal && (
+                <div className="profile-modal-overlay">
+                    <div className="profile-modal">
 
+                        <div className="profile-modal-header">
+                            <div>
+                                <h3>Change Password</h3>
+                                <p>Update your account password.</p>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="profile-modal-close"
+                                onClick={() => setShowPasswordModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {passwordError && (
+                            <p className="profile-form-error">
+                                {passwordError}
+                            </p>
+                        )}
+
+                        {passwordSuccess && (
+                            <p className="profile-form-success">
+                                {passwordSuccess}
+                            </p>
+                        )}
+
+                        <div className="profile-form-field">
+                            <label htmlFor="current-password">
+                                Current Password
+                            </label>
+
+                            <input
+                                id="current-password"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(event) =>
+                                    setCurrentPassword(event.target.value)
+                                }
+                                placeholder="Enter your current password"
+                            />
+                        </div>
+
+                        <div className="profile-form-field">
+                            <label htmlFor="new-password">
+                                New Password
+                            </label>
+
+                            <input
+                                id="new-password"
+                                type="password"
+                                value={newPassword}
+                                onChange={(event) =>
+                                    setNewPassword(event.target.value)
+                                }
+                                placeholder="Enter your new password"
+                            />
+                        </div>
+
+                        <div className="profile-form-field">
+                            <label htmlFor="confirm-password">
+                                Confirm New Password
+                            </label>
+
+                            <input
+                                id="confirm-password"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(event) =>
+                                    setConfirmPassword(event.target.value)
+                                }
+                                placeholder="Confirm your new password"
+                            />
+                        </div>
+
+                        <div className="profile-modal-actions">
+
+                            <button
+                                type="button"
+                                className="profile-secondary-button"
+                                onClick={() => setShowPasswordModal(false)}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="profile-primary-button"
+                                disabled={passwordLoading}
+                                onClick={async () => {
+
+                                    setPasswordError('')
+                                    setPasswordSuccess('')
+
+                                    if (!currentPassword) {
+                                        setPasswordError(
+                                            'Please enter your current password.'
+                                        )
+                                        return
+                                    }
+
+                                    if (!newPassword) {
+                                        setPasswordError(
+                                            'Please enter a new password.'
+                                        )
+                                        return
+                                    }
+
+                                    if (newPassword.length < 8) {
+                                        setPasswordError(
+                                            'New password must be at least 8 characters.'
+                                        )
+                                        return
+                                    }
+
+                                    if (newPassword !== confirmPassword) {
+                                        setPasswordError(
+                                            'New passwords do not match.'
+                                        )
+                                        return
+                                    }
+
+                                    setPasswordLoading(true)
+
+                                    try {
+                                        await apiRequest('/auth/change-password', {
+                                            method: 'PUT',
+                                            body: JSON.stringify({
+                                                current_password: currentPassword,
+                                                new_password: newPassword,
+                                                confirm_password: confirmPassword,
+                                            }),
+                                        })
+
+                                        setPasswordSuccess(
+                                            'Password changed successfully.'
+                                        )
+
+                                        setCurrentPassword('')
+                                        setNewPassword('')
+                                        setConfirmPassword('')
+
+                                    } catch (error) {
+                                        setPasswordError(error.message)
+                                    } finally {
+                                        setPasswordLoading(false)
+                                    }
+                                }}
+                            >
+                                {passwordLoading
+                                    ? 'Changing...'
+                                    : 'Change Password'}
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </main>
     )
 }
