@@ -17,7 +17,8 @@ from app.schemas.auth import (
     ResendOTPRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
-    UpdateProfileRequest
+    UpdateProfileRequest,
+    ChangePasswordRequest,
 )
 from app.core.security import (
     hash_password,
@@ -469,4 +470,46 @@ def update_profile(
             "phone": current_user.phone,
             "is_verified": current_user.is_verified,
         },
+    }
+
+@router.put("/change-password")
+def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Verify the current password
+    if not verify_password(
+        password_data.current_password,
+        str(current_user.password_hash)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Current password is incorrect."
+        )
+
+    # Make sure the new password and confirmation match
+    if password_data.new_password != password_data.confirm_password:
+        raise HTTPException(
+            status_code=400,
+            detail="New passwords do not match."
+        )
+
+    # Prevent reusing the current password
+    if verify_password(
+        password_data.new_password,
+        str(current_user.password_hash)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be different from your current password."
+        )
+
+    # Hash and save the new password
+    current_user.password_hash = hash_password(password_data.new_password)  # type: ignore[assignment]
+
+    db.commit()
+
+    return {
+        "message": "Password changed successfully."
     }

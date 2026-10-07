@@ -4091,3 +4091,13 @@
   font-size: 13px;
   border-radius: 4px;
 }
+
+.verification-badge.verification-verified {
+  background: rgba(25, 135, 84, 0.12);
+  color: #198754;
+}
+
+.verification-badge.verification-not-verified {
+  background: rgba(220, 53, 69, 0.08);
+  color: #dc3545;
+}

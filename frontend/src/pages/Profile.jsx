@@ -238,8 +238,11 @@ function Profile() {
 
                             </div>
 
-                            <span className="verification-badge">
-                                Not verified
+                            <span
+                                className={`verification-badge ${user?.is_verified ? 'verification-verified' : 'verification-not-verified'
+                                    }`}
+                            >
+                                {user?.is_verified ? 'Verified' : 'Not verified'}
                             </span>
 
                         </div>
