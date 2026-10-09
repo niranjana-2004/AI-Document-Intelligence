@@ -17,6 +17,10 @@ function Dashboard() {
 
   const [summary, setSummary] = useState('')
   const [summaryLoading, setSummaryLoading] = useState(false)
+  const [activityCounts, setActivityCounts] = useState({
+    ai_questions: 0,
+    searches: 0,
+  })
   const [showSummaryDocuments, setShowSummaryDocuments] =
     useState(false)
 
@@ -243,6 +247,32 @@ function Dashboard() {
   const displayedDocuments = showAll
     ? documents
     : documents.slice(0, 5)
+
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchActivityCounts = async () => {
+      try {
+        const data = await apiRequest('/auth/activity')
+
+        if (isMounted) {
+          setActivityCounts({
+            ai_questions: data.ai_questions ?? 0,
+            searches: data.searches ?? 0,
+          })
+        }
+      } catch (error) {
+        console.error('Failed to load activity counts:', error)
+      }
+    }
+
+    fetchActivityCounts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   return (
     <>
@@ -563,7 +593,7 @@ function Dashboard() {
                 </div>
 
                 <strong>
-                  —
+                  {loading ? '...' : activityCounts.ai_questions}
                 </strong>
 
               </div>
@@ -588,7 +618,7 @@ function Dashboard() {
                 </div>
 
                 <strong>
-                  —
+                  {loading ? '...' : activityCounts.searches}
                 </strong>
 
               </div>

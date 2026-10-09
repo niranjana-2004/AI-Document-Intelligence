@@ -116,7 +116,11 @@ ANSWER:
             f"Ollama request failed: {error}"
         )
 
-def generate_summary(text: str) -> str:
+def generate_summary(
+    text: str,
+    summary_format: str = "numbered",
+    summary_length: str = "detailed"
+) -> str:
     """
     Generate a concise and factually faithful summary
     of the document using the local Ollama LLM.
@@ -124,117 +128,96 @@ def generate_summary(text: str) -> str:
 
     if not text.strip():
         return "I couldn't generate a summary because the document is empty."
-
+   
     prompt = f"""
-You are a document summarization assistant.
+You are a professional document summarization assistant.
 
-Your task is to summarize the document provided below.
+Your task is to produce an accurate, detailed, natural-language
+summary of the source document.
+
+CONSISTENT WRITING STYLE:
+Every summary must follow the same writing style:
+- Use connected, well-organized paragraphs.
+- Begin by identifying the document's actual subject and purpose.
+- Explain the important content in a logical sequence.
+- Describe relevant components, concepts, methods, processes,
+  examples, findings, results, or conclusions when present.
+- Preserve specific names, technical terms, numbers, measurements,
+  commands, and other important details.
+- End with a concise overall explanation of what the document
+  covers or accomplishes, when supported by its content.
+- Write like an informative explanation of the document, not
+  like a template filled with predefined categories.
+- Use the same natural, explanatory style for every document,
+  whether it is a research paper, project report, study material,
+  aptitude worksheet, technical manual, or another document.
 
 STRICT SOURCE RULES:
+1. Use only information supported by the source document.
+2. Never invent topics, questions, skills, examples, results,
+   findings, or conclusions.
+3. Do not add information from general knowledge.
+4. Do not assume the document contains content that was not
+   extracted from the source.
+5. Preserve the meaning and context of the original information.
+6. Include important details in proportion to their importance.
+7. If information is missing or unclear, do not guess.
 
-1. Use ONLY information explicitly present in the document.
+STRICT OUTPUT RULES:
+1. Write the summary primarily as paragraphs, using multiple
+   paragraphs when needed.
+2. Do not use predefined headings such as Overview, Education,
+   Technical Skills, Projects, Internships, Workshops,
+   Certifications, Achievements, or Results automatically.
+3. Include a heading only if it genuinely helps explain the
+   document's actual content.
+4. Never include statements such as "No projects are listed,"
+   "No information was provided," or "Not listed" for categories
+   unrelated to the document.
+5. Never transform an ordinary worksheet into a résumé,
+   project report, research paper, or academic profile.
+6. For a question paper or practice worksheet, describe the
+   actual questions, exercises, instructions, and topics that
+   are present in the extracted text. Do not invent questions
+   or topics based on what such worksheets commonly contain.
+7. For a technical report or research paper, explain its actual
+   purpose, design, components, methodology, results, limitations,
+   and conclusions when those details are present.
+8. Avoid repetitive conclusions, generic filler, and unnecessary
+   disclaimers.
+9. Do not begin with "Here is a summary of the document."
+10. Do not refer to these instructions in the final summary.
 
-2. Do NOT use general knowledge.
+LENGTH:
+Produce a sufficiently detailed summary to preserve the document's
+important information without reproducing the entire source.
+Choose the length according to the amount and complexity of
+relevant information in the source.
+FORMAT INSTRUCTIONS:
+- Summary format: {summary_format}
+- Summary length: {summary_length}
 
-3. Do NOT invent, assume, estimate, or infer information.
+Use the selected format:
+- numbered: organize the main points as a numbered list.
+- paragraphs: write connected paragraphs.
+- bullets: use bullet points.
+- headings: use relevant headings and subheadings.
 
-4. Do NOT change, reinterpret, or reclassify information.
+Use the selected length:
+- brief: include only the essential information.
+- detailed: explain the important details supported by the source.
 
-5. Preserve the meaning and category of information exactly as it
-   appears in the document.
-
-SECTION ACCURACY RULES:
-
-6. Treat document sections as authoritative.
-
-7. If the document contains a section called "Programming Languages",
-   report ONLY the languages listed in that section as programming
-   languages.
-
-8. Do NOT move technologies, tools, frameworks, databases, or other
-   skills into the Programming Languages category.
-
-9. Treat the following categories separately:
-
-   - Programming Languages
-   - Web Technologies / Frameworks
-   - Databases
-   - Tools / Platforms
-   - IDEs
-   - Operating Systems
-   - Spoken / Human Languages
-   - Projects
-   - Internships
-   - Workshops
-   - Certifications
-   - Awards
-   - Education
-
-10. Do not move an item from one category to another.
-
-FACTUAL ACCURACY:
-
-11. Preserve exact numerical values.
-
-12. Preserve exact CGPAs and percentages.
-
-13. Preserve names of organizations, institutions, projects,
-    certifications, and internship roles.
-
-14. Preserve dates and durations when explicitly stated.
-
-15. Do not calculate, round, convert, or modify numerical information.
-
-SUMMARY STRUCTURE:
-
-Organize the summary using only sections that are actually present
-in the document.
-
-Use a structure such as:
-
-- Overview
-- Education
-- Technical Skills
-- Projects
-- Internships
-- Workshops
-- Certifications
-- Achievements
-- Other relevant information
-
-Do NOT create a section if the document does not contain relevant
-information for it.
-
-IMPORTANT:
-
-Before producing the summary, carefully distinguish information based
-on the section where it appears.
-
-For example, if the document contains:
-
-Programming Languages: C, Java, Python, R
-
-and elsewhere says:
-
-Proficient in Python, SQL, and Power BI
-
-the Programming Languages section MUST remain:
-
-C, Java, Python, R
-
-Do not replace it with Python, SQL, Power BI.
-
-Keep the summary concise but informative.
-
-DOCUMENT:
------------------
+Never invent information or introduce unrelated categories.
+SOURCE DOCUMENT:
+----------------
 {text}
------------------
+----------------
 
-SUMMARY:
+Write the summary now.
 """
 
     try:
+        print("DEBUG: NEW SUMMARY PROMPT IS RUNNING")
         response = requests.post(
             OLLAMA_URL,
             json={
@@ -242,7 +225,7 @@ SUMMARY:
                 "prompt": prompt,
                 "stream": False
             },
-            timeout=120
+            timeout=300
         )
 
         response.raise_for_status()

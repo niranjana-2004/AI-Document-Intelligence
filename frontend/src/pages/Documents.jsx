@@ -22,6 +22,8 @@ function Documents() {
     const [summary, setSummary] = useState('')
     const [summaryLoading, setSummaryLoading] =
         useState(false)
+    const [summaryFormat, setSummaryFormat] = useState("numbered");
+    const [summaryLength, setSummaryLength] = useState("detailed");
 
     const [error, setError] = useState('')
 
@@ -172,6 +174,7 @@ function Documents() {
        SUMMARY
     ======================================== */
 
+
     const handleSummary = async (documentId) => {
         try {
             setSummaryLoading(true)
@@ -179,7 +182,7 @@ function Documents() {
             setError('')
 
             const data = await apiRequest(
-                `/documents/${documentId}/summary`
+                `/documents/${documentId}/summary?format=${encodeURIComponent(summaryFormat)}&length=${encodeURIComponent(summaryLength)}`
             )
 
             setSummary(
@@ -523,14 +526,10 @@ function Documents() {
                                                 </button>
 
                                                 <button
-                                                    className="document-action"
-                                                    onClick={() =>
-                                                        handleSummary(
-                                                            document.id
-                                                        )
-                                                    }
+                                                    onClick={() => handleSummary(document.id)}
+                                                    disabled={summaryLoading}
                                                 >
-                                                    Summarize
+                                                    {summaryLoading ? "Generating..." : "Generate Summary"}
                                                 </button>
 
                                             </div>

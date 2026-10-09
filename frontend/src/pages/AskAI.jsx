@@ -32,7 +32,7 @@ function AskAI() {
                     body: JSON.stringify({
                         query: question,
                         document_id: null,
-                        top_k: 5,
+                        top_k: 12,
                     }),
                 }
             )

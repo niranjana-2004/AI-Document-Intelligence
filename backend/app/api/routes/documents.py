@@ -130,26 +130,64 @@ def ask_question(
         detail=str(error)
     )
 
+
 @router.get("/{document_id}/summary")
 def get_document_summary(
     document_id: int,
+    format: str = "numbered",
+    length: str = "detailed",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     document = (
-    db.query(Document)
-    .filter(
-        Document.id == document_id,
-        Document.user_id == current_user.id
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.user_id == current_user.id
+        )
+        .first()
     )
-    .first()
-)
 
     if not document:
         raise HTTPException(
             status_code=404,
             detail="Document not found."
         )
+
+    allowed_formats = {
+        "numbered",
+        "paragraphs",
+        "bullets",
+        "headings"
+    }
+
+    allowed_lengths = {"brief", "detailed"}
+
+    if format not in allowed_formats:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid summary format."
+        )
+
+    if length not in allowed_lengths:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid summary length."
+        )
+
+    if not document.extracted_text:
+        raise HTTPException(
+        status_code=400,
+        detail="Original document text is unavailable."
+    )
+
+    summary = generate_summary(
+    str(document.extracted_text),
+    summary_format=format,
+    summary_length=length
+    )
+
+    setattr(document, "summary", summary)
 
     chunk_count = db.query(DocumentChunk).filter(
         DocumentChunk.document_id == document_id
@@ -164,13 +202,16 @@ def get_document_summary(
     db.commit()
 
     return {
-    "document_id": document.id,
-    "filename": document.filename,
-    "document_type": document.document_type,
-    "text_length": document.text_length,
-    "chunk_count": chunk_count,
-    "summary": document.summary
+        "document_id": document.id,
+        "filename": document.filename,
+        "document_type": document.document_type,
+        "text_length": document.text_length,
+        "chunk_count": chunk_count,
+        "summary": summary,
+        "summary_format": format,
+        "summary_length": length
     }
+
 
 @router.get("/{document_id}")
 def get_document(
@@ -254,16 +295,19 @@ async def upload_document(
     chunks = processed_document["chunks"]
     embeddings = processed_document["embeddings"]
 
-    # Generate document summary
+    
+# Generate document summary
     summary = None
     summary_error = None
 
     try:
+        print("DEBUG: UPLOAD ROUTE REACHED SUMMARY GENERATION")
         summary = generate_summary(extracted_text)
 
     except Exception as error:
         summary_error = str(error)
         print(f"Summary generation failed: {error}")
+
 
     # Create document database record
     document = Document(
