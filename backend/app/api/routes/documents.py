@@ -1,3 +1,4 @@
+from app.core import database
 from dns import asyncquery
 from app.core import database
 from pathlib import Path
@@ -154,13 +155,21 @@ def get_document_summary(
         DocumentChunk.document_id == document_id
     ).count()
 
+    activity = ActivityLog(
+        user_id=current_user.id,
+        activity_type="summary"
+    )
+
+    db.add(activity)
+    db.commit()
+
     return {
-        "document_id": document.id,
-        "filename": document.filename,
-        "document_type": document.document_type,
-        "text_length": document.text_length,
-        "chunk_count": chunk_count,
-        "summary": document.summary
+    "document_id": document.id,
+    "filename": document.filename,
+    "document_type": document.document_type,
+    "text_length": document.text_length,
+    "chunk_count": chunk_count,
+    "summary": document.summary
     }
 
 @router.get("/{document_id}")
@@ -246,14 +255,15 @@ async def upload_document(
     embeddings = processed_document["embeddings"]
 
     # Generate document summary
+    summary = None
+    summary_error = None
+
     try:
         summary = generate_summary(extracted_text)
 
     except Exception as error:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate document summary: {error}"
-        )
+        summary_error = str(error)
+        print(f"Summary generation failed: {error}")
 
     # Create document database record
     document = Document(
@@ -287,9 +297,20 @@ async def upload_document(
 
     db.commit()
 
+    # Record successful document upload activity
+    activity = ActivityLog(
+    user_id=current_user.id,
+    activity_type="document_upload"
+    )
+
+    db.add(activity)
+    db.commit()
+
     # Return upload result
     return {
-        "message": "Document uploaded successfully!",
+        "message": "Document uploaded successfully!"
+        if summary is not None
+        else "Document uploaded successfully, but summary generation failed.",
         "document_id": document.id,
         "filename": filename,
         "size": len(file_content),
@@ -297,6 +318,10 @@ async def upload_document(
         "text_length": len(extracted_text),
         "chunk_count": len(chunks),
         "summary": summary,
+        "summary_status": (
+            "success" if summary is not None else "failed"
+        ),
+        "summary_error": summary_error,
         "extracted_text": extracted_text
     }
 

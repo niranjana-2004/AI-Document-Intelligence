@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from docx import Document as DocxDocument
 # pyrefly: ignore [missing-import]
 from app.services.pdf_service import extract_text_from_pdf
 from app.services.text_processing_service import (
@@ -8,6 +8,7 @@ from app.services.text_processing_service import (
     detect_chunk_category
 )
 from app.services.embedding_services import generate_embedding
+
 
 
 def process_document(
@@ -35,12 +36,28 @@ def process_document(
             errors="ignore"
         )
 
+    elif file_extension == ".docx":
+        docx_file = DocxDocument(str(file_path))
+
+        paragraphs = [
+            paragraph.text
+            for paragraph in docx_file.paragraphs
+            if paragraph.text.strip()
+        ]
+
+        extracted_text = "\n".join(paragraphs)
+
     else:
         raise ValueError(
             f"Unsupported document type: {file_extension}"
         )
 
     cleaned_text = clean_text(extracted_text)
+
+    if not cleaned_text.strip():
+        raise ValueError(
+            "No readable text was found in the document."
+        )
 
     chunks = chunk_text(
         cleaned_text,

@@ -13,6 +13,17 @@ function Profile() {
     }
 
     const [user, setUser] = useState(null)
+    const [activity, setActivity] = useState({
+        documents: 0,
+        ai_questions: 0,
+        searches: 0,
+        summaries: 0,
+        account_created: null,
+        last_login: null,
+    })
+
+    const [activityLoading, setActivityLoading] = useState(true)
+    const [activityError, setActivityError] = useState('')
     const [showEditModal, setShowEditModal] = useState(false)
     const [editName, setEditName] = useState('')
     const [editEmail, setEditEmail] = useState('')
@@ -32,6 +43,9 @@ function Profile() {
     const [theme, setTheme] = useState(
         () => localStorage.getItem('app_theme') || 'ocean'
     )
+    const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+        return localStorage.getItem('notifications_enabled') !== 'false'
+    })
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user')
@@ -44,6 +58,56 @@ function Profile() {
             }
         }
     }, [])
+
+    useEffect(() => {
+        let isMounted = true
+
+        const fetchActivity = async () => {
+            try {
+                setActivityLoading(true)
+                setActivityError('')
+
+                const data = await apiRequest('/auth/activity')
+
+                if (isMounted) {
+                    setActivity(data)
+                }
+            } catch (error) {
+                if (isMounted) {
+                    setActivityError(
+                        error.message || 'Unable to load account activity.'
+                    )
+                }
+            } finally {
+                if (isMounted) {
+                    setActivityLoading(false)
+                }
+            }
+        }
+
+        fetchActivity()
+
+        return () => {
+            isMounted = false
+        }
+    }, [])
+
+    const formatActivityDate = (value) => {
+        if (!value) {
+            return 'Not available'
+        }
+
+        const date = new Date(value)
+
+        if (Number.isNaN(date.getTime())) {
+            return 'Not available'
+        }
+
+        return date.toLocaleString(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+        })
+    }
 
     return (
         <main className="profile-page">
@@ -412,89 +476,60 @@ function Profile() {
 
 
                     <div className="activity-stats">
-
                         <div className="profile-stat">
-
                             <strong>
-                                —
+                                {activityLoading ? '...' : activity.documents}
                             </strong>
-
-                            <span>
-                                Documents
-                            </span>
-
+                            <span>Documents</span>
                         </div>
 
-
                         <div className="profile-stat">
-
                             <strong>
-                                —
+                                {activityLoading ? '...' : activity.ai_questions}
                             </strong>
-
-                            <span>
-                                AI Questions
-                            </span>
-
+                            <span>AI Questions</span>
                         </div>
 
-
                         <div className="profile-stat">
-
                             <strong>
-                                —
+                                {activityLoading ? '...' : activity.searches}
                             </strong>
-
-                            <span>
-                                Searches
-                            </span>
-
+                            <span>Searches</span>
                         </div>
 
-
                         <div className="profile-stat">
-
                             <strong>
-                                —
+                                {activityLoading ? '...' : activity.summaries}
                             </strong>
-
-                            <span>
-                                Summaries
-                            </span>
-
+                            <span>Summaries</span>
                         </div>
-
                     </div>
 
+                    {activityError && (
+                        <p className="profile-form-error">
+                            {activityError}
+                        </p>
+                    )}
 
                     <div className="account-details">
-
                         <div>
-
-                            <span>
-                                Account Created
-                            </span>
-
+                            <span>Account Created</span>
                             <strong>
-                                —
+                                {activityLoading
+                                    ? 'Loading...'
+                                    : formatActivityDate(activity.account_created)}
                             </strong>
-
                         </div>
 
                         <div>
-
-                            <span>
-                                Last Login
-                            </span>
-
+                            <span>Last Login</span>
                             <strong>
-                                —
+                                {activityLoading
+                                    ? 'Loading...'
+                                    : formatActivityDate(activity.last_login)}
                             </strong>
-
                         </div>
-
                     </div>
-
                 </div>
 
             </section>
