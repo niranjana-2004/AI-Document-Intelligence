@@ -217,7 +217,6 @@ Write the summary now.
 """
 
     try:
-        print("DEBUG: NEW SUMMARY PROMPT IS RUNNING")
         response = requests.post(
             OLLAMA_URL,
             json={

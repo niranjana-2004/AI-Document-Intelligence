@@ -514,18 +514,16 @@ function Documents() {
 
                                             <div className="document-card-actions">
 
+
                                                 <button
                                                     className="document-action"
-                                                    onClick={() =>
-                                                        handleOpenDocument(
-                                                            document.id
-                                                        )
-                                                    }
+                                                    onClick={() => handleOpenDocument(document.id)}
                                                 >
                                                     Open
                                                 </button>
 
                                                 <button
+                                                    className="document-action summary-action"
                                                     onClick={() => handleSummary(document.id)}
                                                     disabled={summaryLoading}
                                                 >

@@ -301,7 +301,6 @@ async def upload_document(
     summary_error = None
 
     try:
-        print("DEBUG: UPLOAD ROUTE REACHED SUMMARY GENERATION")
         summary = generate_summary(extracted_text)
 
     except Exception as error:
