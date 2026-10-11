@@ -5,7 +5,7 @@ def build_context(
     query: str,
     db,
     document_id: int | None = None,
-    top_k: int = 7,
+    top_k: int = 6,
     user_id: int | None = None
 ) -> dict:
     """
@@ -58,4 +58,4 @@ def build_context(
         "context": context,
         "results": results,
         "result_count": len(results)
-    }
+    }

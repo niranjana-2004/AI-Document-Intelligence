@@ -2,6 +2,8 @@ import re
 from app.services.context_service import build_context
 from app.services.llm_service import generate_response, FALLBACK_ANSWER
 
+MIN_CONFIDENCE_THRESHOLD = 0.40
+
 
 def extract_project_titles(results: list[dict]) -> list[str]:
     """
@@ -62,7 +64,7 @@ def answer_question(
     query: str,
     db,
     document_id: int | None = None,
-    top_k: int = 7,
+    top_k: int = 6,
     user_id: int | None = None
 ) -> dict:
     """
@@ -79,7 +81,21 @@ def answer_question(
         user_id=user_id
     )
 
-    if context_data["result_count"] == 0:
+    # --------------------------------------------------
+    # Minimum confidence gate
+    # --------------------------------------------------
+    # If no results returned or if the highest-ranking chunk score is below
+    # the minimum confidence threshold, return fallback answer without calling Ollama.
+    top_chunk_score = (
+        context_data["results"][0].get("final_score", 0.0)
+        if context_data["results"]
+        else 0.0
+    )
+
+    if (
+        context_data["result_count"] == 0
+        or top_chunk_score < MIN_CONFIDENCE_THRESHOLD
+    ):
         return {
             "query": query,
             "answer": FALLBACK_ANSWER,
@@ -119,4 +135,4 @@ def answer_question(
         "answer": answer,
         "result_count": context_data["result_count"],
         "results": context_data["results"]
-    }
+    }

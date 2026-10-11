@@ -12,11 +12,38 @@ from app.models.document_chunk import DocumentChunk
 # SEARCH THRESHOLDS / WEIGHTS
 # --------------------------------------------------
 
-SIMILARITY_THRESHOLD = 0.20
-FINAL_SCORE_THRESHOLD = 0.20
+SIMILARITY_THRESHOLD = 0.25
+FINAL_SCORE_THRESHOLD = 0.25
 
 SEMANTIC_WEIGHT = 0.70
 KEYWORD_WEIGHT = 0.30
+
+
+# --------------------------------------------------
+# COMMON STOP WORDS (FOR KEYWORD FILTERING)
+# --------------------------------------------------
+
+ENGLISH_STOP_WORDS = {
+    "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
+    "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
+    "below", "between", "both", "but", "by", "can", "can't", "cannot", "could",
+    "couldn't", "did", "didn't", "do", "does", "doesn't", "doing", "don't", "down",
+    "during", "each", "few", "for", "from", "further", "had", "hadn't", "has",
+    "hasn't", "have", "haven't", "having", "he", "he'd", "he'll", "he's", "her",
+    "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's",
+    "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "isn't", "it",
+    "it's", "its", "itself", "let's", "me", "more", "most", "mustn't", "my",
+    "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or", "other",
+    "ought", "our", "ours", "ourselves", "out", "over", "own", "same", "shan't",
+    "she", "she'd", "she'll", "she's", "should", "shouldn't", "so", "some", "such",
+    "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then",
+    "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've",
+    "this", "those", "through", "to", "too", "under", "until", "up", "very", "was",
+    "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't", "what",
+    "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's",
+    "whom", "why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd",
+    "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves"
+}
 
 
 # --------------------------------------------------
@@ -382,7 +409,8 @@ def calculate_keyword_score(
     content: str
 ) -> float:
     """
-    Calculate keyword overlap between query and content.
+    Calculate keyword overlap between query and content,
+    excluding common English stop words to prevent false positive matches.
     """
 
     query_words = set(
@@ -399,17 +427,22 @@ def calculate_keyword_score(
         )
     )
 
-    if not query_words:
+    meaningful_words = {
+        w for w in query_words
+        if w not in ENGLISH_STOP_WORDS
+    }
+
+    if not meaningful_words:
         return 0.0
 
-    matched_words = query_words.intersection(
+    matched_words = meaningful_words.intersection(
         content_words
     )
 
     # Abbreviation/full-form matching
     for abbreviation, full_form in QUERY_EXPANSIONS.items():
 
-        if abbreviation in query_words:
+        if abbreviation in meaningful_words:
 
             full_form_words = set(
                 re.findall(
@@ -424,7 +457,7 @@ def calculate_keyword_score(
                     abbreviation
                 )
 
-    return len(matched_words) / len(query_words)
+    return len(matched_words) / len(meaningful_words)
 
 
 # --------------------------------------------------
@@ -752,8 +785,18 @@ def semantic_search(
             })
 
     results.sort(
-    key=lambda x: cast(float, x["final_score"]),
-    reverse=True
-)
+        key=lambda x: cast(float, x["final_score"]),
+        reverse=True
+    )
+
+    # Relative drop-off filter:
+    # Retain chunks within 60% of the top-ranking chunk's score,
+    # filtering out low-scoring noise from unrelated documents.
+    if results:
+        top_score = cast(float, results[0]["final_score"])
+        results = [
+            r for r in results
+            if cast(float, r["final_score"]) >= top_score * 0.60
+        ]
 
     return results[:top_k]
