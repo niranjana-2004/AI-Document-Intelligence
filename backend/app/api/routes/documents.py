@@ -105,18 +105,55 @@ def ask_question(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        # Validate conflicting document scopes if both are provided
+        if request.document_id is not None and request.document_ids is not None:
+            if set(request.document_ids) != {request.document_id}:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Conflicting document scopes: document_id and document_ids specify different documents."
+                )
+
+        effective_document_ids: list[int] | None = None
+        if request.document_ids is not None:
+            if len(request.document_ids) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Document selection cannot be empty."
+                )
+            effective_document_ids = list(dict.fromkeys(request.document_ids))
+        elif request.document_id is not None:
+            effective_document_ids = [request.document_id]
+
+        # Verify that all requested documents exist and belong to the authenticated user
+        if effective_document_ids is not None:
+            owned_docs = (
+                db.query(Document.id)
+                .filter(
+                    Document.user_id == current_user.id,
+                    Document.id.in_(effective_document_ids)
+                )
+                .all()
+            )
+            owned_ids = {doc.id for doc in owned_docs}
+            if len(owned_ids) != len(effective_document_ids):
+                raise HTTPException(
+                    status_code=404,
+                    detail="One or more selected documents were not found."
+                )
+
         answer = answer_question(
-        query=request.query,
-        db=db,
-        document_id=request.document_id,
-        top_k=request.top_k,
-        user_id=cast(int, current_user.id)
+            query=request.query,
+            db=db,
+            document_id=request.document_id,
+            document_ids=effective_document_ids,
+            top_k=request.top_k,
+            user_id=cast(int, current_user.id)
         )
 
         # Record successful AI question activity
         activity = ActivityLog(
-        user_id=current_user.id,
-        activity_type="ai_question"
+            user_id=current_user.id,
+            activity_type="ai_question"
         )
 
         db.add(activity)
@@ -124,6 +161,8 @@ def ask_question(
 
         return answer
 
+    except HTTPException:
+        raise
     except ValueError as error:
         raise HTTPException(
             status_code=400,

@@ -542,7 +542,8 @@ def semantic_search(
     db,
     document_id: int | None = None,
     top_k: int = 5,
-    user_id: int | None = None
+    user_id: int | None = None,
+    document_ids: list[int] | None = None
 ):
     """
     Perform hybrid semantic + keyword +
@@ -576,7 +577,11 @@ def semantic_search(
             .join(Document, Document.id == DocumentChunk.document_id)
             .filter(Document.user_id == user_id)
         )
-    if document_id is not None:
+    if document_ids is not None:
+        query_db = query_db.filter(
+            DocumentChunk.document_id.in_(document_ids)
+        )
+    elif document_id is not None:
         query_db = query_db.filter(
             DocumentChunk.document_id == document_id
         )
@@ -586,7 +591,9 @@ def semantic_search(
     doc_query = db.query(Document.id, Document.filename)
     if user_id is not None:
         doc_query = doc_query.filter(Document.user_id == user_id)
-    if document_id is not None:
+    if document_ids is not None:
+        doc_query = doc_query.filter(Document.id.in_(document_ids))
+    elif document_id is not None:
         doc_query = doc_query.filter(Document.id == document_id)
     doc_filenames = {row.id: row.filename for row in doc_query.all()}
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { apiRequest } from '../services/api'
 import '../App.css'
 
@@ -13,6 +14,13 @@ function AskAI() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
+    // Knowledge Scope states
+    const [documents, setDocuments] = useState([])
+    const [docsLoading, setDocsLoading] = useState(true)
+    const [docsError, setDocsError] = useState('')
+    const [scopeMode, setScopeMode] = useState('all') // 'all' | 'specific'
+    const [selectedDocIds, setSelectedDocIds] = useState([])
+
     const suggestedQuestions = [
         'What are my skills?',
         'What projects have I done?',
@@ -20,8 +28,88 @@ function AskAI() {
         'What is my educational background?',
     ]
 
+    useEffect(() => {
+        fetchDocuments()
+    }, [])
+
+    const fetchDocuments = async () => {
+        try {
+            setDocsLoading(true)
+            setDocsError('')
+            const data = await apiRequest('/documents/')
+            const list = Array.isArray(data)
+                ? data
+                : (data && Array.isArray(data.documents) ? data.documents : [])
+            setDocuments(list)
+        } catch (err) {
+            console.error('Error fetching documents for Ask AI:', err)
+            setDocsError(err.message || 'Unable to load documents.')
+        } finally {
+            setDocsLoading(false)
+        }
+    }
+
+    const handleToggleDoc = (docId) => {
+        setSelectedDocIds((prev) =>
+            prev.includes(docId)
+                ? prev.filter((id) => id !== docId)
+                : [...prev, docId]
+        )
+    }
+
+    const handleSelectAllDocs = () => {
+        setSelectedDocIds(documents.map((d) => d.id))
+    }
+
+    const handleClearDocs = () => {
+        setSelectedDocIds([])
+    }
+
+    const getFileTypeBadge = (doc) => {
+        if (doc.filename && doc.filename.includes('.')) {
+            const ext = doc.filename.split('.').pop()
+            if (ext) return ext.toUpperCase()
+        }
+        if (doc.document_type) {
+            if (doc.document_type.includes('pdf')) return 'PDF'
+            if (doc.document_type.includes('word') || doc.document_type.includes('docx')) return 'DOCX'
+            if (doc.document_type.includes('text') || doc.document_type.includes('plain')) return 'TXT'
+        }
+        return 'DOC'
+    }
+
+    const getFileIcon = (badge) => {
+        switch (badge) {
+            case 'PDF':
+                return '📕'
+            case 'DOCX':
+            case 'DOC':
+                return '📘'
+            case 'TXT':
+                return '📄'
+            default:
+                return '📄'
+        }
+    }
+
+    const isSubmitDisabled =
+        loading ||
+        !question.trim() ||
+        (scopeMode === 'specific' && selectedDocIds.length === 0) ||
+        (!docsLoading && documents.length === 0)
+
     const handleAskAI = async () => {
         if (!question.trim()) {
+            return
+        }
+
+        if (scopeMode === 'specific' && selectedDocIds.length === 0) {
+            setError('Please select at least one document or switch to All Documents.')
+            return
+        }
+
+        if (documents.length === 0 && !docsLoading) {
+            setError('No documents available to query. Please upload documents on the Documents page first.')
             return
         }
 
@@ -41,6 +129,7 @@ function AskAI() {
                     body: JSON.stringify({
                         query: question.trim(),
                         document_id: null,
+                        document_ids: scopeMode === 'specific' ? selectedDocIds : null,
                         top_k: 6,
                     }),
                 }
@@ -320,6 +409,159 @@ function AskAI() {
                     )}
                 </div>
 
+                {/* =================================
+                    KNOWLEDGE SCOPE SELECTOR
+                ================================= */}
+                <div className="scope-selector-container">
+                    <div className="scope-selector-top">
+                        <div className="scope-selector-title">
+                            <span className="scope-selector-icon" aria-hidden="true">🎯</span>
+                            <span>Knowledge Scope</span>
+                        </div>
+
+                        <div className="scope-mode-tabs" role="radiogroup" aria-label="Knowledge Scope">
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={scopeMode === 'all'}
+                                className={`scope-tab ${scopeMode === 'all' ? 'scope-tab-active' : ''}`}
+                                onClick={() => setScopeMode('all')}
+                            >
+                                <span className="scope-tab-icon" aria-hidden="true">🌐</span>
+                                <span className="scope-tab-label">All Documents</span>
+                                {documents.length > 0 && (
+                                    <span className="scope-tab-count">{documents.length}</span>
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={scopeMode === 'specific'}
+                                className={`scope-tab ${scopeMode === 'specific' ? 'scope-tab-active' : ''}`}
+                                onClick={() => setScopeMode('specific')}
+                            >
+                                <span className="scope-tab-icon" aria-hidden="true">📑</span>
+                                <span className="scope-tab-label">Specific Documents</span>
+                                {selectedDocIds.length > 0 && (
+                                    <span className="scope-tab-count scope-tab-count-highlight">
+                                        {selectedDocIds.length}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {docsLoading && (
+                        <div className="scope-loading-hint">
+                            <span className="scope-spinner" aria-hidden="true"></span>
+                            <span>Loading document repository...</span>
+                        </div>
+                    )}
+
+                    {docsError && (
+                        <div className="scope-error-hint" role="alert">
+                            <span>⚠ {docsError}</span>
+                            <button type="button" className="scope-retry-button" onClick={fetchDocuments}>
+                                Retry
+                            </button>
+                        </div>
+                    )}
+
+                    {!docsLoading && !docsError && documents.length === 0 && (
+                        <div className="scope-empty-hint" role="alert">
+                            <span className="scope-empty-icon" aria-hidden="true">📁</span>
+                            <div>
+                                <p className="scope-empty-title">No documents uploaded yet</p>
+                                <p className="scope-empty-desc">
+                                    Upload PDF, DOCX, or TXT documents on the{' '}
+                                    <Link to="/documents" className="scope-link">
+                                        Documents
+                                    </Link>{' '}
+                                    page to query them.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {!docsLoading && !docsError && documents.length > 0 && scopeMode === 'all' && (
+                        <div className="scope-summary-line">
+                            <span className="scope-summary-dot" aria-hidden="true">●</span>
+                            <span>
+                                Cognidocs AI will search across all {documents.length}{' '}
+                                {documents.length === 1 ? 'document' : 'documents'} in your knowledge base.
+                            </span>
+                        </div>
+                    )}
+
+                    {!docsLoading && !docsError && scopeMode === 'specific' && (
+                        <div className="scope-specific-panel">
+                            <div className="scope-specific-header">
+                                <span className="scope-selection-count">
+                                    <strong>{selectedDocIds.length}</strong> of {documents.length} documents selected
+                                </span>
+                                <div className="scope-bulk-actions">
+                                    <button
+                                        type="button"
+                                        className="scope-action-btn"
+                                        onClick={handleSelectAllDocs}
+                                        disabled={selectedDocIds.length === documents.length}
+                                    >
+                                        Select All
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="scope-action-btn"
+                                        onClick={handleClearDocs}
+                                        disabled={selectedDocIds.length === 0}
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+
+                            {documents.length === 0 ? (
+                                <div className="scope-empty-message">
+                                    <span>No documents available to select.</span>
+                                </div>
+                            ) : (
+                                <div className="scope-docs-grid" role="group" aria-label="Selectable documents">
+                                    {documents.map((doc) => {
+                                        const isSelected = selectedDocIds.includes(doc.id)
+                                        const typeBadge = getFileTypeBadge(doc)
+                                        return (
+                                            <label
+                                                key={doc.id}
+                                                className={`scope-doc-item ${isSelected ? 'scope-doc-item-selected' : ''}`}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    className="scope-doc-checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => handleToggleDoc(doc.id)}
+                                                    aria-label={`Select ${doc.filename}`}
+                                                />
+                                                <span className="scope-doc-icon" aria-hidden="true">
+                                                    {getFileIcon(typeBadge)}
+                                                </span>
+                                                <span className="scope-doc-name" title={doc.filename}>
+                                                    {doc.filename}
+                                                </span>
+                                                <span className="scope-doc-badge">{typeBadge}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            )}
+
+                            {selectedDocIds.length === 0 && (
+                                <p className="scope-validation-warning" role="alert">
+                                    ⚠ Please select at least one document to ask a question.
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </div>
+
                 <textarea
                     className="ask-ai-input"
                     placeholder="Example: What are the key projects or skills highlighted in my documents?"
@@ -328,22 +570,33 @@ function AskAI() {
                     onKeyDown={(event) => {
                         if (event.key === 'Enter' && !event.shiftKey) {
                             event.preventDefault()
-                            handleAskAI()
+                            if (!isSubmitDisabled) {
+                                handleAskAI()
+                            }
                         }
                     }}
                     aria-label="Ask a question about your documents"
                 />
 
                 <div className="ask-ai-input-footer">
-                    <span className="ask-ai-hint">
-                        Press <strong>Enter</strong> to ask · <strong>Shift + Enter</strong> for a new line
-                    </span>
+                    <div className="ask-ai-footer-info">
+                        <span className="ask-ai-hint">
+                            Press <strong>Enter</strong> to ask · <strong>Shift + Enter</strong> for a new line
+                        </span>
+                        {!docsLoading && documents.length > 0 && (
+                            <span className="scope-status-pill">
+                                {scopeMode === 'all'
+                                    ? `Scope: All Documents (${documents.length})`
+                                    : `Scope: ${selectedDocIds.length} of ${documents.length} Selected`}
+                            </span>
+                        )}
+                    </div>
 
                     <button
                         type="button"
                         className="ask-ai-button"
                         onClick={handleAskAI}
-                        disabled={loading || !question.trim()}
+                        disabled={isSubmitDisabled}
                     >
                         {loading ? 'Synthesizing...' : 'Ask Cognidocs AI →'}
                     </button>

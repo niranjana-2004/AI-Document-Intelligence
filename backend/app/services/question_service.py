@@ -64,6 +64,7 @@ def answer_question(
     query: str,
     db,
     document_id: int | None = None,
+    document_ids: list[int] | None = None,
     top_k: int = 6,
     user_id: int | None = None
 ) -> dict:
@@ -77,6 +78,7 @@ def answer_question(
         query=query,
         db=db,
         document_id=document_id,
+        document_ids=document_ids,
         top_k=top_k,
         user_id=user_id
     )
