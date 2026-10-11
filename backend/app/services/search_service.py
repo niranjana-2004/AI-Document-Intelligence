@@ -126,8 +126,6 @@ QUERY_INTENTS = {
     "languages": [
     "spoken language",
     "spoken languages",
-    "human language",
-    "human languages",
     "languages known",
     ],
 
@@ -304,8 +302,6 @@ def is_ambiguous_language_query(query: str) -> bool:
     spoken_phrases = [
         "spoken language",
         "spoken languages",
-        "human language",
-        "human languages",
     ]
 
     if any(
@@ -554,6 +550,13 @@ def semantic_search(
 
     chunks = query_db.all()
 
+    doc_query = db.query(Document.id, Document.filename)
+    if user_id is not None:
+        doc_query = doc_query.filter(Document.user_id == user_id)
+    if document_id is not None:
+        doc_query = doc_query.filter(Document.id == document_id)
+    doc_filenames = {row.id: row.filename for row in doc_query.all()}
+
     results = []
 
     # --------------------------------------------------
@@ -735,6 +738,8 @@ def semantic_search(
             results.append({
                 "chunk_id": chunk.id,
                 "document_id": chunk.document_id,
+                "filename": doc_filenames.get(chunk.document_id),
+                "page_number": getattr(chunk, "page_number", None),
                 "chunk_index": chunk.chunk_index,
                 "content": chunk.content,
                 "similarity": similarity,

@@ -5,7 +5,7 @@ function PasswordResetSuccess() {
     return (
         <AuthLayout>
             <div className="auth-card success-card">
-                <div className="success-icon">
+                <div className="success-icon" aria-hidden="true">
                     ✓
                 </div>
 
@@ -14,7 +14,7 @@ function PasswordResetSuccess() {
 
                     <p>
                         Your password has been changed successfully.
-                        You can now sign in with your new password.
+                        You can now sign in to Cognidocs with your new password.
                     </p>
                 </div>
 

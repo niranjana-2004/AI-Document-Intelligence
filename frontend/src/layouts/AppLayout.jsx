@@ -1,8 +1,73 @@
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import '../styles/app-layout.css'
 
 function AppLayout({ children }) {
     const navigate = useNavigate()
+
+    const [currentTheme, setCurrentTheme] = useState(() => {
+        if (typeof document !== 'undefined' && document.documentElement.dataset.theme) {
+            return document.documentElement.dataset.theme
+        }
+        return localStorage.getItem('app_theme') || 'ocean'
+    })
+
+    useEffect(() => {
+        const syncTheme = () => {
+            const activeTheme =
+                document.documentElement.dataset.theme ||
+                localStorage.getItem('app_theme') ||
+                'ocean'
+            setCurrentTheme(activeTheme)
+        }
+
+        syncTheme()
+
+        // Observe changes to document.documentElement.dataset.theme
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (
+                    mutation.type === 'attributes' &&
+                    mutation.attributeName === 'data-theme'
+                ) {
+                    syncTheme()
+                }
+            }
+        })
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme'],
+        })
+
+        // Also synchronize cross-tab storage changes
+        const handleStorage = (event) => {
+            if (event.key === 'app_theme') {
+                syncTheme()
+            }
+        }
+
+        window.addEventListener('storage', handleStorage)
+
+        return () => {
+            observer.disconnect()
+            window.removeEventListener('storage', handleStorage)
+        }
+    }, [])
+
+    const toggleTheme = () => {
+        const activeTheme =
+            document.documentElement.dataset.theme ||
+            localStorage.getItem('app_theme') ||
+            currentTheme ||
+            'ocean'
+
+        // If current active theme is Ocean, switch to Dark; otherwise switch to Ocean.
+        const nextTheme = activeTheme === 'ocean' ? 'dark' : 'ocean'
+        setCurrentTheme(nextTheme)
+        localStorage.setItem('app_theme', nextTheme)
+        document.documentElement.dataset.theme = nextTheme
+    }
 
     let user = null
     const storedUser = localStorage.getItem('user')
@@ -30,17 +95,17 @@ function AppLayout({ children }) {
                 {/* Brand */}
                 <div className="app-brand">
                     <div className="app-logo">
-                        AI
+                        CD
                     </div>
 
                     <div className="app-brand-text">
-                        <h1>Document Intelligence</h1>
-                        <span>AI-powered workspace</span>
+                        <h1>Cognidocs</h1>
+                        <span>Knowledge, unlocked.</span>
                     </div>
                 </div>
 
                 {/* Navigation */}
-                <nav className="app-navigation">
+                <nav className="app-navigation" aria-label="Workspace navigation">
 
                     <p className="nav-section-title">
                         Workspace
@@ -50,7 +115,7 @@ function AppLayout({ children }) {
                         to="/dashboard"
                         className="nav-item"
                     >
-                        <span className="nav-icon">⌂</span>
+                        <span className="nav-icon" aria-hidden="true">⌂</span>
                         <span>Dashboard</span>
                     </NavLink>
 
@@ -58,7 +123,7 @@ function AppLayout({ children }) {
                         to="/documents"
                         className="nav-item"
                     >
-                        <span className="nav-icon">▤</span>
+                        <span className="nav-icon" aria-hidden="true">▤</span>
                         <span>Documents</span>
                     </NavLink>
 
@@ -66,7 +131,7 @@ function AppLayout({ children }) {
                         to="/ask-ai"
                         className="nav-item"
                     >
-                        <span className="nav-icon">✦</span>
+                        <span className="nav-icon" aria-hidden="true">✦</span>
                         <span>Ask AI</span>
                     </NavLink>
 
@@ -74,7 +139,7 @@ function AppLayout({ children }) {
                         to="/search"
                         className="nav-item"
                     >
-                        <span className="nav-icon">⌕</span>
+                        <span className="nav-icon" aria-hidden="true">⌕</span>
                         <span>Search</span>
                     </NavLink>
 
@@ -86,7 +151,7 @@ function AppLayout({ children }) {
                         to="/profile"
                         className="nav-item"
                     >
-                        <span className="nav-icon">◯</span>
+                        <span className="nav-icon" aria-hidden="true">◯</span>
                         <span>Profile</span>
                     </NavLink>
 
@@ -94,7 +159,7 @@ function AppLayout({ children }) {
                         to="/about"
                         className="nav-item"
                     >
-                        <span className="nav-icon">ⓘ</span>
+                        <span className="nav-icon" aria-hidden="true">ⓘ</span>
                         <span>About</span>
                     </NavLink>
 
@@ -108,7 +173,7 @@ function AppLayout({ children }) {
                         className="logout-button"
                         onClick={handleLogout}
                     >
-                        <span className="nav-icon">↪</span>
+                        <span className="nav-icon" aria-hidden="true">↪</span>
                         <span>Logout</span>
                     </button>
 
@@ -125,11 +190,11 @@ function AppLayout({ children }) {
                     <div className="topbar-left">
                         <div className="mobile-brand">
                             <div className="app-logo small-logo">
-                                AI
+                                CD
                             </div>
 
                             <span>
-                                Document Intelligence
+                                Cognidocs
                             </span>
                         </div>
                     </div>
@@ -138,8 +203,24 @@ function AppLayout({ children }) {
 
                         <button
                             type="button"
+                            className="theme-toggle-btn"
+                            onClick={toggleTheme}
+                            title={currentTheme === 'ocean' ? 'Switch to Dark appearance' : 'Switch to Ocean Teal appearance'}
+                            aria-label={`Toggle appearance. Currently ${currentTheme}.`}
+                        >
+                            <span className="theme-toggle-icon" aria-hidden="true">
+                                {currentTheme === 'dark' ? '☀️' : '🌙'}
+                            </span>
+                            <span className="theme-toggle-label">
+                                {currentTheme === 'dark' ? 'Light' : 'Dark'}
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
                             className="topbar-icon-button"
                             title="Notifications"
+                            aria-label="Notifications"
                         >
                             ♢
                         </button>
@@ -148,6 +229,7 @@ function AppLayout({ children }) {
                             type="button"
                             className="profile-button"
                             onClick={() => navigate('/profile')}
+                            aria-label="View user profile"
                         >
                             <span className="profile-avatar">
                                 {user?.full_name

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
+import { apiRequest } from '../../services/api'
 
 function Login() {
     const navigate = useNavigate()
@@ -17,24 +18,13 @@ function Login() {
         setLoading(true)
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/auth/login', {
+            const data = await apiRequest('/auth/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     email,
                     password,
                 }),
             })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail || 'Login failed. Please try again.'
-                )
-            }
 
             // Store authentication information
             localStorage.setItem('access_token', data.access_token)
@@ -55,7 +45,7 @@ function Login() {
                     <h2>Welcome back</h2>
 
                     <p>
-                        Sign in to continue to your document workspace.
+                        Sign in to continue to your Cognidocs workspace.
                     </p>
                 </div>
 
@@ -71,6 +61,7 @@ function Login() {
                             placeholder="you@example.com"
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
+                            autoComplete="email"
                             required
                         />
                     </div>
@@ -92,6 +83,7 @@ function Login() {
                             placeholder="Enter your password"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
+                            autoComplete="current-password"
                             required
                         />
                     </div>
@@ -107,7 +99,7 @@ function Login() {
                         className="auth-primary-button"
                         disabled={loading}
                     >
-                        {loading ? 'Signing in...' : 'Sign in'}
+                        {loading ? 'Signing in...' : 'Login'}
                     </button>
                 </form>
 
@@ -118,7 +110,7 @@ function Login() {
                 <p className="auth-switch">
                     Don't have an account?{' '}
                     <Link to="/register">
-                        Create account
+                        Sign Up
                     </Link>
                 </p>
             </div>

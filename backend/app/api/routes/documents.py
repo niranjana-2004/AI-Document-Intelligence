@@ -14,7 +14,7 @@ from app.schemas.question import QuestionRequest
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import cast
-from app.services.llm_service import generate_summary
+from app.services.llm_service import generate_summary, LLMServiceError
 from app.services.text_processing_service import detect_chunk_category
 from app.api.dependencies import get_current_user
 from app.models.user import User
@@ -126,9 +126,14 @@ def ask_question(
 
     except ValueError as error:
         raise HTTPException(
-        status_code=400,
-        detail=str(error)
-    )
+            status_code=400,
+            detail=str(error)
+        )
+    except (LLMServiceError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error)
+        )
 
 
 @router.get("/{document_id}/summary")

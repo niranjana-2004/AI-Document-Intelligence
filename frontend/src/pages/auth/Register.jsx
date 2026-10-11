@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
+import { apiRequest } from '../../services/api'
 
 function Register() {
     const navigate = useNavigate()
@@ -104,28 +105,14 @@ function Register() {
         setLoading(true)
 
         try {
-            const response = await fetch(
-                'http://127.0.0.1:8000/auth/register',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        full_name: fullName.trim(),
-                        email: email.trim(),
-                        password,
-                    }),
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail || 'Registration failed. Please try again.'
-                )
-            }
+            await apiRequest('/auth/register', {
+                method: 'POST',
+                body: JSON.stringify({
+                    full_name: fullName.trim(),
+                    email: email.trim(),
+                    password,
+                }),
+            })
 
             // Store email temporarily so the OTP page knows
             // which account is being verified.
@@ -152,7 +139,7 @@ function Register() {
                     <h2>Create your account</h2>
 
                     <p>
-                        Create an account to manage and analyze your documents.
+                        Create an account to manage and query your documents with Cognidocs.
                     </p>
                 </div>
 
@@ -180,73 +167,77 @@ function Register() {
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="registerEmail">
-                            Email
-                        </label>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="registerEmail">
+                                Email
+                            </label>
 
-                        <input
-                            id="registerEmail"
-                            type="email"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(event) =>
-                                setEmail(event.target.value)
-                            }
-                            autoComplete="email"
-                        />
+                            <input
+                                id="registerEmail"
+                                type="email"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(event) =>
+                                    setEmail(event.target.value)
+                                }
+                                autoComplete="email"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="phone">
+                                Phone number
+                            </label>
+
+                            <input
+                                id="phone"
+                                type="tel"
+                                placeholder="10-digit number"
+                                value={phone}
+                                onChange={(event) =>
+                                    setPhone(event.target.value)
+                                }
+                                inputMode="numeric"
+                                autoComplete="tel"
+                            />
+                        </div>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="phone">
-                            Phone number
-                        </label>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="registerPassword">
+                                Password
+                            </label>
 
-                        <input
-                            id="phone"
-                            type="tel"
-                            placeholder="Enter your phone number"
-                            value={phone}
-                            onChange={(event) =>
-                                setPhone(event.target.value)
-                            }
-                            inputMode="numeric"
-                            autoComplete="tel"
-                        />
-                    </div>
+                            <input
+                                id="registerPassword"
+                                type="password"
+                                placeholder="Min 8 characters"
+                                value={password}
+                                onChange={(event) =>
+                                    setPassword(event.target.value)
+                                }
+                                autoComplete="new-password"
+                            />
+                        </div>
 
-                    <div className="form-group">
-                        <label htmlFor="registerPassword">
-                            Password
-                        </label>
+                        <div className="form-group">
+                            <label htmlFor="confirmPassword">
+                                Confirm password
+                            </label>
 
-                        <input
-                            id="registerPassword"
-                            type="password"
-                            placeholder="Create a password"
-                            value={password}
-                            onChange={(event) =>
-                                setPassword(event.target.value)
-                            }
-                            autoComplete="new-password"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="confirmPassword">
-                            Confirm password
-                        </label>
-
-                        <input
-                            id="confirmPassword"
-                            type="password"
-                            placeholder="Confirm your password"
-                            value={confirmPassword}
-                            onChange={(event) =>
-                                setConfirmPassword(event.target.value)
-                            }
-                            autoComplete="new-password"
-                        />
+                            <input
+                                id="confirmPassword"
+                                type="password"
+                                placeholder="Re-enter password"
+                                value={confirmPassword}
+                                onChange={(event) =>
+                                    setConfirmPassword(event.target.value)
+                                }
+                                autoComplete="new-password"
+                            />
+                        </div>
                     </div>
 
                     <button
@@ -256,7 +247,7 @@ function Register() {
                     >
                         {loading
                             ? 'Creating account...'
-                            : 'Create account'}
+                            : 'Create Account'}
                     </button>
                 </form>
 
@@ -267,7 +258,7 @@ function Register() {
                 <p className="auth-switch">
                     Already have an account?{' '}
                     <Link to="/login">
-                        Sign in
+                        Login
                     </Link>
                 </p>
             </div>

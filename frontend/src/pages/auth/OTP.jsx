@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
+import { apiRequest } from '../../services/api'
 
 function OTP() {
     const navigate = useNavigate()
@@ -15,9 +16,11 @@ function OTP() {
     ])
 
     const [error, setError] = useState('')
+    const [infoMessage, setInfoMessage] = useState('')
     const [loading, setLoading] = useState(false)
 
     const inputRefs = useRef([])
+    const registrationEmail = localStorage.getItem('registration_email') || ''
 
     const handleChange = (index, value) => {
         // Allow only numbers
@@ -30,6 +33,7 @@ function OTP() {
 
         setOtp(newOtp)
         setError('')
+        setInfoMessage('')
 
         // Move to next box
         if (value && index < 5) {
@@ -47,10 +51,27 @@ function OTP() {
         }
     }
 
+    const handlePaste = (event) => {
+        event.preventDefault()
+        const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+        if (pasted.length > 0) {
+            const newOtp = [...otp]
+            for (let i = 0; i < 6; i++) {
+                newOtp[i] = pasted[i] || ''
+            }
+            setOtp(newOtp)
+            setError('')
+            setInfoMessage('')
+            const nextIdx = Math.min(pasted.length, 5)
+            inputRefs.current[nextIdx]?.focus()
+        }
+    }
+
     const handleVerify = async (event) => {
         event.preventDefault()
 
         setError('')
+        setInfoMessage('')
 
         const enteredOtp = otp.join('')
 
@@ -66,10 +87,9 @@ function OTP() {
         }
 
         // Get the email saved during registration
-        const registrationEmail =
-            localStorage.getItem('registration_email')
+        const savedEmail = registrationEmail || localStorage.getItem('registration_email')
 
-        if (!registrationEmail) {
+        if (!savedEmail) {
             setError(
                 'Registration session not found. Please register again.'
             )
@@ -79,28 +99,13 @@ function OTP() {
         setLoading(true)
 
         try {
-            const response = await fetch(
-                'http://127.0.0.1:8000/auth/verify-otp',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: registrationEmail,
-                        otp: enteredOtp,
-                    }),
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail ||
-                    'OTP verification failed. Please try again.'
-                )
-            }
+            await apiRequest('/auth/verify-otp', {
+                method: 'POST',
+                body: JSON.stringify({
+                    email: savedEmail,
+                    otp: enteredOtp,
+                }),
+            })
 
             // Verification successful.
             localStorage.removeItem('registration_email')
@@ -118,11 +123,11 @@ function OTP() {
 
     const handleResend = async () => {
         setError('')
+        setInfoMessage('')
 
-        const registrationEmail =
-            localStorage.getItem('registration_email')
+        const savedEmail = registrationEmail || localStorage.getItem('registration_email')
 
-        if (!registrationEmail) {
+        if (!savedEmail) {
             setError(
                 'Registration session not found. Please register again.'
             )
@@ -132,27 +137,12 @@ function OTP() {
         setLoading(true)
 
         try {
-            const response = await fetch(
-                'http://127.0.0.1:8000/auth/resend-otp',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: registrationEmail,
-                    }),
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail ||
-                    'Unable to resend OTP. Please try again.'
-                )
-            }
+            await apiRequest('/auth/resend-otp', {
+                method: 'POST',
+                body: JSON.stringify({
+                    email: savedEmail,
+                }),
+            })
 
             setOtp([
                 '',
@@ -163,7 +153,8 @@ function OTP() {
                 '',
             ])
 
-            setError('A new OTP has been sent. Please check your email.')
+            setInfoMessage('A new OTP has been sent. Please check your email inbox.')
+            inputRefs.current[0]?.focus()
         } catch (error) {
             setError(
                 error.message ||
@@ -181,14 +172,26 @@ function OTP() {
                     <h2>Verify your account</h2>
 
                     <p>
-                        We've sent a 6-digit verification code to your
-                        email address.
+                        {registrationEmail ? (
+                            <>
+                                Enter the 6-digit code sent to{' '}
+                                <strong style={{ color: 'var(--text-primary)' }}>{registrationEmail}</strong>.
+                            </>
+                        ) : (
+                            "We've sent a 6-digit verification code to your email address."
+                        )}
                     </p>
                 </div>
 
                 {error && (
                     <div className="auth-error">
                         {error}
+                    </div>
+                )}
+
+                {infoMessage && (
+                    <div className="auth-success-message">
+                        {infoMessage}
                     </div>
                 )}
 
@@ -213,6 +216,7 @@ function OTP() {
                                 onKeyDown={(event) =>
                                     handleKeyDown(index, event)
                                 }
+                                onPaste={handlePaste}
                                 className="otp-input"
                                 aria-label={`OTP digit ${index + 1}`}
                                 disabled={loading}

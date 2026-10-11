@@ -5,8 +5,23 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama3.2"
 
 FALLBACK_ANSWER = (
-    "I couldn't find the answer in the provided document."
+    "The provided documents do not contain sufficient information to answer this question."
 )
+
+
+class LLMServiceError(RuntimeError):
+    """Base exception for LLM service failures."""
+    pass
+
+
+class LLMConnectionError(LLMServiceError):
+    """Raised when the LLM service is unreachable."""
+    pass
+
+
+class LLMTimeoutError(LLMServiceError):
+    """Raised when the LLM service request times out."""
+    pass
 
 
 def generate_response(
@@ -14,7 +29,8 @@ def generate_response(
     context: str
 ) -> str:
     """
-    Generate a grounded answer using the local Ollama LLM.
+    Generate a grounded, synthesized answer with inline source citations
+    using the local Ollama LLM.
     """
 
     if not query.strip():
@@ -23,54 +39,25 @@ def generate_response(
     if not context.strip():
         return FALLBACK_ANSWER
 
-    prompt = f"""
-You answer questions using ONLY the document context below.
+    prompt = f"""You are Cognidocs AI, an intelligent document analysis assistant.
+Answer the user's question directly, concisely, and factually using ONLY the provided document sources.
 
-If the answer is present in the context, give the answer directly.
+STRICT GUIDELINES:
+1. Grounded synthesis: Synthesize a clear, direct answer in your own words based exclusively on the provided sources. Do not reproduce entire source chunks verbatim.
+2. Inline citations: Cite the source number in square brackets, such as [1] or [2], immediately after each statement, fact, or claim derived from that source (e.g., "The system employs AES-256 encryption [1] and SHA-256 hashing [2].").
+3. Source numbering rule: Each source is identified by a "[Source N | ...]" header label. You must ONLY cite the assigned header number N (e.g., [1], [2], [3], etc.).
+   DO NOT copy internal reference markers that happen to appear inside the document text (such as academic bibliography numbers like [5], [16], [28]). Always cite the assigned [Source N] number that contains the evidence.
+4. Valid citations only: Only reference source numbers that actually appear in the [Source N] headers below. Never cite non-existent source numbers.
+5. Strict factual grounding: Do not use outside knowledge, extrapolate, speculate, or fabricate any facts, quotes, page numbers, or filenames.
+6. Inadequate information: If the provided sources do not contain sufficient information to answer the question, respond exactly with:
+"{FALLBACK_ANSWER}"
+Do not guess or provide unsupported speculation.
+7. Formatting: Use concise paragraphs or a clean list if multiple items are requested. Keep the response professional, natural, and directly focused on the inquiry.
 
-If the answer is not present, respond exactly:
-{FALLBACK_ANSWER}
-
-For category questions, use the matching section.
-
-For example:
-- certifications → CERTIFICATIONS DONE
-- education → EDUCATIONAL QUALIFICATIONS
-- projects → PROJECTS DONE
-- internships → INTERNSHIPS DONE
-- programming languages → Programming Languages
-- spoken languages → LANGUAGES KNOWN
-
-For a certification question, return ALL certification entries
-listed under CERTIFICATIONS DONE.
-
-For a project-list question, return ONLY the project titles/names
-listed under PROJECTS DONE.
-
-Do NOT return technologies such as HTML, CSS, JavaScript, PHP,
-MySQL, Python, Flask, PostgreSQL, or other tools as project names.
-
-If the PROJECTS DONE section contains technologies before the first
-"Title:" entry, ignore those technologies and start with the first
-project title.
-
-For questions about a specific project, answer using the relevant
-details explicitly provided for that project, such as:
-
-- technologies
-- tools
-- aim
-- technical functionalities
-- duration
-- team size
-
-Do NOT return the project titles as the answer when the user is
-asking about a specific project's technologies, aim, or other details.
-
-DOCUMENT CONTEXT:
------------------
+SOURCES:
+--------
 {context}
------------------
+--------
 
 USER QUESTION:
 {query}
@@ -84,7 +71,10 @@ ANSWER:
             json={
                 "model": MODEL_NAME,
                 "prompt": prompt,
-                "stream": False
+                "stream": False,
+                "options": {
+                    "temperature": 0.2
+                }
             },
             timeout=120
         )
@@ -101,20 +91,22 @@ ANSWER:
         return answer
 
     except requests.exceptions.ConnectionError:
-        raise RuntimeError(
-            "Could not connect to Ollama. "
-            "Make sure Ollama is running."
+        raise LLMConnectionError(
+            "The AI generation service is currently unreachable. "
+            "Please ensure Ollama is running."
         )
 
     except requests.exceptions.Timeout:
-        raise RuntimeError(
-            "Ollama took too long to generate a response."
+        raise LLMTimeoutError(
+            "The AI model took too long to generate a response. "
+            "Please try again or simplify your query."
         )
 
-    except requests.exceptions.RequestException as error:
-        raise RuntimeError(
-            f"Ollama request failed: {error}"
+    except requests.exceptions.RequestException:
+        raise LLMServiceError(
+            "An error occurred while communicating with the AI generation service."
         )
+
 
 def generate_summary(
     text: str,
@@ -239,17 +231,17 @@ Write the summary now.
         return summary
 
     except requests.exceptions.ConnectionError:
-        raise RuntimeError(
-            "Could not connect to Ollama. "
-            "Make sure Ollama is running."
+        raise LLMConnectionError(
+            "The AI generation service is currently unreachable. "
+            "Please ensure Ollama is running."
         )
 
     except requests.exceptions.Timeout:
-        raise RuntimeError(
-            "Ollama took too long to generate the summary."
+        raise LLMTimeoutError(
+            "The AI model took too long to generate the summary."
         )
 
-    except requests.exceptions.RequestException as error:
-        raise RuntimeError(
-            f"Ollama request failed: {error}"
+    except requests.exceptions.RequestException:
+        raise LLMServiceError(
+            "An error occurred while communicating with the AI generation service."
         )

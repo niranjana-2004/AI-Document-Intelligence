@@ -18,6 +18,7 @@ import AskAI from './pages/AskAI'
 import Search from './pages/Search'
 import Profile from './pages/Profile'
 import About from './pages/About'
+import LandingPage from './pages/LandingPage'
 import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useEffect } from 'react'
@@ -38,12 +39,7 @@ function App() {
 
         <Route
           path="/"
-          element={
-            <Navigate
-              to="/login"
-              replace
-            />
-          }
+          element={<LandingPage />}
         />
 
         <Route

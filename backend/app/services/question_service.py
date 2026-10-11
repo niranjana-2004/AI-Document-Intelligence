@@ -1,19 +1,21 @@
-from sqlalchemy.orm import query
-from app.services.context_service import build_context
-from app.services.llm_service import generate_response
 import re
+from app.services.context_service import build_context
+from app.services.llm_service import generate_response, FALLBACK_ANSWER
+
 
 def extract_project_titles(results: list[dict]) -> list[str]:
     """
-    Extract project titles directly from retrieved project chunks.
+    Extract project titles directly from retrieved project chunks,
+    attaching grounded inline citations matching the chunk's citation index.
     """
-
     titles = []
 
     for result in results:
         if result.get("query_intent") != "projects":
             continue
 
+        citation_idx = result.get("citation_index")
+        cite_str = f" [{citation_idx}]" if citation_idx else ""
         content = result.get("content", "")
 
         matches = re.findall(
@@ -23,17 +25,18 @@ def extract_project_titles(results: list[dict]) -> list[str]:
 
         for title in matches:
             title = title.strip()
-
-            if title and title not in titles:
-                titles.append(title)
+            if title:
+                entry = f"{title}{cite_str}"
+                if entry not in titles:
+                    titles.append(entry)
 
     return titles
+
 
 def is_project_list_query(query: str) -> bool:
     """
     Determine whether the user is asking for a list of projects.
     """
-
     query_lower = query.lower().strip()
 
     project_list_phrases = [
@@ -54,6 +57,7 @@ def is_project_list_query(query: str) -> bool:
         for phrase in project_list_phrases
     )
 
+
 def answer_question(
     query: str,
     db,
@@ -62,9 +66,8 @@ def answer_question(
     user_id: int | None = None
 ) -> dict:
     """
-    Answer a question using relevant document context.
+    Answer a question using relevant document context and grounded synthesis.
     """
-
     if not query.strip():
         raise ValueError("Question cannot be empty.")
 
@@ -79,19 +82,14 @@ def answer_question(
     if context_data["result_count"] == 0:
         return {
             "query": query,
-            "answer": "I couldn't find relevant information in the provided documents.",
+            "answer": FALLBACK_ANSWER,
             "result_count": 0,
             "results": []
         }
 
-    print("\n========== CONTEXT SENT TO LLM ==========")
-    print(context_data["context"])
-    print("==========================================\n")
-
     # --------------------------------------------------
     # Deterministic handling for project list questions
     # --------------------------------------------------
-
     if (
         is_project_list_query(query)
         and any(
@@ -104,15 +102,12 @@ def answer_question(
         )
 
         if project_titles:
-            answer = "\n".join(
-                project_titles
-            )
+            answer = "\n".join(project_titles)
         else:
             answer = generate_response(
                 query=query,
                 context=context_data["context"]
             )
-
     else:
         answer = generate_response(
             query=query,
@@ -124,4 +119,4 @@ def answer_question(
         "answer": answer,
         "result_count": context_data["result_count"],
         "results": context_data["results"]
-    }
+    }

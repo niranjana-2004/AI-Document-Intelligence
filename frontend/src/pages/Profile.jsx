@@ -5,12 +5,6 @@ import '../App.css'
 
 function Profile() {
     const navigate = useNavigate()
-    const handleLogout = () => {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('user')
-
-        navigate('/login', { replace: true })
-    }
 
     const [user, setUser] = useState(null)
     const [activity, setActivity] = useState({
@@ -24,12 +18,17 @@ function Profile() {
 
     const [activityLoading, setActivityLoading] = useState(true)
     const [activityError, setActivityError] = useState('')
+
+    // Edit Profile Modal State
     const [showEditModal, setShowEditModal] = useState(false)
     const [editName, setEditName] = useState('')
     const [editEmail, setEditEmail] = useState('')
     const [editPhone, setEditPhone] = useState('')
     const [phoneError, setPhoneError] = useState('')
+    const [editLoading, setEditLoading] = useState(false)
     const [editError, setEditError] = useState('')
+
+    // Password Modal State
     const [showPasswordModal, setShowPasswordModal] = useState(false)
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -37,19 +36,30 @@ function Profile() {
     const [passwordError, setPasswordError] = useState('')
     const [passwordSuccess, setPasswordSuccess] = useState('')
     const [passwordLoading, setPasswordLoading] = useState(false)
+
+    // Delete Account Modal State
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [deleteLoading, setDeleteLoading] = useState(false)
     const [deleteError, setDeleteError] = useState('')
-    const [theme, setTheme] = useState(
-        () => localStorage.getItem('app_theme') || 'ocean'
-    )
+
+    // Theme Management State
+    const [theme, setTheme] = useState(() => {
+        if (typeof document !== 'undefined' && document.documentElement.dataset.theme) {
+            return document.documentElement.dataset.theme
+        }
+        return localStorage.getItem('app_theme') || 'ocean'
+    })
+
+    // Notifications Preference State (explicit boolean persisted to localStorage)
     const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
         return localStorage.getItem('notifications_enabled') !== 'false'
     })
 
+    /* ========================================
+       LOAD USER FROM STORAGE
+    ======================================== */
     useEffect(() => {
         const storedUser = localStorage.getItem('user')
-
         if (storedUser) {
             try {
                 setUser(JSON.parse(storedUser))
@@ -59,6 +69,9 @@ function Profile() {
         }
     }, [])
 
+    /* ========================================
+       FETCH ACCOUNT ACTIVITY
+    ======================================== */
     useEffect(() => {
         let isMounted = true
 
@@ -92,13 +105,82 @@ function Profile() {
         }
     }, [])
 
+    /* ========================================
+       THEME SYNCHRONIZATION WITH DOM & STORAGE
+    ======================================== */
+    useEffect(() => {
+        const syncTheme = () => {
+            const activeTheme =
+                document.documentElement.dataset.theme ||
+                localStorage.getItem('app_theme') ||
+                'ocean'
+            setTheme(activeTheme)
+        }
+
+        syncTheme()
+
+        // Observe external changes to data-theme (such as AppLayout header toggle)
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (
+                    mutation.type === 'attributes' &&
+                    mutation.attributeName === 'data-theme'
+                ) {
+                    syncTheme()
+                }
+            }
+        })
+
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme'],
+        })
+
+        // Synchronize cross-tab storage changes
+        const handleStorage = (event) => {
+            if (event.key === 'app_theme') {
+                syncTheme()
+            }
+            if (event.key === 'notifications_enabled') {
+                setNotificationsEnabled(event.newValue !== 'false')
+            }
+        }
+
+        window.addEventListener('storage', handleStorage)
+
+        return () => {
+            observer.disconnect()
+            window.removeEventListener('storage', handleStorage)
+        }
+    }, [])
+
+    const handleThemeChange = (newTheme) => {
+        setTheme(newTheme)
+        localStorage.setItem('app_theme', newTheme)
+        document.documentElement.dataset.theme = newTheme
+    }
+
+    const handleNotificationsChange = (event) => {
+        const checked = event.target.checked
+        setNotificationsEnabled(checked)
+        localStorage.setItem('notifications_enabled', String(checked))
+    }
+
+    /* ========================================
+       LOGOUT ACTION
+    ======================================== */
+    const handleLogout = () => {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user')
+        navigate('/login', { replace: true })
+    }
+
     const formatActivityDate = (value) => {
         if (!value) {
             return 'Not available'
         }
 
         const date = new Date(value)
-
         if (Number.isNaN(date.getTime())) {
             return 'Not available'
         }
@@ -111,37 +193,22 @@ function Profile() {
 
     return (
         <main className="profile-page">
-
             {/* =================================
-          PROFILE HEADER
-      ================================= */}
-
+                PROFILE HEADER
+            ================================= */}
             <section className="profile-header">
-
                 <div className="profile-header-content">
-
-                    <div className="profile-large-avatar">
+                    <div className="profile-large-avatar" aria-hidden="true">
                         {user?.full_name
                             ? user.full_name.charAt(0).toUpperCase()
                             : 'U'}
                     </div>
 
                     <div>
-
-                        <p className="eyebrow">
-                            ACCOUNT
-                        </p>
-
-                        <h2>
-                            {user?.full_name || 'User'}
-                        </h2>
-
-                        <p>
-                            {user?.email || 'No email available'}
-                        </p>
-
+                        <p className="eyebrow">COGNIDOCS ACCOUNT</p>
+                        <h2>{user?.full_name || 'Cognidocs User'}</h2>
+                        <p>{user?.email || 'No email associated'}</p>
                     </div>
-
                 </div>
 
                 <button
@@ -152,140 +219,65 @@ function Profile() {
                         setEditEmail(user?.email || '')
                         setEditPhone(user?.phone || '')
                         setEditError('')
+                        setPhoneError('')
                         setShowEditModal(true)
                     }}
+                    aria-label="Edit Profile"
                 >
                     Edit Profile
                 </button>
-
             </section>
 
-
             {/* =================================
-          PROFILE GRID
-      ================================= */}
-
+                PROFILE GRID
+            ================================= */}
             <section className="profile-grid">
-
-                {/* ===============================
-            PERSONAL INFORMATION
-        ================================ */}
-
+                {/* PERSONAL INFORMATION */}
                 <div className="profile-card">
-
                     <div className="profile-card-header">
-
                         <div>
-
-                            <h3>
-                                Personal Information
-                            </h3>
-
-                            <p>
-                                Your basic account information
-                            </p>
-
+                            <h3>Personal Information</h3>
+                            <p>Your verified account identity and details</p>
                         </div>
-
                     </div>
-
 
                     <div className="profile-fields">
-
                         <div className="profile-field">
-
-                            <span>
-                                Full Name
-                            </span>
-
-                            <strong>
-                                {user?.full_name || 'Not available'}
-                            </strong>
-
+                            <span>Full Name</span>
+                            <strong>{user?.full_name || 'Not available'}</strong>
                         </div>
 
-
                         <div className="profile-field">
-
-                            <span>
-                                Email
-                            </span>
-
-                            <strong>
-                                {user?.email || 'Not available'}
-                            </strong>
-
+                            <span>Email</span>
+                            <strong>{user?.email || 'Not available'}</strong>
                         </div>
 
-
                         <div className="profile-field">
-
-                            <span>
-                                Phone
-                            </span>
-
-                            <strong>
-                                {user?.phone || 'Not added'}
-                            </strong>
-
+                            <span>Phone Number</span>
+                            <strong>{user?.phone || 'Not added'}</strong>
                         </div>
 
-
                         <div className="profile-field">
-
-                            <span>
-                                Account Type
-                            </span>
-
-                            <strong>
-                                Standard
-                            </strong>
-
+                            <span>Account Tier</span>
+                            <strong className="profile-tier-badge">Standard Tier</strong>
                         </div>
-
                     </div>
-
                 </div>
 
-
-                {/* ===============================
-            SECURITY
-        ================================ */}
-
+                {/* SECURITY */}
                 <div className="profile-card">
-
                     <div className="profile-card-header">
-
                         <div>
-
-                            <h3>
-                                Security
-                            </h3>
-
-                            <p>
-                                Manage your account security
-                            </p>
-
+                            <h3>Security & Authentication</h3>
+                            <p>Manage passwords, verification, and credentials</p>
                         </div>
-
                     </div>
 
-
                     <div className="security-list">
-
                         <div className="security-item">
-
                             <div>
-
-                                <h4>
-                                    Password
-                                </h4>
-
-                                <p>
-                                    Your password is protected
-                                    and securely stored.
-                                </p>
-
+                                <h4>Password Protection</h4>
+                                <p>Encrypted password stored with secure cryptographic hashing.</p>
                             </div>
 
                             <button
@@ -300,180 +292,99 @@ function Profile() {
                                     setShowPasswordModal(true)
                                 }}
                             >
-                                Change
+                                Change Password
                             </button>
-
                         </div>
 
-
                         <div className="security-item">
-
                             <div>
-
-                                <h4>
-                                    Email Verification
-                                </h4>
-
-                                <p>
-                                    Email verification status
-                                </p>
-
+                                <h4>Email Verification</h4>
+                                <p>Verification status confirmed with OTP verification.</p>
                             </div>
 
                             <span
-                                className={`verification-badge ${user?.is_verified ? 'verification-verified' : 'verification-not-verified'
-                                    }`}
+                                className={`verification-badge ${
+                                    user?.is_verified
+                                        ? 'verification-verified'
+                                        : 'verification-not-verified'
+                                }`}
                             >
-                                {user?.is_verified ? 'Verified' : 'Not verified'}
+                                {user?.is_verified ? '✓ Verified' : 'Not verified'}
                             </span>
-
                         </div>
-
 
                         <div className="security-item">
-
                             <div>
-
-                                <h4>
-                                    Two-Factor Authentication
-                                </h4>
-
-                                <p>
-                                    Add an additional layer of
-                                    account protection.
-                                </p>
-
+                                <h4>Two-Factor Authentication</h4>
+                                <p>Additional verification layer for high-security sign-ins.</p>
                             </div>
 
-                            <span className="security-status">
-                                Coming soon
+                            <span className="security-status-badge">
+                                Coming Soon
                             </span>
-
                         </div>
-
                     </div>
-
                 </div>
 
-
-                {/* ===============================
-            PREFERENCES
-        ================================ */}
-
+                {/* PREFERENCES */}
                 <div className="profile-card">
-
                     <div className="profile-card-header">
-
                         <div>
-
-                            <h3>
-                                Preferences
-                            </h3>
-
-                            <p>
-                                Customize your workspace
-                            </p>
-
+                            <h3>Workspace Preferences</h3>
+                            <p>Customize your theme and visual workspace experience</p>
                         </div>
-
                     </div>
-
 
                     <div className="preference-list">
-
                         <div className="preference-item">
-
                             <div>
-
-                                <h4>
-                                    Appearance
-                                </h4>
-
-                                <p>
-                                    Choose how the application
-                                    looks.
-                                </p>
-
+                                <h4>Theme & Accent Palette</h4>
+                                <p>Switch between six curated Cognidocs visual themes.</p>
                             </div>
 
-                            <select
-                                className="profile-select"
-                                value={theme}
-                                onChange={(e) => {
-                                    const newTheme = e.target.value
-
-                                    setTheme(newTheme)
-                                    localStorage.setItem('app_theme', newTheme)
-                                    document.documentElement.dataset.theme = newTheme
-                                }}
-                            >
-                                <option value="ocean">🌊 Ocean Teal</option>
-                                <option value="dark">🌙 Dark</option>
-                                <option value="forest">🌿 Forest</option>
-                                <option value="rose">🌸 Rose</option>
-                                <option value="lavender">💜 Lavender</option>
-                                <option value="sand">🌅 Warm Sand</option>
-                            </select>
-
+                            <div className="theme-selector-wrap">
+                                <select
+                                    className="profile-select"
+                                    value={theme}
+                                    onChange={(e) => handleThemeChange(e.target.value)}
+                                    aria-label="Select application theme"
+                                >
+                                    <option value="ocean">🌊 Ocean Teal (Default)</option>
+                                    <option value="dark">🌙 Dark Slate</option>
+                                    <option value="forest">🌿 Forest Green</option>
+                                    <option value="rose">🌸 Rose Pink</option>
+                                    <option value="lavender">💜 Lavender Purple</option>
+                                    <option value="sand">🌅 Warm Sand</option>
+                                </select>
+                            </div>
                         </div>
 
-
                         <div className="preference-item">
-
                             <div>
-
-                                <h4>
-                                    Notifications
-                                </h4>
-
-                                <p>
-                                    Receive important application
-                                    notifications.
-                                </p>
-
+                                <h4>Workspace Notifications</h4>
+                                <p>In-app alerts and processing status banners.</p>
                             </div>
 
-                            <label className="toggle">
-
+                            <label className="toggle" aria-label="Toggle workspace notifications">
                                 <input
                                     type="checkbox"
-                                    defaultChecked
+                                    checked={notificationsEnabled}
+                                    onChange={handleNotificationsChange}
                                 />
-
                                 <span className="toggle-slider"></span>
-
                             </label>
-
                         </div>
-
                     </div>
-
                 </div>
 
-
-                {/* ===============================
-            ACCOUNT ACTIVITY
-        ================================ */}
-
+                {/* ACCOUNT ACTIVITY */}
                 <div className="profile-card">
-
                     <div className="profile-card-header">
-
                         <div>
-
-                            <h3>
-                                Account Activity
-                            </h3>
-
-                            <p>
-                                Overview of your workspace
-                                activity
-                            </p>
-
+                            <h3>Account Activity</h3>
+                            <p>Overview of your knowledge base engagement</p>
                         </div>
-
                     </div>
-
 
                     <div className="activity-stats">
                         <div className="profile-stat">
@@ -487,7 +398,7 @@ function Profile() {
                             <strong>
                                 {activityLoading ? '...' : activity.ai_questions}
                             </strong>
-                            <span>AI Questions</span>
+                            <span>AI Queries</span>
                         </div>
 
                         <div className="profile-stat">
@@ -506,7 +417,7 @@ function Profile() {
                     </div>
 
                     {activityError && (
-                        <p className="profile-form-error">
+                        <p className="profile-form-error" role="alert">
                             {activityError}
                         </p>
                     )}
@@ -522,7 +433,7 @@ function Profile() {
                         </div>
 
                         <div>
-                            <span>Last Login</span>
+                            <span>Last Active Session</span>
                             <strong>
                                 {activityLoading
                                     ? 'Loading...'
@@ -531,36 +442,21 @@ function Profile() {
                         </div>
                     </div>
                 </div>
-
             </section>
 
-
             {/* =================================
-          ACCOUNT ACTIONS
-      ================================= */}
-
+                ACCOUNT ACTIONS (DANGER ZONE)
+            ================================= */}
             <section className="account-actions">
-
                 <div>
-
-                    <p className="eyebrow">
-                        ACCOUNT MANAGEMENT
-                    </p>
-
-                    <h3>
-                        Account Actions
-                    </h3>
-
+                    <p className="eyebrow">SESSION & ACCOUNT DANGER ZONE</p>
+                    <h3>Account Actions</h3>
                     <p>
-                        Manage your current session or
-                        permanently remove your account.
+                        Terminate your active session or permanently remove your account and stored knowledge vault.
                     </p>
-
                 </div>
 
-
                 <div className="account-action-buttons">
-
                     <button
                         className="logout-profile-button"
                         type="button"
@@ -579,39 +475,49 @@ function Profile() {
                     >
                         Delete Account
                     </button>
-
                 </div>
-
             </section>
+
+            {/* =================================
+                EDIT PROFILE MODAL
+            ================================= */}
             {showEditModal && (
-                <div className="profile-modal-overlay">
-                    <div className="profile-modal">
-
-                        <div className="profile-modal-header">
+                <div
+                    className="modal-overlay profile-modal-overlay"
+                    onClick={() => setShowEditModal(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="edit-profile-title"
+                >
+                    <div
+                        className="modal profile-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="modal-header profile-modal-header">
                             <div>
-                                <p className="eyebrow">
-                                    ACCOUNT
-                                </p>
-
-                                <h3>Edit Profile</h3>
+                                <h2 id="edit-profile-title">Edit Profile</h2>
+                                <p>Update your personal account details</p>
                             </div>
 
                             <button
                                 type="button"
-                                className="profile-modal-close"
+                                className="modal-close"
                                 onClick={() => setShowEditModal(false)}
+                                aria-label="Close edit profile modal"
                             >
-                                ×
+                                ✕
                             </button>
                         </div>
 
-                        <div className="profile-modal-body">
+                        <div className="modal-body profile-modal-body">
+                            {editError && (
+                                <p className="profile-form-error" role="alert">
+                                    {editError}
+                                </p>
+                            )}
 
                             <div className="profile-form-field">
-                                <label htmlFor="edit-name">
-                                    Full Name
-                                </label>
-
+                                <label htmlFor="edit-name">Full Name</label>
                                 <input
                                     id="edit-name"
                                     type="text"
@@ -621,31 +527,23 @@ function Profile() {
                                 />
                             </div>
 
-
                             <div className="profile-form-field">
-                                <label htmlFor="edit-email">
-                                    Email
-                                </label>
-
+                                <label htmlFor="edit-email">Email Address</label>
                                 <input
                                     id="edit-email"
                                     type="email"
                                     value={editEmail}
-                                    onChange={(event) => setEditEmail(event.target.value)}
+                                    disabled
+                                    readOnly
                                     placeholder="Enter your email address"
                                 />
-
-                                <small>
-                                    Changing your email may require verification.
+                                <small className="field-hint">
+                                    Email is tied to your account identity and requires re-verification to modify.
                                 </small>
                             </div>
 
-
                             <div className="profile-form-field">
-                                <label htmlFor="edit-phone">
-                                    Phone Number
-                                </label>
-
+                                <label htmlFor="edit-phone">Phone Number (10 Digits)</label>
                                 <input
                                     id="edit-phone"
                                     type="tel"
@@ -662,24 +560,23 @@ function Profile() {
                                             setPhoneError('')
                                         }
                                     }}
-                                    placeholder="Enter your phone number"
+                                    placeholder="Enter your 10-digit phone number"
                                 />
 
                                 {phoneError && (
-                                    <p className="profile-form-error">
+                                    <p className="profile-form-error" role="alert">
                                         {phoneError}
                                     </p>
                                 )}
                             </div>
-
                         </div>
 
                         <div className="profile-modal-actions">
-
                             <button
                                 type="button"
                                 className="profile-secondary-button"
                                 onClick={() => setShowEditModal(false)}
+                                disabled={editLoading}
                             >
                                 Cancel
                             </button>
@@ -687,6 +584,7 @@ function Profile() {
                             <button
                                 type="button"
                                 className="profile-primary-button"
+                                disabled={editLoading}
                                 onClick={async () => {
                                     if (!/^\d{10}$/.test(editPhone)) {
                                         setPhoneError('Phone number must contain exactly 10 digits.')
@@ -695,6 +593,8 @@ function Profile() {
 
                                     try {
                                         setPhoneError('')
+                                        setEditError('')
+                                        setEditLoading(true)
 
                                         const data = await apiRequest('/auth/profile', {
                                             method: 'PUT',
@@ -705,109 +605,114 @@ function Profile() {
                                         })
 
                                         const updatedUser = data.user
-
                                         setUser(updatedUser)
                                         localStorage.setItem('user', JSON.stringify(updatedUser))
 
                                         setShowEditModal(false)
                                     } catch (error) {
-                                        setPhoneError(error.message)
+                                        setEditError(error.message || 'Failed to update profile.')
+                                    } finally {
+                                        setEditLoading(false)
                                     }
                                 }}
                             >
-                                Save Changes
+                                {editLoading ? 'Saving...' : 'Save Changes'}
                             </button>
-
                         </div>
-
                     </div>
                 </div>
             )}
-            {showPasswordModal && (
-                <div className="profile-modal-overlay">
-                    <div className="profile-modal">
 
-                        <div className="profile-modal-header">
+            {/* =================================
+                CHANGE PASSWORD MODAL
+            ================================= */}
+            {showPasswordModal && (
+                <div
+                    className="modal-overlay profile-modal-overlay"
+                    onClick={() => setShowPasswordModal(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="change-password-title"
+                >
+                    <div
+                        className="modal profile-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="modal-header profile-modal-header">
                             <div>
-                                <h3>Change Password</h3>
-                                <p>Update your account password.</p>
+                                <h2 id="change-password-title">Change Password</h2>
+                                <p>Update your account password securely</p>
                             </div>
 
                             <button
                                 type="button"
-                                className="profile-modal-close"
+                                className="modal-close"
                                 onClick={() => setShowPasswordModal(false)}
+                                aria-label="Close change password modal"
                             >
-                                ×
+                                ✕
                             </button>
                         </div>
 
-                        {passwordError && (
-                            <p className="profile-form-error">
-                                {passwordError}
-                            </p>
-                        )}
+                        <div className="modal-body profile-modal-body">
+                            {passwordError && (
+                                <p className="profile-form-error" role="alert">
+                                    {passwordError}
+                                </p>
+                            )}
 
-                        {passwordSuccess && (
-                            <p className="profile-form-success">
-                                {passwordSuccess}
-                            </p>
-                        )}
+                            {passwordSuccess && (
+                                <p className="profile-form-success" role="status">
+                                    {passwordSuccess}
+                                </p>
+                            )}
 
-                        <div className="profile-form-field">
-                            <label htmlFor="current-password">
-                                Current Password
-                            </label>
+                            <div className="profile-form-field">
+                                <label htmlFor="current-password">Current Password</label>
+                                <input
+                                    id="current-password"
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(event) =>
+                                        setCurrentPassword(event.target.value)
+                                    }
+                                    placeholder="Enter your current password"
+                                />
+                            </div>
 
-                            <input
-                                id="current-password"
-                                type="password"
-                                value={currentPassword}
-                                onChange={(event) =>
-                                    setCurrentPassword(event.target.value)
-                                }
-                                placeholder="Enter your current password"
-                            />
-                        </div>
+                            <div className="profile-form-field">
+                                <label htmlFor="new-password">New Password (8+ characters)</label>
+                                <input
+                                    id="new-password"
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(event) =>
+                                        setNewPassword(event.target.value)
+                                    }
+                                    placeholder="Enter your new password"
+                                />
+                            </div>
 
-                        <div className="profile-form-field">
-                            <label htmlFor="new-password">
-                                New Password
-                            </label>
-
-                            <input
-                                id="new-password"
-                                type="password"
-                                value={newPassword}
-                                onChange={(event) =>
-                                    setNewPassword(event.target.value)
-                                }
-                                placeholder="Enter your new password"
-                            />
-                        </div>
-
-                        <div className="profile-form-field">
-                            <label htmlFor="confirm-password">
-                                Confirm New Password
-                            </label>
-
-                            <input
-                                id="confirm-password"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(event) =>
-                                    setConfirmPassword(event.target.value)
-                                }
-                                placeholder="Confirm your new password"
-                            />
+                            <div className="profile-form-field">
+                                <label htmlFor="confirm-password">Confirm New Password</label>
+                                <input
+                                    id="confirm-password"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(event) =>
+                                        setConfirmPassword(event.target.value)
+                                    }
+                                    placeholder="Confirm your new password"
+                                />
+                            </div>
                         </div>
 
                         <div className="profile-modal-actions">
-
                             <button
                                 type="button"
                                 className="profile-secondary-button"
                                 onClick={() => setShowPasswordModal(false)}
+                                disabled={passwordLoading}
                             >
                                 Cancel
                             </button>
@@ -817,21 +722,16 @@ function Profile() {
                                 className="profile-primary-button"
                                 disabled={passwordLoading}
                                 onClick={async () => {
-
                                     setPasswordError('')
                                     setPasswordSuccess('')
 
                                     if (!currentPassword) {
-                                        setPasswordError(
-                                            'Please enter your current password.'
-                                        )
+                                        setPasswordError('Please enter your current password.')
                                         return
                                     }
 
                                     if (!newPassword) {
-                                        setPasswordError(
-                                            'Please enter a new password.'
-                                        )
+                                        setPasswordError('Please enter a new password.')
                                         return
                                     }
 
@@ -843,9 +743,7 @@ function Profile() {
                                     }
 
                                     if (newPassword !== confirmPassword) {
-                                        setPasswordError(
-                                            'New passwords do not match.'
-                                        )
+                                        setPasswordError('New passwords do not match.')
                                         return
                                     }
 
@@ -861,68 +759,74 @@ function Profile() {
                                             }),
                                         })
 
-                                        setPasswordSuccess(
-                                            'Password changed successfully.'
-                                        )
-
+                                        setPasswordSuccess('Password changed successfully.')
                                         setCurrentPassword('')
                                         setNewPassword('')
                                         setConfirmPassword('')
-
                                     } catch (error) {
-                                        setPasswordError(error.message)
+                                        setPasswordError(
+                                            error.message || 'Failed to update password.'
+                                        )
                                     } finally {
                                         setPasswordLoading(false)
                                     }
                                 }}
                             >
-                                {passwordLoading
-                                    ? 'Changing...'
-                                    : 'Change Password'}
+                                {passwordLoading ? 'Updating...' : 'Update Password'}
                             </button>
-
                         </div>
-
                     </div>
                 </div>
             )}
-            {showDeleteModal && (
-                <div className="profile-modal-overlay">
-                    <div className="profile-modal delete-account-modal">
 
-                        <div className="profile-modal-header">
+            {/* =================================
+                DELETE ACCOUNT MODAL
+            ================================= */}
+            {showDeleteModal && (
+                <div
+                    className="modal-overlay profile-modal-overlay"
+                    onClick={() => setShowDeleteModal(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="delete-account-title"
+                >
+                    <div
+                        className="modal profile-modal delete-account-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="modal-header profile-modal-header">
                             <div>
-                                <h3>Delete Account</h3>
-                                <p>
-                                    Are you sure you want to permanently delete your account?
-                                </p>
+                                <h2 id="delete-account-title">Delete Account</h2>
+                                <p>Permanent account deletion and data removal</p>
                             </div>
 
                             <button
                                 type="button"
-                                className="profile-modal-close"
+                                className="modal-close"
                                 onClick={() => setShowDeleteModal(false)}
+                                aria-label="Close delete account modal"
                             >
-                                ×
+                                ✕
                             </button>
                         </div>
 
-                        <div className="delete-account-warning">
-                            <strong>This action cannot be undone.</strong>
-                            <p>
-                                Your account and associated account information will be
-                                permanently deleted.
-                            </p>
+                        <div className="modal-body profile-modal-body">
+                            <div className="delete-account-warning">
+                                <strong>⚠️ This action is permanent and irreversible.</strong>
+                                <p>
+                                    Your account, documents, embeddings, search logs, and activity records
+                                    will be permanently erased from the system.
+                                </p>
+                            </div>
+
+                            {deleteError && (
+                                <p className="profile-form-error" role="alert">
+                                    {deleteError}
+                                </p>
+                            )}
                         </div>
 
-                        {deleteError && (
-                            <p className="profile-form-error">
-                                {deleteError}
-                            </p>
-                        )}
-
                         <div className="profile-modal-actions">
-
                             <button
                                 type="button"
                                 className="profile-secondary-button"
@@ -937,7 +841,6 @@ function Profile() {
                                 className="delete-account-confirm-button"
                                 disabled={deleteLoading}
                                 onClick={async () => {
-
                                     setDeleteError('')
                                     setDeleteLoading(true)
 
@@ -950,21 +853,18 @@ function Profile() {
                                         localStorage.removeItem('user')
 
                                         navigate('/login', { replace: true })
-
                                     } catch (error) {
-                                        setDeleteError(error.message)
+                                        setDeleteError(
+                                            error.message || 'Failed to delete account.'
+                                        )
                                     } finally {
                                         setDeleteLoading(false)
                                     }
                                 }}
                             >
-                                {deleteLoading
-                                    ? 'Deleting...'
-                                    : 'Delete Account'}
+                                {deleteLoading ? 'Deleting Account...' : 'Permanently Delete Account'}
                             </button>
-
                         </div>
-
                     </div>
                 </div>
             )}

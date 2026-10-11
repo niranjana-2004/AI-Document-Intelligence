@@ -6,21 +6,21 @@ function About() {
 
     return (
         <main className="about-page">
-
-            {/* Header */}
+            {/* =================================
+                HERO SECTION
+            ================================= */}
             <section className="about-hero">
                 <div className="about-hero-content">
-                    <p className="eyebrow">ABOUT THE PLATFORM</p>
+                    <p className="eyebrow">ABOUT COGNIDOCS</p>
 
                     <h2>
-                        Turn your documents into
-                        <span> intelligent answers.</span>
+                        Knowledge, <span>unlocked.</span>
                     </h2>
 
                     <p className="about-hero-description">
-                        AI Document Intelligence helps you upload, search, summarize,
-                        and ask questions about your documents using AI-powered
-                        document understanding.
+                        Cognidocs transforms static documents into an interactive knowledge
+                        vault. Upload PDFs, DOCX files, and text notes, then query, summarize,
+                        and uncover context-grounded insights through local AI intelligence.
                     </p>
 
                     <div className="about-hero-actions">
@@ -29,7 +29,7 @@ function About() {
                             className="about-primary-button"
                             onClick={() => navigate('/documents')}
                         >
-                            Explore Documents
+                            Explore Documents →
                         </button>
 
                         <button
@@ -44,300 +44,243 @@ function About() {
 
                 <div className="about-hero-visual">
                     <div className="about-ai-card">
-                        <div className="about-ai-icon">AI</div>
+                        <div className="about-ai-icon" aria-hidden="true">CD</div>
 
                         <div>
-                            <strong>Document Intelligence</strong>
-                            <span>Understand • Search • Ask</span>
+                            <strong>Cognidocs Core</strong>
+                            <span>Understand · Search · Synthesize</span>
                         </div>
                     </div>
 
                     <div className="about-floating-card about-floating-one">
-                        <span>✓</span>
+                        <span aria-hidden="true">✓</span>
                         <div>
-                            <strong>Smart Search</strong>
-                            <small>Find relevant information</small>
+                            <strong>Semantic Retrieval</strong>
+                            <small>Cosine vector similarity</small>
                         </div>
                     </div>
 
                     <div className="about-floating-card about-floating-two">
-                        <span>✦</span>
+                        <span aria-hidden="true">✦</span>
                         <div>
-                            <strong>AI Answers</strong>
-                            <small>Ask questions naturally</small>
+                            <strong>Grounded Answers</strong>
+                            <small>Context-verified reasoning</small>
                         </div>
                     </div>
                 </div>
             </section>
 
-
-            {/* What it does */}
+            {/* =================================
+                WHAT IT DOES
+            ================================= */}
             <section className="about-section">
-
                 <div className="about-section-heading">
                     <p className="eyebrow">WHAT IT DOES</p>
-
-                    <h3>
-                        One workspace for your documents
-                    </h3>
-
+                    <h3>One Unified Workspace for Document Intelligence</h3>
                     <p>
-                        The platform combines document processing, semantic search,
-                        retrieval, and AI-generated responses into one workspace.
+                        Cognidocs brings document processing, vector search,
+                        semantic retrieval, and AI-driven synthesis into a single high-performance workspace.
                     </p>
                 </div>
 
                 <div className="about-feature-grid">
-
                     <article className="about-feature-card">
-                        <div className="about-feature-icon">↑</div>
-
-                        <h4>Upload Documents</h4>
-
+                        <div className="about-feature-icon" aria-hidden="true">↑</div>
+                        <h4>Document Ingestion</h4>
                         <p>
-                            Upload supported documents and let the system extract and
-                            process their text automatically.
+                            Upload PDF, DOCX, or TXT documents. The system automatically extracts text,
+                            generates sentence embeddings, and partitions content into semantic chunks.
                         </p>
                     </article>
 
                     <article className="about-feature-card">
-                        <div className="about-feature-icon">⌕</div>
-
-                        <h4>Search Information</h4>
-
+                        <div className="about-feature-icon" aria-hidden="true">⌕</div>
+                        <h4>Semantic Search</h4>
                         <p>
-                            Search through document content and retrieve the sections
-                            that are most relevant to your query.
+                            Search by concept rather than keyword matching. Retrieve exact passages
+                            ranked by mathematical vector proximity to your intent.
                         </p>
                     </article>
 
                     <article className="about-feature-card">
-                        <div className="about-feature-icon">✦</div>
-
-                        <h4>Ask AI</h4>
-
+                        <div className="about-feature-icon" aria-hidden="true">✦</div>
+                        <h4>Context-Grounded Q&A</h4>
                         <p>
-                            Ask questions about your documents and receive answers
-                            based on the retrieved document context.
+                            Ask questions naturally. Cognidocs supplies relevant context chunks to the language model
+                            to generate accurate, grounded responses.
                         </p>
                     </article>
 
                     <article className="about-feature-card">
-                        <div className="about-feature-icon">≡</div>
-
-                        <h4>Generate Summaries</h4>
-
+                        <div className="about-feature-icon" aria-hidden="true">≡</div>
+                        <h4>On-Demand Summaries</h4>
                         <p>
-                            Generate concise AI-powered summaries to understand
-                            important document information quickly.
+                            Generate condensed overviews in numbered, bulleted, or paragraph formats
+                            to distill key document findings in seconds.
                         </p>
                     </article>
-
                 </div>
             </section>
 
-
-            {/* How it works */}
+            {/* =================================
+                HOW IT WORKS
+            ================================= */}
             <section className="about-section about-workflow-section">
-
                 <div className="about-section-heading">
                     <p className="eyebrow">HOW IT WORKS</p>
-
-                    <h3>
-                        From document to answer
-                    </h3>
-
+                    <h3>From Document to Grounded Answer</h3>
                     <p>
-                        The system follows a document intelligence pipeline to turn
-                        raw document content into useful answers.
+                        Cognidocs executes a multi-stage retrieval-augmented pipeline
+                        to turn raw files into verified answers.
                     </p>
                 </div>
 
                 <div className="about-workflow">
-
                     <div className="about-workflow-step">
                         <div className="workflow-number">01</div>
-
                         <div>
-                            <h4>Upload</h4>
-                            <p>
-                                A document is uploaded into the workspace.
-                            </p>
+                            <h4>Upload & Validate</h4>
+                            <p>Documents are uploaded, verified for format integrity, and securely saved.</p>
                         </div>
                     </div>
 
-                    <div className="workflow-line"></div>
+                    <div className="workflow-line" aria-hidden="true"></div>
 
                     <div className="about-workflow-step">
                         <div className="workflow-number">02</div>
-
                         <div>
-                            <h4>Extract & Process</h4>
-                            <p>
-                                Text is extracted, cleaned, and divided into meaningful
-                                chunks.
-                            </p>
+                            <h4>Extract & Chunk</h4>
+                            <p>Text is extracted, cleaned, and split into overlapping chunks for coherent semantic context.</p>
                         </div>
                     </div>
 
-                    <div className="workflow-line"></div>
+                    <div className="workflow-line" aria-hidden="true"></div>
 
                     <div className="about-workflow-step">
                         <div className="workflow-number">03</div>
-
                         <div>
-                            <h4>Retrieve</h4>
-                            <p>
-                                Relevant document sections are identified using semantic
-                                and keyword-based retrieval.
-                            </p>
+                            <h4>Embed & Retrieve</h4>
+                            <p>Sentence transformers compute dense vector representations to locate high-affinity passages.</p>
                         </div>
                     </div>
 
-                    <div className="workflow-line"></div>
+                    <div className="workflow-line" aria-hidden="true"></div>
 
                     <div className="about-workflow-step">
                         <div className="workflow-number">04</div>
-
                         <div>
-                            <h4>Generate</h4>
-                            <p>
-                                The retrieved context is provided to the AI model to
-                                generate a response.
-                            </p>
+                            <h4>Synthesize</h4>
+                            <p>Retrieved passages are passed to the language model to formulate context-grounded answers.</p>
                         </div>
                     </div>
-
                 </div>
             </section>
 
-
-            {/* Technology */}
+            {/* =================================
+                TECHNOLOGY
+            ================================= */}
             <section className="about-section">
-
                 <div className="about-section-heading">
-                    <p className="eyebrow">TECHNOLOGY</p>
-
-                    <h3>
-                        Built with modern AI technologies
-                    </h3>
-
+                    <p className="eyebrow">ARCHITECTURE & STACK</p>
+                    <h3>Engineered with Modern AI Technologies</h3>
                     <p>
-                        The application combines a Python backend, modern web
-                        technologies, vector embeddings, and a local language model.
+                        Cognidocs couples an asynchronous Python backend with modern web standards,
+                        local language models, and high-density vector embeddings.
                     </p>
                 </div>
 
                 <div className="about-tech-grid">
-
                     <div className="about-tech-item">
                         <strong>FastAPI</strong>
-                        <span>Backend API</span>
+                        <span>High-performance asynchronous Python API</span>
                     </div>
 
                     <div className="about-tech-item">
-                        <strong>React</strong>
-                        <span>Frontend interface</span>
+                        <strong>React & Vite</strong>
+                        <span>Reactive frontend with glassmorphic aesthetics</span>
                     </div>
 
                     <div className="about-tech-item">
-                        <strong>SQLite</strong>
-                        <span>Document metadata & storage</span>
+                        <strong>SQLite & SQLAlchemy</strong>
+                        <span>Document metadata & relational activity storage</span>
                     </div>
 
                     <div className="about-tech-item">
                         <strong>Sentence Transformers</strong>
-                        <span>Text embeddings</span>
+                        <span>Dense multi-dimensional text embeddings</span>
                     </div>
 
                     <div className="about-tech-item">
                         <strong>Semantic Search</strong>
-                        <span>Relevant information retrieval</span>
+                        <span>Cosine vector similarity chunk ranking</span>
                     </div>
 
                     <div className="about-tech-item">
-                        <strong>Ollama</strong>
-                        <span>Local language model</span>
+                        <strong>Ollama LLM</strong>
+                        <span>Private, local language model inference</span>
                     </div>
-
                 </div>
             </section>
 
-
-            {/* RAG explanation */}
+            {/* =================================
+                RAG PIPELINE
+            ================================= */}
             <section className="about-rag-section">
-
                 <div className="about-rag-content">
-
                     <p className="eyebrow">AI PIPELINE</p>
-
-                    <h3>
-                        Retrieval-Augmented Generation
-                    </h3>
-
+                    <h3>Retrieval-Augmented Generation (RAG)</h3>
                     <p>
-                        Instead of asking the language model to answer from general
-                        knowledge alone, the system first retrieves relevant
-                        information from your documents.
+                        Rather than querying a language model on generic web memory alone,
+                        Cognidocs retrieves precise passages directly from your uploaded files.
                     </p>
-
                     <p>
-                        That retrieved context is then passed to the language model,
-                        allowing the generated response to be grounded in the
-                        available document content.
+                        By injecting these exact passages into the prompt context, the AI synthesizes
+                        answers that reflect the specific facts, skills, and data in your private library.
                     </p>
-
                 </div>
 
                 <div className="about-rag-flow">
-
                     <div className="rag-box">
-                        <strong>Your Document</strong>
-                        <span>Source content</span>
+                        <strong>Your Documents</strong>
+                        <span>Source text files</span>
                     </div>
 
-                    <div className="rag-arrow">→</div>
+                    <div className="rag-arrow" aria-hidden="true">→</div>
 
                     <div className="rag-box">
-                        <strong>Retrieval</strong>
-                        <span>Relevant chunks</span>
+                        <strong>Semantic Retrieval</strong>
+                        <span>Ranked chunk excerpts</span>
                     </div>
 
-                    <div className="rag-arrow">→</div>
+                    <div className="rag-arrow" aria-hidden="true">→</div>
 
                     <div className="rag-box">
-                        <strong>AI Model</strong>
-                        <span>Context + question</span>
+                        <strong>AI Language Model</strong>
+                        <span>Context + user prompt</span>
                     </div>
 
-                    <div className="rag-arrow">→</div>
+                    <div className="rag-arrow" aria-hidden="true">→</div>
 
                     <div className="rag-box rag-result">
-                        <strong>Answer</strong>
-                        <span>AI-generated response</span>
+                        <strong>Grounded Answer</strong>
+                        <span>Context-backed synthesis</span>
                     </div>
-
                 </div>
             </section>
 
-
-            {/* Bottom CTA */}
+            {/* =================================
+                FINAL CTA
+            ================================= */}
             <section className="about-final-card">
-
                 <div>
-                    <p className="eyebrow">READY TO EXPLORE?</p>
-
-                    <h3>
-                        Start working with your documents.
-                    </h3>
-
+                    <p className="eyebrow">READY TO UNLOCK KNOWLEDGE?</p>
+                    <h3>Start Working with Your Documents</h3>
                     <p>
-                        Upload a document, search its content, or ask AI a question.
+                        Upload files, perform semantic searches, or query the AI assistant.
                     </p>
                 </div>
 
                 <div className="about-final-actions">
-
                     <button
                         type="button"
                         className="about-primary-button"
@@ -353,11 +296,8 @@ function About() {
                     >
                         Ask AI
                     </button>
-
                 </div>
-
             </section>
-
         </main>
     )
 }

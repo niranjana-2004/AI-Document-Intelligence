@@ -38,6 +38,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetchDocuments()
+    fetchActivityCounts()
   }, [])
 
   const fetchDocuments = async () => {
@@ -52,25 +53,6 @@ function Dashboard() {
         : data.documents || []
 
       setDocuments(documentList)
-
-      const summaryResults = await Promise.all(
-        documentList.map(async (document) => {
-          try {
-            const summaryData = await apiRequest(
-              `/documents/${document.id}/summary`
-            )
-
-            return Boolean(summaryData.summary)
-          } catch {
-            return false
-          }
-        })
-      )
-
-      setSummaryCount(
-        summaryResults.filter(Boolean).length
-      )
-
     } catch (error) {
       console.error(
         'Error fetching documents:',
@@ -81,9 +63,23 @@ function Dashboard() {
         error.message ||
         'Unable to connect to the backend.'
       )
-
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchActivityCounts = async () => {
+    try {
+      const data = await apiRequest('/auth/activity')
+      if (data) {
+        setActivityCounts({
+          ai_questions: data.ai_questions ?? 0,
+          searches: data.searches ?? 0,
+        })
+        setSummaryCount(data.summaries ?? 0)
+      }
+    } catch (error) {
+      console.error('Failed to load activity counts:', error)
     }
   }
 
@@ -128,6 +124,20 @@ function Dashboard() {
         data.summary ||
         'No summary available.'
       )
+
+      // Refresh activity count from /auth/activity safely without interrupting displayed summary
+      try {
+        const activityData = await apiRequest('/auth/activity')
+        if (activityData) {
+          setSummaryCount(activityData.summaries ?? 0)
+          setActivityCounts({
+            ai_questions: activityData.ai_questions ?? 0,
+            searches: activityData.searches ?? 0,
+          })
+        }
+      } catch (refreshErr) {
+        console.warn('Unable to refresh activity counts after summary:', refreshErr)
+      }
 
     } catch (error) {
       console.error(
@@ -248,32 +258,6 @@ function Dashboard() {
     ? documents
     : documents.slice(0, 5)
 
-
-  useEffect(() => {
-    let isMounted = true
-
-    const fetchActivityCounts = async () => {
-      try {
-        const data = await apiRequest('/auth/activity')
-
-        if (isMounted) {
-          setActivityCounts({
-            ai_questions: data.ai_questions ?? 0,
-            searches: data.searches ?? 0,
-          })
-        }
-      } catch (error) {
-        console.error('Failed to load activity counts:', error)
-      }
-    }
-
-    fetchActivityCounts()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
   return (
     <>
       <main className="dashboard">
@@ -287,7 +271,7 @@ function Dashboard() {
           <div>
 
             <p className="eyebrow">
-              AI DOCUMENT WORKSPACE
+              COGNIDOCS WORKSPACE
             </p>
 
             <h2>
@@ -365,7 +349,7 @@ function Dashboard() {
             </strong>
 
             <span className="stat-description">
-              Generated summaries
+              Summary activity records
             </span>
 
           </div>
@@ -637,8 +621,7 @@ function Dashboard() {
                   </h4>
 
                   <p>
-                    AI-generated document
-                    summaries
+                    AI summary activity records
                   </p>
 
                 </div>
@@ -673,7 +656,7 @@ function Dashboard() {
               </p>
 
               <h3>
-                How Document Intelligence works
+                How Cognidocs works
               </h3>
 
               <p>
@@ -817,6 +800,7 @@ function Dashboard() {
               <button
                 className="modal-close"
                 onClick={closeDocument}
+                aria-label="Close document dialog"
               >
                 ✕
               </button>
@@ -877,6 +861,7 @@ function Dashboard() {
                     false
                   )
                 }
+                aria-label="Close document selection dialog"
               >
                 ×
               </button>
@@ -970,6 +955,7 @@ function Dashboard() {
                 onClick={() =>
                   setSummary('')
                 }
+                aria-label="Close summary dialog"
               >
                 ✕
               </button>
@@ -1032,6 +1018,7 @@ function Dashboard() {
               <button
                 className="modal-close"
                 onClick={closeAskModal}
+                aria-label="Close Ask AI dialog"
               >
                 ✕
               </button>
@@ -1116,6 +1103,7 @@ function Dashboard() {
               <button
                 className="modal-close"
                 onClick={closeSearchModal}
+                aria-label="Close search dialog"
               >
                 ✕
               </button>

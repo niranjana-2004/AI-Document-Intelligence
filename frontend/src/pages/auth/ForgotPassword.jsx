@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
+import { apiRequest } from '../../services/api'
 
 function ForgotPassword() {
     const [email, setEmail] = useState('')
@@ -32,27 +33,12 @@ function ForgotPassword() {
         setLoading(true)
 
         try {
-            const response = await fetch(
-                'http://127.0.0.1:8000/auth/forgot-password',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: trimmedEmail,
-                    }),
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail ||
-                    'Unable to send the reset link. Please try again.'
-                )
-            }
+            await apiRequest('/auth/forgot-password', {
+                method: 'POST',
+                body: JSON.stringify({
+                    email: trimmedEmail,
+                }),
+            })
 
             // The reset link has been successfully requested.
             setLinkSent(true)
@@ -126,7 +112,7 @@ function ForgotPassword() {
                 <p className="auth-switch">
                     Remember your password?{' '}
                     <Link to="/login">
-                        Sign in
+                        Login
                     </Link>
                 </p>
             </div>
@@ -136,16 +122,19 @@ function ForgotPassword() {
                 <div
                     className="reset-success-overlay"
                     onClick={() => setShowSuccessPopup(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="reset-modal-title"
                 >
                     <div
                         className="reset-success-popup"
                         onClick={(event) => event.stopPropagation()}
                     >
-                        <div className="reset-success-icon">
+                        <div className="reset-success-icon" aria-hidden="true">
                             ✓
                         </div>
 
-                        <h3>Reset link sent!</h3>
+                        <h3 id="reset-modal-title">Reset link sent!</h3>
 
                         <p>
                             We've sent a password reset link to
@@ -161,6 +150,7 @@ function ForgotPassword() {
                             type="button"
                             className="auth-primary-button"
                             onClick={() => setShowSuccessPopup(false)}
+                            autoFocus
                         >
                             Got it
                         </button>

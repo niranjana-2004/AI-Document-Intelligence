@@ -1,5 +1,4 @@
 from app.services.search_service import semantic_search
-from app.models.document_chunk import DocumentChunk
 
 
 def build_context(
@@ -10,20 +9,19 @@ def build_context(
     user_id: int | None = None
 ) -> dict:
     """
-    Retrieve relevant document chunks and build
-    context for the LLM.
+    Retrieve relevant document chunks and build structured context
+    for grounded answer synthesis with traceable source citations.
 
-    Neighboring chunks are included to prevent important
-    information from being lost when a section is split
-    across multiple chunks.
+    Each retrieved chunk is assigned a stable 1-based citation index
+    corresponding directly to [Source N] in the LLM prompt context.
     """
 
     results = semantic_search(
-    query=query,
-    db=db,
-    document_id=document_id,
-    top_k=top_k,
-    user_id=user_id
+        query=query,
+        db=db,
+        document_id=document_id,
+        top_k=top_k,
+        user_id=user_id
     )
 
     if not results:
@@ -35,87 +33,22 @@ def build_context(
         }
 
     # --------------------------------------------------
-    # Collect relevant chunk IDs and neighboring chunks
-    # --------------------------------------------------
-
-    selected_chunks = {}
-
-    for result in results:
-
-        selected_chunks[result["chunk_id"]] = result
-
-        chunk_index = result["chunk_index"]
-        current_document_id = result["document_id"]
-
-        # Get previous chunk
-        previous_chunk = (
-            db.query(DocumentChunk)
-            .filter(
-                DocumentChunk.document_id == current_document_id,
-                DocumentChunk.chunk_index == chunk_index - 1
-            )
-            .first()
-        )
-
-        if previous_chunk:
-            selected_chunks[previous_chunk.id] = {
-                "chunk_id": previous_chunk.id,
-                "document_id": previous_chunk.document_id,
-                "chunk_index": previous_chunk.chunk_index,
-                "content": previous_chunk.content,
-                "similarity": 0.0,
-                "keyword_score": 0.0,
-                "category": result.get("category"),
-                "category_boost": 0.0,
-                "final_score": 0.0
-            }
-
-        # Get next chunk
-        next_chunk = (
-            db.query(DocumentChunk)
-            .filter(
-                DocumentChunk.document_id == current_document_id,
-                DocumentChunk.chunk_index == chunk_index + 1
-            )
-            .first()
-        )
-
-        if next_chunk:
-            selected_chunks[next_chunk.id] = {
-                "chunk_id": next_chunk.id,
-                "document_id": next_chunk.document_id,
-                "chunk_index": next_chunk.chunk_index,
-                "content": next_chunk.content,
-                "similarity": 0.0,
-                "keyword_score": 0.0,
-                "category": result.get("category"),
-                "category_boost": 0.0,
-                "final_score": 0.0
-            }
-
-    # --------------------------------------------------
-    # Sort chunks in their original document order
-    # --------------------------------------------------
-
-    ordered_chunks = sorted(
-        selected_chunks.values(),
-        key=lambda x: (
-            x["document_id"],
-            x["chunk_index"]
-        )
-    )
-
-    # --------------------------------------------------
-    # Build LLM context
+    # Assign stable citation numbers and build LLM context
     # --------------------------------------------------
 
     context_parts = []
 
-    for result in ordered_chunks:
+    for idx, result in enumerate(results, start=1):
+        result["citation_index"] = idx
+
+        filename = result.get("filename") or "Unknown Document"
+        page_number = result.get("page_number")
+        page_str = str(page_number) if page_number is not None else "N/A"
+        content = (result.get("content") or "").strip()
 
         context_parts.append(
-            f"[Document Chunk {result['chunk_index']}]\n"
-            f"{result['content']}"
+            f"[Source {idx} | Document: {filename} | Page: {page_str}]\n"
+            f"{content}"
         )
 
     context = "\n\n".join(context_parts)
@@ -125,4 +58,4 @@ def build_context(
         "context": context,
         "results": results,
         "result_count": len(results)
-    }
+    }

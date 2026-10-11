@@ -1,6 +1,7 @@
-/* 🌊 Ocean Teal — Default */
+/* 🌊 Ocean Teal — Default (Cognidocs Light) */
 :root,
-[data-theme="ocean"] {
+[data-theme="ocean"],
+[data-theme="light"] {
   --bg-primary: #f0faf8;
   --surface: #ffffff;
   --surface-secondary: #e5f7f3;
@@ -25,10 +26,28 @@
   --error-soft: #ffe8e5;
 
   --shadow-color: rgba(18, 54, 61, 0.10);
+
+  /* Cognidocs Brand & Glowing Accents */
+  --cogni-cyan: #00f2fe;
+  --cogni-teal: #13b8a6;
+  --cogni-violet: #8a2be2;
+  --cogni-cyan-glow: rgba(0, 242, 254, 0.35);
+  --cogni-teal-glow: rgba(19, 184, 166, 0.28);
+  --cogni-violet-glow: rgba(138, 43, 226, 0.25);
+  --cogni-gradient: linear-gradient(135deg, #00f2fe 0%, #13b8a6 50%, #8a2be2 100%);
+  --cogni-gradient-subtle: linear-gradient(135deg, rgba(0, 242, 254, 0.12) 0%, rgba(138, 43, 226, 0.12) 100%);
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(19, 184, 166, 0.22);
+  --glass-border-glow: rgba(0, 242, 254, 0.45);
+  --glass-blur: blur(14px);
+  --glass-shadow: 0 12px 32px -4px rgba(18, 54, 61, 0.10), 0 4px 12px -2px rgba(0, 242, 254, 0.08);
 }
 
 
-/* 🌙 Dark — Deep Teal */
+/* 🌙 Dark — Deep Teal / Cognidocs Dark */
 [data-theme="dark"] {
   --bg-primary: #0b171b;
   --surface: #12272d;
@@ -54,6 +73,24 @@
   --error-soft: #4b2b28;
 
   --shadow-color: rgba(0, 0, 0, 0.35);
+
+  /* Cognidocs Brand & Glowing Accents */
+  --cogni-cyan: #00f2fe;
+  --cogni-teal: #25d8c6;
+  --cogni-violet: #a855f7;
+  --cogni-cyan-glow: rgba(0, 242, 254, 0.42);
+  --cogni-teal-glow: rgba(37, 216, 198, 0.35);
+  --cogni-violet-glow: rgba(168, 85, 247, 0.35);
+  --cogni-gradient: linear-gradient(135deg, #00f2fe 0%, #25d8c6 50%, #a855f7 100%);
+  --cogni-gradient-subtle: linear-gradient(135deg, rgba(0, 242, 254, 0.16) 0%, rgba(168, 85, 247, 0.16) 100%);
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(18, 39, 45, 0.68);
+  --glass-bg-hover: rgba(24, 54, 61, 0.82);
+  --glass-border: rgba(37, 216, 198, 0.24);
+  --glass-border-glow: rgba(0, 242, 254, 0.50);
+  --glass-blur: blur(14px);
+  --glass-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.45), 0 4px 16px -2px rgba(0, 242, 254, 0.12);
 }
 
 
@@ -83,6 +120,22 @@
   --error-soft: #ffebe8;
 
   --shadow-color: rgba(32, 58, 41, 0.10);
+
+  --cogni-cyan: #00f2fe;
+  --cogni-teal: #3f9d59;
+  --cogni-violet: #8a2be2;
+  --cogni-cyan-glow: rgba(0, 242, 254, 0.30);
+  --cogni-teal-glow: rgba(63, 157, 89, 0.25);
+  --cogni-violet-glow: rgba(138, 43, 226, 0.20);
+  --cogni-gradient: linear-gradient(135deg, #00f2fe 0%, #3f9d59 50%, #8a2be2 100%);
+  --cogni-gradient-subtle: linear-gradient(135deg, rgba(0, 242, 254, 0.10) 0%, rgba(63, 157, 89, 0.10) 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(63, 157, 89, 0.22);
+  --glass-border-glow: rgba(63, 157, 89, 0.45);
+  --glass-blur: blur(14px);
+  --glass-shadow: 0 12px 32px -4px rgba(32, 58, 41, 0.10);
 }
 
 
@@ -112,6 +165,22 @@
   --error-soft: #ffe6e8;
 
   --shadow-color: rgba(71, 35, 47, 0.10);
+
+  --cogni-cyan: #00f2fe;
+  --cogni-teal: #d95778;
+  --cogni-violet: #8a2be2;
+  --cogni-cyan-glow: rgba(0, 242, 254, 0.30);
+  --cogni-teal-glow: rgba(217, 87, 120, 0.25);
+  --cogni-violet-glow: rgba(138, 43, 226, 0.20);
+  --cogni-gradient: linear-gradient(135deg, #00f2fe 0%, #d95778 50%, #8a2be2 100%);
+  --cogni-gradient-subtle: linear-gradient(135deg, rgba(0, 242, 254, 0.10) 0%, rgba(217, 87, 120, 0.10) 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(217, 87, 120, 0.22);
+  --glass-border-glow: rgba(217, 87, 120, 0.45);
+  --glass-blur: blur(14px);
+  --glass-shadow: 0 12px 32px -4px rgba(71, 35, 47, 0.10);
 }
 
 
@@ -141,6 +210,22 @@
   --error-soft: #ffe8ea;
 
   --shadow-color: rgba(48, 32, 68, 0.10);
+
+  --cogni-cyan: #00f2fe;
+  --cogni-teal: #8b5bd6;
+  --cogni-violet: #8a2be2;
+  --cogni-cyan-glow: rgba(0, 242, 254, 0.30);
+  --cogni-teal-glow: rgba(139, 91, 214, 0.25);
+  --cogni-violet-glow: rgba(138, 43, 226, 0.28);
+  --cogni-gradient: linear-gradient(135deg, #00f2fe 0%, #8b5bd6 50%, #8a2be2 100%);
+  --cogni-gradient-subtle: linear-gradient(135deg, rgba(0, 242, 254, 0.10) 0%, rgba(139, 91, 214, 0.10) 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(139, 91, 214, 0.22);
+  --glass-border-glow: rgba(139, 91, 214, 0.45);
+  --glass-blur: blur(14px);
+  --glass-shadow: 0 12px 32px -4px rgba(48, 32, 68, 0.10);
 }
 
 
@@ -170,6 +255,22 @@
   --error-soft: #ffebe7;
 
   --shadow-color: rgba(68, 50, 31, 0.10);
+
+  --cogni-cyan: #00f2fe;
+  --cogni-teal: #c3833e;
+  --cogni-violet: #8a2be2;
+  --cogni-cyan-glow: rgba(0, 242, 254, 0.28);
+  --cogni-teal-glow: rgba(195, 131, 62, 0.25);
+  --cogni-violet-glow: rgba(138, 43, 226, 0.20);
+  --cogni-gradient: linear-gradient(135deg, #00f2fe 0%, #c3833e 50%, #8a2be2 100%);
+  --cogni-gradient-subtle: linear-gradient(135deg, rgba(0, 242, 254, 0.10) 0%, rgba(195, 131, 62, 0.10) 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-hover: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(195, 131, 62, 0.22);
+  --glass-border-glow: rgba(195, 131, 62, 0.45);
+  --glass-blur: blur(14px);
+  --glass-shadow: 0 12px 32px -4px rgba(68, 50, 31, 0.10);
 }
 
 /* ========================================
@@ -189,6 +290,7 @@ body,
 
 body {
   font-family:
+    "Plus Jakarta Sans",
     Inter,
     ui-sans-serif,
     system-ui,
@@ -199,4 +301,101 @@ body {
 
   background: var(--bg-primary);
   color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ========================================
+   COGNIDOCS GLASSMORPHISM & UTILITIES
+   ======================================== */
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 16px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-glow);
+  box-shadow: var(--glass-shadow), 0 0 20px var(--cogni-cyan-glow);
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.gradient-text {
+  background: var(--cogni-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px var(--cogni-cyan-glow);
+}
+
+.glow-violet {
+  box-shadow: 0 0 20px var(--cogni-violet-glow);
+}
+
+.glow-border {
+  border-color: var(--glass-border-glow) !important;
+}
+
+/* ========================================
+   KEYFRAME ANIMATIONS
+   ======================================== */
+
+@keyframes cogniPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(0.995);
+  }
+}
+
+@keyframes cogniFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes cogniShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY: PREFERS-REDUCED-MOTION
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
+import { apiRequest } from '../../services/api'
 
 function ResetPassword() {
     const navigate = useNavigate()
@@ -69,28 +70,13 @@ function ResetPassword() {
         setLoading(true)
 
         try {
-            const response = await fetch(
-                'http://127.0.0.1:8000/auth/reset-password',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        token,
-                        new_password: newPassword,
-                    }),
-                }
-            )
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail ||
-                    'Password reset failed. Please try again.'
-                )
-            }
+            await apiRequest('/auth/reset-password', {
+                method: 'POST',
+                body: JSON.stringify({
+                    token,
+                    new_password: newPassword,
+                }),
+            })
 
             navigate('/password-reset-success')
         } catch (error) {
@@ -110,8 +96,7 @@ function ResetPassword() {
                     <h2>Reset your password</h2>
 
                     <p>
-                        Create a new password for your
-                        AI Document Intelligence account.
+                        Create a new password for your Cognidocs account.
                     </p>
                 </div>
 
@@ -130,7 +115,7 @@ function ResetPassword() {
                         <input
                             id="newPassword"
                             type="password"
-                            placeholder="Enter your new password"
+                            placeholder="Min 8 chars, uppercase, lowercase, special"
                             value={newPassword}
                             onChange={(event) => {
                                 setNewPassword(event.target.value)
@@ -139,6 +124,7 @@ function ResetPassword() {
                             disabled={loading}
                             autoComplete="new-password"
                         />
+                        <small>Must be at least 8 characters with uppercase, lowercase, number, and symbol.</small>
                     </div>
 
                     <div className="form-group">
@@ -149,7 +135,7 @@ function ResetPassword() {
                         <input
                             id="confirmNewPassword"
                             type="password"
-                            placeholder="Confirm your new password"
+                            placeholder="Re-enter your new password"
                             value={confirmNewPassword}
                             onChange={(event) => {
                                 setConfirmNewPassword(event.target.value)
@@ -178,7 +164,7 @@ function ResetPassword() {
                 <p className="auth-switch">
                     Remember your password?{' '}
                     <Link to="/login">
-                        Sign in
+                        Login
                     </Link>
                 </p>
             </div>
