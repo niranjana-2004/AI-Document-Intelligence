@@ -4,6 +4,178 @@ from app.services.llm_service import generate_response, FALLBACK_ANSWER
 
 MIN_CONFIDENCE_THRESHOLD = 0.40
 
+ORDINALS = {
+    "first": 1, "1st": 1,
+    "second": 2, "2nd": 2,
+    "third": 3, "3rd": 3,
+    "fourth": 4, "4th": 4,
+    "fifth": 5, "5th": 5,
+    "sixth": 6, "6th": 6,
+}
+
+STOPWORDS = {
+    "she", "he", "they", "i", "we", "has", "have", "had", "completed",
+    "done", "earned", "holds", "the", "a", "an", "is", "was", "did"
+}
+
+
+def extract_list_items(text: str) -> list[str]:
+    """Extract list items from numbered, bulleted, or title lists."""
+    items = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        # Numbered list: 1. Item or 1) Item
+        m_num = re.match(r"^(?:\d+[\.\)]|\(\d+\))\s+(.+)$", stripped)
+        if m_num:
+            item = m_num.group(1).strip()
+            item = re.sub(r"\s*\[\d+\]", "", item).strip()
+            item = re.sub(r"^\*+|\*+$|^_+|_+$", "", item).strip()
+            if item:
+                items.append(item)
+            continue
+
+        # Bullet list: - Item or * Item or • Item
+        m_bullet = re.match(r"^[-*•]\s+(.+)$", stripped)
+        if m_bullet:
+            item = m_bullet.group(1).strip()
+            item = re.sub(r"\s*\[\d+\]", "", item).strip()
+            item = re.sub(r"^\*+|\*+$|^_+|_+$", "", item).strip()
+            if item:
+                items.append(item)
+            continue
+
+        # Title: Item
+        m_title = re.match(r"^(?:Title|Project)\s*:\s*(.+)$", stripped, re.IGNORECASE)
+        if m_title:
+            item = m_title.group(1).strip()
+            item = re.sub(r"\s*\[\d+\]", "", item).strip()
+            if item:
+                items.append(item)
+            continue
+
+    return items
+
+
+def extract_topic_from_text(text: str) -> str | None:
+    """Extract a topic or entity from a prior user question or assistant text."""
+    if not text:
+        return None
+
+    cleaned = text.strip()
+
+    # Pattern 1: User question questions like "What is X?", "Tell me about X", etc.
+    patterns = [
+        r"(?i)^(?:what\s+is|what\s+are|explain|describe|tell\s+me\s+about|details\s+about|information\s+on|who\s+is)\s+(?:the\s+|a\s+|an\s+)?(.+?)(?:\?|\.|$)",
+        r"(?i)^(?:did\s+\w+\s+(?:complete|do|have|earn)\s+)(?:the\s+|a\s+|an\s+)?(.+?)(?:\?|\.|$)",
+    ]
+
+    for pattern in patterns:
+        m = re.match(pattern, cleaned)
+        if m:
+            topic = m.group(1).strip()
+            topic = re.sub(r"[\?\.\!]+$", "", topic).strip()
+            if topic and 1 < len(topic) and len(topic.split()) <= 8:
+                return topic
+
+    # Pattern 2: Entity like "<Name> certification/project/degree"
+    m_ent = re.search(
+        r"(?i)\b([A-Za-z0-9\-_]+(?:\s+[A-Za-z0-9\-_]+){0,2}\s+(?:certification|certificate|project|degree|internship|workshop))\b",
+        cleaned
+    )
+    if m_ent:
+        words = m_ent.group(1).split()
+        while words and words[0].lower() in STOPWORDS:
+            words.pop(0)
+        if words:
+            return " ".join(words)
+
+    # Pattern 3: Quoted topic
+    quoted = re.findall(r'"([^"]+)"|\'([^\']+)\'', cleaned)
+    if quoted:
+        candidate = (quoted[0][0] or quoted[0][1]).strip()
+        if candidate and len(candidate.split()) <= 6:
+            return candidate
+
+    return None
+
+
+def resolve_follow_up_query(query: str, history: list | None) -> str:
+    """
+    Deterministically resolve conversational follow-up references.
+    Returns the resolved standalone query, or the original query if unresolvable.
+    """
+    if not history or not query.strip():
+        return query
+
+    query_strip = query.strip()
+    query_lower = query_strip.lower()
+
+    # 1. Ordinal/list references (e.g. "the second one", "explain the 2nd one")
+    ordinal_match = re.search(
+        r"\b(?:the\s+)?(first|second|third|fourth|fifth|sixth|1st|2nd|3rd|4th|5th|6th)\s*(?:one|item|project|topic|certification|point)?\b",
+        query_lower
+    )
+    if ordinal_match:
+        ord_word = ordinal_match.group(1)
+        target_idx = ORDINALS.get(ord_word)
+        if target_idx:
+            last_msg = history[-1]
+            role = last_msg.get("role", "") if isinstance(last_msg, dict) else getattr(last_msg, "role", "")
+            if role == "assistant":
+                content = last_msg.get("content", "") if isinstance(last_msg, dict) else getattr(last_msg, "content", "")
+                items = extract_list_items(content)
+                if items and len(items) >= target_idx:
+                    selected_item = items[target_idx - 1]
+                    resolved = re.sub(
+                        r"(?i)\b(?:the\s+)?(?:first|second|third|fourth|fifth|sixth|1st|2nd|3rd|4th|5th|6th)\s*(?:one|item|project|topic|certification|point)?\b",
+                        selected_item,
+                        query_strip
+                    ).strip()
+                    return resolved
+            return query
+
+    # 2. Extract recent topic for pronouns / anaphoric phrases
+    recent_topic = None
+    for msg in reversed(history):
+        content = msg.get("content", "") if isinstance(msg, dict) else getattr(msg, "content", "")
+        topic = extract_topic_from_text(content)
+        if topic:
+            recent_topic = topic
+            break
+
+    if not recent_topic:
+        for msg in reversed(history):
+            role = msg.get("role", "") if isinstance(msg, dict) else getattr(msg, "role", "")
+            if role == "assistant":
+                content = msg.get("content", "") if isinstance(msg, dict) else getattr(msg, "content", "")
+                m_def = re.match(r"^([A-Z][A-Za-z0-9\s\-_]{2,40})\s+(?:is|refers to|was)\b", content.strip())
+                if m_def:
+                    recent_topic = m_def.group(1).strip()
+                    break
+
+    if recent_topic:
+        # Check "its types" / "what are its types"
+        if re.search(r"\b(?:what\s+are\s+)?its\s+types\b", query_lower):
+            return f"What are the types of {recent_topic}?"
+
+        # Check "when was it completed?" / "when was it done?"
+        if re.search(r"\bwhen\s+was\s+it\s+(?:completed|done|finished|awarded|earned|issued)\b", query_lower):
+            return f"When was {recent_topic} completed?"
+
+        # Check "explain that further" / "explain it further" / "tell me more about that"
+        if re.search(r"\b(?:explain|elaborate\s+on|tell\s+me\s+more\s+about)\s+(?:that|it|this)(?:\s+further)?\b", query_lower):
+            return f"Explain {recent_topic} further"
+
+        # General "it" substitution if question is about "it" as subject/object
+        if re.search(r"\b(?:what|how|why|where)\s+(?:is|does|was|can)\s+it\b", query_lower):
+            return re.sub(r"\bit\b", recent_topic, query_strip, flags=re.IGNORECASE)
+
+    # If reference cannot be resolved reliably, do not invent a topic.
+    return query
+
 
 def extract_project_titles(results: list[dict]) -> list[str]:
     """
@@ -66,7 +238,8 @@ def answer_question(
     document_id: int | None = None,
     document_ids: list[int] | None = None,
     top_k: int = 6,
-    user_id: int | None = None
+    user_id: int | None = None,
+    conversation_history: list | None = None
 ) -> dict:
     """
     Answer a question using relevant document context and grounded synthesis.
@@ -74,8 +247,17 @@ def answer_question(
     if not query.strip():
         raise ValueError("Question cannot be empty.")
 
+    # Retrieve history from query metadata if not explicitly provided
+    if conversation_history is None:
+        conversation_history = getattr(query, "conversation_history", None)
+
+    original_query = str(query)
+
+    # Resolve follow-up query before document retrieval
+    retrieval_query = resolve_follow_up_query(original_query, conversation_history)
+
     context_data = build_context(
-        query=query,
+        query=retrieval_query,
         db=db,
         document_id=document_id,
         document_ids=document_ids,
@@ -99,7 +281,7 @@ def answer_question(
         or top_chunk_score < MIN_CONFIDENCE_THRESHOLD
     ):
         return {
-            "query": query,
+            "query": original_query,
             "answer": FALLBACK_ANSWER,
             "result_count": 0,
             "results": []
@@ -109,7 +291,7 @@ def answer_question(
     # Deterministic handling for project list questions
     # --------------------------------------------------
     if (
-        is_project_list_query(query)
+        (is_project_list_query(original_query) or is_project_list_query(retrieval_query))
         and any(
             result.get("query_intent") == "projects"
             for result in context_data["results"]
@@ -123,17 +305,19 @@ def answer_question(
             answer = "\n".join(project_titles)
         else:
             answer = generate_response(
-                query=query,
-                context=context_data["context"]
+                query=original_query,
+                context=context_data["context"],
+                conversation_history=conversation_history
             )
     else:
         answer = generate_response(
-            query=query,
-            context=context_data["context"]
+            query=original_query,
+            context=context_data["context"],
+            conversation_history=conversation_history
         )
 
     return {
-        "query": query,
+        "query": original_query,
         "answer": answer,
         "result_count": context_data["result_count"],
         "results": context_data["results"]

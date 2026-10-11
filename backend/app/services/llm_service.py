@@ -24,9 +24,25 @@ class LLMTimeoutError(LLMServiceError):
     pass
 
 
+def format_conversation_history(conversation_history: list | None) -> str:
+    """Format validated recent conversation turns for LLM prompt context."""
+    if not conversation_history:
+        return ""
+
+    formatted_turns = []
+    for message in conversation_history:
+        role = message.get("role", "") if isinstance(message, dict) else getattr(message, "role", "")
+        content = message.get("content", "") if isinstance(message, dict) else getattr(message, "content", "")
+        speaker = "User" if role == "user" else "Assistant"
+        formatted_turns.append(f"{speaker}: {content.strip()}")
+
+    return "\n".join(formatted_turns).strip()
+
+
 def generate_response(
     query: str,
-    context: str
+    context: str,
+    conversation_history: list | None = None
 ) -> str:
     """
     Generate a grounded, synthesized answer with inline source citations
@@ -38,6 +54,13 @@ def generate_response(
 
     if not context.strip():
         return FALLBACK_ANSWER
+
+    history_text = format_conversation_history(conversation_history)
+    history_section = (
+        f"CONVERSATION HISTORY:\n--------\n{history_text}\n--------\n\n"
+        if history_text
+        else ""
+    )
 
     prompt = f"""You are Cognidocs AI, an intelligent document analysis assistant.
 Answer the user's question directly, concisely, and factually using ONLY the provided document sources.
@@ -53,8 +76,9 @@ STRICT GUIDELINES:
 "{FALLBACK_ANSWER}"
 Do not guess or provide unsupported speculation.
 7. Formatting: Use concise paragraphs or a clean list if multiple items are requested. Keep the response professional, natural, and directly focused on the inquiry.
+8. Conversational grounding: Conversation history is provided solely to understand conversational context and resolve follow-up references. Conversation history is NOT evidence. All factual claims must be strictly grounded in the SOURCES below and must cite only source indices ([1], [2], etc.) from the current SOURCES.
 
-SOURCES:
+{history_section}SOURCES:
 --------
 {context}
 --------
@@ -166,7 +190,7 @@ STRICT OUTPUT RULES:
 4. Never include statements such as "No projects are listed,"
    "No information was provided," or "Not listed" for categories
    unrelated to the document.
-5. Never transform an ordinary worksheet into a résumé,
+5. Never transform an ordinary worksheet into a rAcsumAc,
    project report, research paper, or academic profile.
 6. For a question paper or practice worksheet, describe the
    actual questions, exercises, instructions, and topics that
