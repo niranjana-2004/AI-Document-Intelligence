@@ -25,6 +25,10 @@ function Documents() {
     const [copiedDocText, setCopiedDocText] = useState(false)
     const [copiedSummaryText, setCopiedSummaryText] = useState(false)
 
+    const [documentToDelete, setDocumentToDelete] = useState(null)
+    const [deleteLoading, setDeleteLoading] = useState(false)
+    const [deleteError, setDeleteError] = useState('')
+
     /* ========================================
        FETCH DOCUMENTS
     ======================================== */
@@ -173,20 +177,29 @@ function Documents() {
        DELETE DOCUMENT
     ======================================== */
 
-    const handleDelete = async (documentId) => {
-        const confirmed = window.confirm(
-            'Are you sure you want to delete this document?'
-        )
+    const handleRequestDelete = (doc) => {
+        setDocumentToDelete(doc)
+        setDeleteError('')
+    }
 
-        if (!confirmed) {
+    const handleCancelDelete = () => {
+        if (deleteLoading) return
+        setDocumentToDelete(null)
+        setDeleteError('')
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!documentToDelete || deleteLoading) {
             return
         }
 
         try {
+            setDeleteLoading(true)
+            setDeleteError('')
             setError('')
 
             await apiRequest(
-                `/documents/${documentId}`,
+                `/documents/${documentToDelete.id}`,
                 {
                     method: 'DELETE',
                 }
@@ -195,15 +208,22 @@ function Documents() {
             setDocuments((currentDocuments) =>
                 currentDocuments.filter(
                     (document) =>
-                        document.id !== documentId
+                        document.id !== documentToDelete.id
                 )
             )
+
+            if (selectedDocument?.id === documentToDelete.id) {
+                closeDocument()
+            }
+
+            setDocumentToDelete(null)
         } catch (err) {
             console.error('Delete error:', err)
-            setError(
-                err.message ||
-                'Failed to delete document.'
-            )
+            const errMsg = err.message || 'Failed to delete document.'
+            setDeleteError(errMsg)
+            setError(errMsg)
+        } finally {
+            setDeleteLoading(false)
         }
     }
 
@@ -437,7 +457,7 @@ function Documents() {
                                             <button
                                                 type="button"
                                                 className="document-delete"
-                                                onClick={() => handleDelete(doc.id)}
+                                                onClick={() => handleRequestDelete(doc)}
                                                 title={`Delete ${doc.filename}`}
                                                 aria-label={`Delete ${doc.filename}`}
                                             >
@@ -608,6 +628,84 @@ function Documents() {
                                     </div>
                                 </>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* =================================
+                DELETE DOCUMENT CONFIRMATION MODAL
+            ================================= */}
+            {documentToDelete && (
+                <div
+                    className="modal-overlay"
+                    onClick={!deleteLoading ? handleCancelDelete : undefined}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="delete-doc-modal-title"
+                >
+                    <div
+                        className="modal delete-doc-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="modal-header">
+                            <div>
+                                <h2 id="delete-doc-modal-title">Delete Document</h2>
+                                <p>Permanent document removal</p>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="modal-close"
+                                onClick={handleCancelDelete}
+                                disabled={deleteLoading}
+                                aria-label="Close delete confirmation"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="modal-body delete-doc-modal-body">
+                            <div className="delete-doc-warning">
+                                <span className="delete-doc-warning-icon" aria-hidden="true">⚠️</span>
+                                <div className="delete-doc-warning-content">
+                                    <p className="delete-doc-question">
+                                        Are you sure you want to delete this document?
+                                    </p>
+                                    <p className="delete-doc-target" title={documentToDelete.filename}>
+                                        📄 <span className="delete-doc-filename">{documentToDelete.filename}</span>
+                                    </p>
+                                    <p className="delete-doc-subtext">
+                                        This action cannot be undone. All extracted text and vector embeddings will be permanently removed.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {deleteError && (
+                                <p className="delete-doc-error" role="alert">
+                                    {deleteError}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="delete-doc-actions">
+                            <button
+                                type="button"
+                                className="delete-doc-cancel-btn"
+                                onClick={handleCancelDelete}
+                                disabled={deleteLoading}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="delete-doc-confirm-btn"
+                                onClick={handleConfirmDelete}
+                                disabled={deleteLoading}
+                            >
+                                {deleteLoading ? 'Deleting...' : 'Delete document'}
+                            </button>
                         </div>
                     </div>
                 </div>
