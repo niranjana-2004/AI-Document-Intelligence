@@ -133,6 +133,72 @@ ANSWER:
         )
 
 
+MAX_SUMMARY_INPUT_CHARS = 12000
+
+SUMMARY_FORMAT_INSTRUCTIONS = {
+    "numbered": "Present the summary as a structured, numbered list of main points.",
+    "paragraphs": "Present the summary as cohesive, well-organized paragraphs.",
+    "bullets": "Present the summary as clear, structured bullet points.",
+    "headings": "Present the summary organized under relevant, content-specific headings and subheadings.",
+}
+
+SUMMARY_LENGTH_INSTRUCTIONS = {
+    "brief": "Keep the summary concise and high-level (approximately 1-2 paragraphs or 3-5 key points), highlighting only essential takeaways.",
+    "detailed": "Provide a comprehensive, detailed summary covering important concepts, context, findings, and nuances.",
+}
+
+
+def prepare_summary_input(text: str, max_chars: int = MAX_SUMMARY_INPUT_CHARS) -> tuple[str, bool]:
+    """
+    Bound document text for LLM summarization without exceeding context budgets.
+    For documents exceeding max_chars, samples opening, middle, and concluding sections.
+    """
+    text_clean = text.strip()
+    total_len = len(text_clean)
+    if total_len <= max_chars:
+        return text_clean, False
+
+    head_budget = int(max_chars * 0.40)
+    mid_budget = int(max_chars * 0.25)
+    tail_budget = max_chars - head_budget - mid_budget
+
+    # 1. Opening section
+    head_cut = text_clean[:head_budget]
+    last_nl = head_cut.rfind("\n")
+    if last_nl > head_budget - 400:
+        head_text = head_cut[:last_nl].strip()
+    else:
+        head_text = head_cut.strip()
+
+    # 2. Middle section (centered around midpoint)
+    mid_center = total_len // 2
+    mid_start = max(0, mid_center - (mid_budget // 2))
+    mid_end = min(total_len, mid_start + mid_budget)
+    mid_slice = text_clean[mid_start:mid_end]
+    first_nl = mid_slice.find("\n")
+    last_nl = mid_slice.rfind("\n")
+    if first_nl != -1 and last_nl != -1 and last_nl > first_nl:
+        mid_text = mid_slice[first_nl:last_nl].strip()
+    else:
+        mid_text = mid_slice.strip()
+
+    # 3. Concluding section
+    tail_start = max(0, total_len - tail_budget)
+    tail_slice = text_clean[tail_start:]
+    first_nl = tail_slice.find("\n")
+    if first_nl != -1 and first_nl < 400:
+        tail_text = tail_slice[first_nl:].strip()
+    else:
+        tail_text = tail_slice.strip()
+
+    sampled_text = (
+        f"--- [EXCERPT 1: OPENING / OVERVIEW] ---\n{head_text}\n\n"
+        f"--- [EXCERPT 2: CENTRAL CONTENT / METHODOLOGY] ---\n{mid_text}\n\n"
+        f"--- [EXCERPT 3: CONCLUDING CONTENT / RESULTS] ---\n{tail_text}"
+    )
+    return sampled_text, True
+
+
 def generate_summary(
     text: str,
     summary_format: str = "numbered",
@@ -142,95 +208,53 @@ def generate_summary(
     Generate a concise and factually faithful summary
     of the document using the local Ollama LLM.
     """
-
-    if not text.strip():
+    if not text or not text.strip():
         return "I couldn't generate a summary because the document is empty."
-   
-    prompt = f"""
-You are a professional document summarization assistant.
 
-Your task is to produce an accurate, detailed, natural-language
-summary of the source document.
+    format_key = summary_format.lower() if summary_format else "numbered"
+    length_key = summary_length.lower() if summary_length else "detailed"
 
-CONSISTENT WRITING STYLE:
-Every summary must follow the same writing style:
-- Use connected, well-organized paragraphs.
-- Begin by identifying the document's actual subject and purpose.
-- Explain the important content in a logical sequence.
-- Describe relevant components, concepts, methods, processes,
-  examples, findings, results, or conclusions when present.
-- Preserve specific names, technical terms, numbers, measurements,
-  commands, and other important details.
-- End with a concise overall explanation of what the document
-  covers or accomplishes, when supported by its content.
-- Write like an informative explanation of the document, not
-  like a template filled with predefined categories.
-- Use the same natural, explanatory style for every document,
-  whether it is a research paper, project report, study material,
-  aptitude worksheet, technical manual, or another document.
+    format_instruction = SUMMARY_FORMAT_INSTRUCTIONS.get(
+        format_key,
+        SUMMARY_FORMAT_INSTRUCTIONS["numbered"]
+    )
+    length_instruction = SUMMARY_LENGTH_INSTRUCTIONS.get(
+        length_key,
+        SUMMARY_LENGTH_INSTRUCTIONS["detailed"]
+    )
 
-STRICT SOURCE RULES:
-1. Use only information supported by the source document.
-2. Never invent topics, questions, skills, examples, results,
-   findings, or conclusions.
-3. Do not add information from general knowledge.
-4. Do not assume the document contains content that was not
-   extracted from the source.
-5. Preserve the meaning and context of the original information.
-6. Include important details in proportion to their importance.
-7. If information is missing or unclear, do not guess.
+    bounded_text, is_sampled = prepare_summary_input(text)
 
-STRICT OUTPUT RULES:
-1. Write the summary primarily as paragraphs, using multiple
-   paragraphs when needed.
-2. Do not use predefined headings such as Overview, Education,
-   Technical Skills, Projects, Internships, Workshops,
-   Certifications, Achievements, or Results automatically.
-3. Include a heading only if it genuinely helps explain the
-   document's actual content.
-4. Never include statements such as "No projects are listed,"
-   "No information was provided," or "Not listed" for categories
-   unrelated to the document.
-5. Never transform an ordinary worksheet into a rAcsumAc,
-   project report, research paper, or academic profile.
-6. For a question paper or practice worksheet, describe the
-   actual questions, exercises, instructions, and topics that
-   are present in the extracted text. Do not invent questions
-   or topics based on what such worksheets commonly contain.
-7. For a technical report or research paper, explain its actual
-   purpose, design, components, methodology, results, limitations,
-   and conclusions when those details are present.
-8. Avoid repetitive conclusions, generic filler, and unnecessary
-   disclaimers.
-9. Do not begin with "Here is a summary of the document."
-10. Do not refer to these instructions in the final summary.
+    if is_sampled:
+        source_header = (
+            f"SOURCE DOCUMENT EXCERPTS (Sampled from the opening, middle, and concluding sections "
+            f"of a {len(text.strip()):,} character document):\n"
+            f"Base your summary strictly on these provided excerpts without assuming or inventing details from unsupplied sections."
+        )
+    else:
+        source_header = "SOURCE DOCUMENT:"
 
-LENGTH:
-Produce a sufficiently detailed summary to preserve the document's
-important information without reproducing the entire source.
-Choose the length according to the amount and complexity of
-relevant information in the source.
-FORMAT INSTRUCTIONS:
-- Summary format: {summary_format}
-- Summary length: {summary_length}
+    prompt = f"""You are Cognidocs AI, an expert document intelligence assistant.
+Analyze the provided document text and produce an accurate, objective, and well-structured summary.
 
-Use the selected format:
-- numbered: organize the main points as a numbered list.
-- paragraphs: write connected paragraphs.
-- bullets: use bullet points.
-- headings: use relevant headings and subheadings.
+CORE GUIDELINES:
+1. Factual grounding: Base the summary strictly on the information explicitly present in the source text. Never invent facts, figures, skills, findings, or conclusions.
+2. Adaptive content analysis:
+   - For resumes or curriculum vitae: summarize the candidate's actual qualifications, technical and professional skills, education, and notable experience.
+   - For research papers or academic studies: summarize the research objectives, methodologies, key findings, and conclusions.
+   - For technical reports or specifications: summarize the project scope, system components or architecture, implementation details, and outcomes.
+   - For general documents or articles: summarize the primary topics, core arguments, and takeaways.
+3. Strict omission: If a detail, section, or topic is not present in the document, completely omit it. Never include placeholder headings or disclaimers such as "Not listed", "Not specified", "No information provided", or "None mentioned".
+4. Formatting: {format_instruction}
+5. Depth: {length_instruction}
+6. Tone: Professional, objective, and informative. Begin directly with the summary content without conversational preambles like "Here is a summary".
 
-Use the selected length:
-- brief: include only the essential information.
-- detailed: explain the important details supported by the source.
-
-Never invent information or introduce unrelated categories.
-SOURCE DOCUMENT:
+{source_header}
 ----------------
-{text}
+{bounded_text}
 ----------------
 
-Write the summary now.
+SUMMARY:
 """
 
     try:
@@ -239,15 +263,16 @@ Write the summary now.
             json={
                 "model": MODEL_NAME,
                 "prompt": prompt,
-                "stream": False
+                "stream": False,
+                "options": {
+                    "temperature": 0.3
+                }
             },
             timeout=300
         )
 
         response.raise_for_status()
-
         data = response.json()
-
         summary = data.get("response", "").strip()
 
         if not summary:
@@ -270,6 +295,7 @@ Write the summary now.
         raise LLMServiceError(
             "An error occurred while communicating with the AI generation service."
         )
+
 
 
 def generate_suggested_questions_llm(

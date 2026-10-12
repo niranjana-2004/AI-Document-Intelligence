@@ -262,11 +262,17 @@ def get_document_summary(
         detail="Original document text is unavailable."
     )
 
-    summary = generate_summary(
-    str(document.extracted_text),
-    summary_format=format,
-    summary_length=length
-    )
+    try:
+        summary = generate_summary(
+            str(document.extracted_text),
+            summary_format=format,
+            summary_length=length
+        )
+    except (LLMServiceError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error)
+        )
 
     setattr(document, "summary", summary)
 
