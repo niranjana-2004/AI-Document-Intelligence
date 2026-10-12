@@ -112,9 +112,38 @@ QUERY_INTENTS = {
         "certificates",
     ],
 
+    "objective": [
+        "objective",
+        "objectives",
+        "project objective",
+        "project objectives",
+        "aim of the project",
+        "goal of the project",
+        "project goal",
+        "project goals",
+        "career objective",
+    ],
+
     "projects": [
-        "project",
-        "projects",
+        "projects done",
+        "projects have i done",
+        "projects has he done",
+        "projects has she done",
+        "projects did i do",
+        "projects did he do",
+        "projects did she do",
+        "projects worked on",
+        "projects completed",
+        "list of projects",
+        "list projects",
+        "list all projects",
+        "what projects",
+        "which projects",
+        "my projects",
+        "academic projects",
+        "personal projects",
+        "projects listed",
+        "projects undertaken",
     ],
 
     "internship": [
@@ -168,6 +197,21 @@ QUERY_INTENTS = {
 # --------------------------------------------------
 
 SECTION_MARKERS = {
+
+    "objective": [
+        "career objective",
+        "main objective",
+        "project objective",
+        "project objectives",
+        "objective of the project",
+        "objective of this project",
+        "specific objectives",
+        "aim of the project",
+        "objective:",
+        "objectives:",
+        "objective\n",
+        "objectives\n",
+    ],
 
     "education": [
         "educational qualifications",
@@ -287,6 +331,7 @@ def detect_query_intent(query: str) -> str | None:
         "ides",
         "tools",
         "certifications",
+        "objective",
         "projects",
         "workshops",
         "awards",
@@ -642,6 +687,33 @@ def semantic_search(
 
     chunks_to_search = special_chunks if ambiguous_language_query else chunks
 
+    # Precompute section and subsection presence in candidate documents
+    SECTION_FILTER_INTENTS = {
+        "projects": "projects",
+        "certifications": "certifications",
+        "internship": "internship",
+        "workshops": "workshops",
+        "awards": "awards",
+        "education": "education",
+        "languages": "languages",
+    }
+
+    has_section_marker_in_docs = False
+    if intent in SECTION_FILTER_INTENTS:
+        required_category = SECTION_FILTER_INTENTS[intent]
+        section_markers = SECTION_MARKERS.get(required_category, [])
+        has_section_marker_in_docs = any(
+            any(marker in (c.content or "").lower() for marker in section_markers)
+            for c in chunks_to_search
+        )
+
+    has_subsection_marker_in_docs = False
+    if intent in SUBSECTION_MARKERS:
+        has_subsection_marker_in_docs = any(
+            any(marker in (c.content or "").lower() for marker in SUBSECTION_MARKERS[intent])
+            for c in chunks_to_search
+        )
+
     for chunk in chunks_to_search:
 
         if not chunk.embedding:
@@ -699,17 +771,7 @@ def semantic_search(
         # Strong document section filtering
         # --------------------------------------------------
 
-        SECTION_FILTER_INTENTS = {
-            "projects": "projects",
-            "certifications": "certifications",
-            "internship": "internship",
-            "workshops": "workshops",
-            "awards": "awards",
-            "education": "education",
-            "languages": "languages",
-        }
-
-        if intent in SECTION_FILTER_INTENTS:
+        if intent in SECTION_FILTER_INTENTS and has_section_marker_in_docs:
 
             required_category = SECTION_FILTER_INTENTS[intent]
 
@@ -732,7 +794,7 @@ def semantic_search(
         # --------------------------------------------------
 
 
-        if intent in SUBSECTION_MARKERS:
+        if intent in SUBSECTION_MARKERS and has_subsection_marker_in_docs:
 
             subsection_present = False
 

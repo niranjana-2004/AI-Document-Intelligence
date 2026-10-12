@@ -9,8 +9,8 @@ from app.core.database import get_db
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.services.search_service import semantic_search
-from app.services.question_service import answer_question
-from app.schemas.question import QuestionRequest
+from app.services.question_service import answer_question, get_document_suggested_questions
+from app.schemas.question import QuestionRequest, SuggestedQuestionsRequest, SuggestedQuestionsResponse
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import cast
@@ -172,6 +172,43 @@ def ask_question(
         raise HTTPException(
             status_code=503,
             detail=str(error)
+        )
+
+
+@router.post("/suggested-questions", response_model=SuggestedQuestionsResponse)
+def get_suggested_questions_endpoint(
+    request: SuggestedQuestionsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        if request.document_ids is not None and len(request.document_ids) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Document selection cannot be empty."
+            )
+
+        questions = get_document_suggested_questions(
+            db=db,
+            user_id=cast(int, current_user.id),
+            document_ids=request.document_ids
+        )
+
+        return {
+            "questions": questions,
+            "scope": "specific" if request.document_ids is not None else "all"
+        }
+    except HTTPException:
+        raise
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate suggested questions: {error}"
         )
 
 

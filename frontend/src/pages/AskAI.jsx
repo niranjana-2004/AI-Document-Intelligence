@@ -116,12 +116,67 @@ function AskAI() {
     const activeRequestIdRef = useRef(0)
     const abortControllerRef = useRef(null)
 
-    const suggestedQuestions = [
-        'What are my skills?',
-        'What projects have I done?',
-        'What certifications do I have?',
-        'What is my educational background?',
-    ]
+    // Document-aware suggested questions states & cancellation guards
+    const [suggestedQuestions, setSuggestedQuestions] = useState([])
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+    const suggestionsRequestIdRef = useRef(0)
+    const suggestionsAbortControllerRef = useRef(null)
+
+    const fetchSuggestedQuestions = async (forcedScopeMode = scopeMode, forcedDocIds = selectedDocIds) => {
+        // Cancel any pending suggestion request
+        if (suggestionsAbortControllerRef.current) {
+            suggestionsAbortControllerRef.current.abort()
+            suggestionsAbortControllerRef.current = null
+        }
+
+        // In Specific mode with 0 docs selected, or when no documents exist
+        if (forcedScopeMode === 'specific' && (!Array.isArray(forcedDocIds) || forcedDocIds.length === 0)) {
+            setSuggestedQuestions([])
+            setSuggestionsLoading(false)
+            return
+        }
+
+        if (documents.length === 0 && !docsLoading) {
+            setSuggestedQuestions([])
+            setSuggestionsLoading(false)
+            return
+        }
+
+        const currentReqId = ++suggestionsRequestIdRef.current
+        const abortController = new AbortController()
+        suggestionsAbortControllerRef.current = abortController
+
+        setSuggestedQuestions([])
+        setSuggestionsLoading(true)
+
+        try {
+            const payload = {
+                document_ids: forcedScopeMode === 'specific' ? forcedDocIds : null,
+            }
+            const data = await apiRequest('/documents/suggested-questions', {
+                method: 'POST',
+                signal: abortController.signal,
+                body: JSON.stringify(payload),
+            })
+
+            if (currentReqId !== suggestionsRequestIdRef.current) {
+                return
+            }
+
+            const questionsList = Array.isArray(data?.questions) ? data.questions : []
+            setSuggestedQuestions(questionsList)
+        } catch (err) {
+            if (currentReqId !== suggestionsRequestIdRef.current || err?.name === 'AbortError') {
+                return
+            }
+            console.warn('Failed to fetch suggested questions:', err)
+            setSuggestedQuestions([])
+        } finally {
+            if (currentReqId === suggestionsRequestIdRef.current) {
+                setSuggestionsLoading(false)
+            }
+        }
+    }
 
     useEffect(() => {
         fetchDocuments()
@@ -129,8 +184,23 @@ function AskAI() {
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort()
             }
+            if (suggestionsAbortControllerRef.current) {
+                suggestionsAbortControllerRef.current.abort()
+            }
         }
     }, [])
+
+    // Refresh suggested questions on scope changes or when document collection finishes loading
+    useEffect(() => {
+        if (!docsLoading) {
+            fetchSuggestedQuestions(scopeMode, selectedDocIds)
+        }
+        return () => {
+            if (suggestionsAbortControllerRef.current) {
+                suggestionsAbortControllerRef.current.abort()
+            }
+        }
+    }, [scopeMode, selectedDocIds, documents.length, docsLoading])
 
     // Auto-scroll to bottom of conversation thread on new messages or loading
     useEffect(() => {
@@ -179,6 +249,7 @@ function AskAI() {
                 setMessages([])
             }
             setError('')
+            setSuggestedQuestions([])
             setScopeMode(newMode)
             if (newMode === 'specific') {
                 setIsDocPickerOpen(true)
@@ -199,6 +270,7 @@ function AskAI() {
             setMessages([])
         }
         setError('')
+        setSuggestedQuestions([])
         setSelectedDocIds((prev) =>
             prev.includes(docId)
                 ? prev.filter((id) => id !== docId)
@@ -217,6 +289,7 @@ function AskAI() {
             setMessages([])
         }
         setError('')
+        setSuggestedQuestions([])
         setSelectedDocIds(documents.map((d) => d.id))
     }
 
@@ -231,6 +304,7 @@ function AskAI() {
             setMessages([])
         }
         setError('')
+        setSuggestedQuestions([])
         setSelectedDocIds([])
     }
 
@@ -249,6 +323,7 @@ function AskAI() {
         setExpandedSourceExcerpts({})
         setExpandedSourcesDrawers({})
         textareaRef.current?.focus()
+        fetchSuggestedQuestions(scopeMode, selectedDocIds)
     }
 
     const getFileTypeBadge = (doc) => {
@@ -284,9 +359,9 @@ function AskAI() {
         (scopeMode === 'specific' && selectedDocIds.length === 0) ||
         (!docsLoading && documents.length === 0)
 
-    const handleAskAI = async () => {
-        const queryText = question.trim()
-        if (!queryText || isSubmitDisabled) {
+    const handleAskAI = async (overrideQuery = null) => {
+        const queryText = (typeof overrideQuery === 'string' ? overrideQuery : question).trim()
+        if (!queryText || loading) {
             return
         }
 
@@ -385,9 +460,8 @@ function AskAI() {
     }
 
     const handleSuggestedQuestion = (suggestion) => {
-        if (loading) return
-        setQuestion(suggestion)
-        textareaRef.current?.focus()
+        if (loading || !suggestion) return
+        handleAskAI(suggestion)
     }
 
     const handleCitationClick = (msgId, citationIndex) => {
@@ -771,21 +845,39 @@ function AskAI() {
                         </p>
 
                         <div className="chat-suggestions-wrap">
-                            <span className="chat-suggestions-label">Quick Inquiries</span>
-                            <div className="chat-suggestions-chips">
-                                {suggestedQuestions.map((suggestion) => (
-                                    <button
-                                        key={suggestion}
-                                        type="button"
-                                        className="chat-suggestion-chip"
-                                        onClick={() => handleSuggestedQuestion(suggestion)}
-                                        disabled={loading}
-                                    >
-                                        <span className="suggestion-sparkle" aria-hidden="true">✨</span>
-                                        <span>{suggestion}</span>
-                                    </button>
-                                ))}
-                            </div>
+                            <span className="chat-suggestions-label">
+                                {scopeMode === 'specific' ? 'Document Suggestions' : 'Collection Inquiries'}
+                            </span>
+                            {suggestionsLoading ? (
+                                <div className="chat-suggestions-loading" aria-label="Generating document-aware suggestions">
+                                    <span className="suggestion-spinner" aria-hidden="true"></span>
+                                    <span className="suggestion-loading-text">Generating document-aware suggestions...</span>
+                                </div>
+                            ) : scopeMode === 'specific' && selectedDocIds.length === 0 ? (
+                                <p className="chat-suggestions-hint">
+                                    Select one or more documents above to generate tailored inquiry suggestions.
+                                </p>
+                            ) : suggestedQuestions.length > 0 ? (
+                                <div className="chat-suggestions-chips">
+                                    {suggestedQuestions.map((suggestion) => (
+                                        <button
+                                            key={suggestion}
+                                            type="button"
+                                            className="chat-suggestion-chip"
+                                            onClick={() => handleSuggestedQuestion(suggestion)}
+                                            disabled={loading}
+                                            title={`Ask: "${suggestion}"`}
+                                        >
+                                            <span className="suggestion-sparkle" aria-hidden="true">✨</span>
+                                            <span>{suggestion}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : !docsLoading && documents.length > 0 ? (
+                                <p className="chat-suggestions-hint">
+                                    Ask any question about your documents in the composer below.
+                                </p>
+                            ) : null}
                         </div>
                     </section>
                 )}

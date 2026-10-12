@@ -3380,6 +3380,47 @@
   cursor: not-allowed;
 }
 
+.chat-suggestions-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.suggestion-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--cogni-cyan);
+  border-radius: 50%;
+  animation: suggestion-spin 0.8s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes suggestion-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suggestion-loading-text {
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+
+.chat-suggestions-hint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+  font-style: italic;
+}
+
 .chat-thread-container {
   display: flex;
   flex-direction: column;

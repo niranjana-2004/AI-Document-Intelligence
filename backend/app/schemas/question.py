@@ -50,3 +50,12 @@ class QuestionRequest(BaseModel):
         if self.conversation_history is not None:
             self.query = ConversationalQuery(self.query, self.conversation_history)
         return self
+
+
+class SuggestedQuestionsRequest(BaseModel):
+    document_ids: list[int] | None = Field(default=None, max_length=20)
+
+
+class SuggestedQuestionsResponse(BaseModel):
+    questions: list[str]
+    scope: Literal["all", "specific"]

@@ -1,3 +1,4 @@
+import re
 import requests
 
 
@@ -265,6 +266,92 @@ Write the summary now.
             "The AI model took too long to generate the summary."
         )
 
+    except requests.exceptions.RequestException:
+        raise LLMServiceError(
+            "An error occurred while communicating with the AI generation service."
+        )
+
+
+def generate_suggested_questions_llm(
+    summary_context: str,
+    max_questions: int = 4
+) -> list[str]:
+    """
+    Generate concise, document-grounded suggested questions using the local Ollama LLM.
+    """
+    if not summary_context or not summary_context.strip():
+        return []
+
+    prompt = f"""You are Cognidocs AI, an intelligent document analysis assistant.
+Based on the following document context, generate {max_questions} concise, high-value questions that a user would likely ask about this content.
+
+STRICT RULES:
+1. Grounding: Every question must be strictly relevant to the document topics, facts, or findings provided below.
+2. Output format: Output ONLY the questions, exactly one question per line.
+3. No numbering, no bullet points, no quotation marks, no conversational prefixes, and no explanations.
+4. Each question must be complete, specific, and end with a question mark '?'.
+5. Keep each question natural, direct, and under 15 words.
+
+DOCUMENT CONTEXT:
+--------
+{summary_context.strip()}
+--------
+
+QUESTIONS:
+"""
+
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json={
+                "model": MODEL_NAME,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.3
+                }
+            },
+            timeout=25
+        )
+
+        response.raise_for_status()
+        data = response.json()
+        raw_output = data.get("response", "").strip()
+
+        if not raw_output:
+            return []
+
+        questions: list[str] = []
+        for line in raw_output.splitlines():
+            cleaned = line.strip()
+            if not cleaned:
+                continue
+            # Strip markdown bullets or numbered prefixes like "1. ", "- ", "* "
+            cleaned = re.sub(r"^(?:\d+[\.\)]|[-*•])\s+", "", cleaned).strip()
+            # Strip quotes
+            cleaned = cleaned.strip('"\'')
+            if not cleaned:
+                continue
+            # Ensure it ends with ?
+            if not cleaned.endswith("?"):
+                cleaned += "?"
+            # Ignore conversational filler lines like "Here are 4 questions:"
+            if cleaned.lower().startswith(("here are", "sure,", "certainly", "based on")):
+                continue
+            if len(cleaned.split()) >= 3 and cleaned not in questions:
+                questions.append(cleaned)
+
+        return questions[:max_questions]
+
+    except requests.exceptions.ConnectionError:
+        raise LLMConnectionError(
+            "The AI generation service is currently unreachable. "
+            "Please ensure Ollama is running."
+        )
+    except requests.exceptions.Timeout:
+        raise LLMTimeoutError(
+            "The AI model took too long to generate suggested questions."
+        )
     except requests.exceptions.RequestException:
         raise LLMServiceError(
             "An error occurred while communicating with the AI generation service."
