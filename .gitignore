@@ -34,7 +34,7 @@ uploads/
 generated/
 
 # ML / AI models
-models/
+/models/
 *.bin
 *.pt
 *.pth
