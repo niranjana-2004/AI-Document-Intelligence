@@ -1,11 +1,14 @@
+import logging
 from app.core import database
 import secrets
 import os
 from typing import cast
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+
+logger = logging.getLogger(__name__)
 from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.models.otp import OTPVerification
@@ -228,50 +231,76 @@ def resend_otp(
 @router.post("/forgot-password")
 def forgot_password(
     request: ForgotPasswordRequest,
-    db: Session = Depends(get_db)
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
 ):
-    user = (
-        db.query(User)
-        .filter(User.email == request.email.lower())
-        .first()
-    )
+    normalized_email = request.email.strip().lower()
 
-    if not user:
+    try:
+        user = (
+            db.query(User)
+            .filter(User.email == normalized_email)
+            .first()
+        )
+    except Exception as exc:
+        logger.error(
+            "Database error searching for user during password reset: %s",
+            exc,
+        )
         raise HTTPException(
-            status_code=404,
-            detail="No account found with this email address."
+            status_code=500,
+            detail="Unable to process password reset request at this time.",
         )
 
-    # Generate a secure, random reset token
-    reset_token = generate_password_reset_token()
+    # For an unregistered address, return the same generic message without creating a token or sending email
+    if not user:
+        return {
+            "message": "If an account exists with this email address, "
+                       "a password reset link has been sent."
+        }
 
-    # Store only the hashed token in the database
-    token_hash = hash_password_reset_token(reset_token)
+    try:
+        # Generate a secure, random reset token
+        reset_token = generate_password_reset_token()
 
-    # Token expires after 30 minutes
-    expires_at = (
-        datetime.now(timezone.utc)
-        + timedelta(minutes=30)
-    )
+        # Store only the hashed token in the database
+        token_hash = hash_password_reset_token(reset_token)
 
-    # Invalidate any previous unused reset tokens
-    db.query(PasswordResetToken).filter(
-        PasswordResetToken.user_id == user.id,
-        PasswordResetToken.is_used == False
-    ).update(
-        {"is_used": True},
-        synchronize_session=False
-    )
+        # Token expires after 30 minutes
+        expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(minutes=30)
+        )
 
-    reset_record = PasswordResetToken(
-        user_id=user.id,
-        token_hash=token_hash,
-        expires_at=expires_at,
-        is_used=False
-    )
+        # Invalidate any previous unused reset tokens
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.is_used == False,
+        ).update(
+            {"is_used": True},
+            synchronize_session=False,
+        )
 
-    db.add(reset_record)
-    db.commit()
+        reset_record = PasswordResetToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+            is_used=False,
+        )
+
+        db.add(reset_record)
+        # Commit the token record before scheduling the email task
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error(
+            "Database error persisting password reset token: %s",
+            exc,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to process password reset request at this time.",
+        )
 
     # Create the link that will be sent by email
     reset_link = (
@@ -279,11 +308,12 @@ def forgot_password(
         f"?token={reset_token}"
     )
 
-    # Send the reset email
-    send_password_reset_email(
-        recipient_email=cast(str, user.email),
-        recipient_name=cast(str, user.full_name),
-        reset_link=reset_link
+    # Schedule background email task with primitives only (never pass live db session)
+    background_tasks.add_task(
+        send_password_reset_email,
+        recipient_email=str(user.email),
+        recipient_name=str(user.full_name),
+        reset_link=reset_link,
     )
 
     return {

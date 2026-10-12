@@ -1,17 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import AuthLayout from '../../layouts/AuthLayout'
 import { apiRequest } from '../../services/api'
 
 function ForgotPassword() {
     const [email, setEmail] = useState('')
+    const [submittedEmail, setSubmittedEmail] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [showSuccessPopup, setShowSuccessPopup] = useState(false)
     const [linkSent, setLinkSent] = useState(false)
+    const [cooldownSeconds, setCooldownSeconds] = useState(0)
+
+    useEffect(() => {
+        if (cooldownSeconds <= 0) return
+
+        const timer = setInterval(() => {
+            setCooldownSeconds((prev) => (prev > 0 ? prev - 1 : 0))
+        }, 1000)
+
+        return () => clearInterval(timer)
+    }, [cooldownSeconds])
 
     const handleSubmit = async (event) => {
         event.preventDefault()
+
+        // Prevent concurrent or premature duplicate submissions
+        if (loading || cooldownSeconds > 0) {
+            return
+        }
 
         setError('')
 
@@ -40,9 +57,11 @@ function ForgotPassword() {
                 }),
             })
 
-            // The reset link has been successfully requested.
+            // The reset link has been dispatched or queued generically
+            setSubmittedEmail(trimmedEmail)
             setLinkSent(true)
             setShowSuccessPopup(true)
+            setCooldownSeconds(60)
 
         } catch (error) {
             setError(
@@ -67,8 +86,15 @@ function ForgotPassword() {
                 </div>
 
                 {error && (
-                    <div className="auth-error">
+                    <div className="auth-error" role="alert">
                         {error}
+                    </div>
+                )}
+
+                {linkSent && !error && !showSuccessPopup && (
+                    <div className="auth-success-message" role="status" aria-live="polite">
+                        If an account exists for <strong>{submittedEmail || email.trim()}</strong>,
+                        a password reset link has been dispatched. Delivery may take a moment—please check your inbox and spam folder.
                     </div>
                 )}
 
@@ -89,19 +115,24 @@ function ForgotPassword() {
                             }}
                             autoComplete="email"
                             disabled={loading}
+                            required
                         />
                     </div>
 
                     <button
                         type="submit"
                         className="auth-primary-button"
-                        disabled={loading}
+                        disabled={loading || cooldownSeconds > 0}
+                        aria-busy={loading}
+                        aria-disabled={loading || cooldownSeconds > 0}
                     >
                         {loading
                             ? 'Sending reset link...'
-                            : linkSent
-                                ? 'Resend reset link'
-                                : 'Send reset link'}
+                            : cooldownSeconds > 0
+                                ? `Resend reset link (${cooldownSeconds}s)`
+                                : linkSent
+                                    ? 'Resend reset link'
+                                    : 'Send reset link'}
                     </button>
                 </form>
 
@@ -134,16 +165,16 @@ function ForgotPassword() {
                             ✓
                         </div>
 
-                        <h3 id="reset-modal-title">Reset link sent!</h3>
+                        <h3 id="reset-modal-title">Check your email</h3>
 
                         <p>
-                            We've sent a password reset link to
-                            <strong> {email.trim()}</strong>.
+                            If an account is registered with
+                            <strong> {submittedEmail || email.trim()}</strong>,
+                            a password reset link has been sent.
                         </p>
 
                         <p>
-                            Please check your inbox and click the
-                            link to create a new password.
+                            Delivery may take a short time. Please check your inbox and spam folder.
                         </p>
 
                         <button
