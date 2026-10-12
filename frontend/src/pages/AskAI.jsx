@@ -91,11 +91,63 @@ function normalizeConversationHistory(messagesList) {
     return result.length > 0 ? result : null
 }
 
+/**
+ * Groups conversations into chronological buckets (Today, Yesterday, Previous 7 Days, Older)
+ */
+function groupConversationsByDate(conversationsList) {
+    if (!Array.isArray(conversationsList) || conversationsList.length === 0) {
+        return []
+    }
+    const now = new Date()
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const oneDayMs = 24 * 60 * 60 * 1000
+    const startOfYesterday = startOfToday - oneDayMs
+    const startOfLast7Days = startOfToday - 7 * oneDayMs
+
+    const groups = {
+        today: [],
+        yesterday: [],
+        last7Days: [],
+        older: [],
+    }
+
+    conversationsList.forEach((conv) => {
+        const date = new Date(conv.updated_at || conv.created_at).getTime()
+        if (date >= startOfToday) {
+            groups.today.push(conv)
+        } else if (date >= startOfYesterday) {
+            groups.yesterday.push(conv)
+        } else if (date >= startOfLast7Days) {
+            groups.last7Days.push(conv)
+        } else {
+            groups.older.push(conv)
+        }
+    })
+
+    return [
+        { label: 'Today', items: groups.today },
+        { label: 'Yesterday', items: groups.yesterday },
+        { label: 'Previous 7 Days', items: groups.last7Days },
+        { label: 'Older', items: groups.older },
+    ].filter((g) => g.items.length > 0)
+}
+
 function AskAI() {
     const [question, setQuestion] = useState('')
     const [messages, setMessages] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+
+    // Persistent conversation history states
+    const [conversations, setConversations] = useState([])
+    const [conversationsLoading, setConversationsLoading] = useState(true)
+    const [activeConversationId, setActiveConversationId] = useState(null)
+    const [activeConversationTitle, setActiveConversationTitle] = useState('')
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+    const [editingConvId, setEditingConvId] = useState(null)
+    const [editingTitle, setEditingTitle] = useState('')
+    const [deletingConvId, setDeletingConvId] = useState(null)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     // Per-message UI states
     const [copiedMsgId, setCopiedMsgId] = useState(null)
@@ -178,8 +230,146 @@ function AskAI() {
         }
     }
 
+    const fetchConversations = async () => {
+        try {
+            setConversationsLoading(true)
+            const data = await apiRequest('/conversations')
+            const list = Array.isArray(data) ? data : []
+            setConversations(list)
+            return list
+        } catch (err) {
+            console.warn('Failed to fetch conversation history:', err)
+            return []
+        } finally {
+            setConversationsLoading(false)
+        }
+    }
+
+    const handleSelectConversation = async (convId) => {
+        if (loading || convId === activeConversationId) return
+
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+            abortControllerRef.current = null
+        }
+        activeRequestIdRef.current++
+
+        setLoading(false)
+        setError('')
+        setHighlightedCitation(null)
+        setExpandedSourceExcerpts({})
+        setExpandedSourcesDrawers({})
+
+        try {
+            const data = await apiRequest(`/conversations/${convId}`)
+            if (!data || !data.id) return
+
+            setActiveConversationId(data.id)
+            setActiveConversationTitle(data.title || 'Conversation')
+            sessionStorage.setItem('cognidocs_active_chat_id', String(data.id))
+
+            const restoredMessages = (data.messages || []).map((m) => ({
+                id: `msg-${m.id}`,
+                role: m.role,
+                content: m.content,
+                sources: Array.isArray(m.sources) ? m.sources : [],
+                timestamp: m.created_at,
+            }))
+            setMessages(restoredMessages)
+
+            // Restore document scope
+            const restoredMode = data.scope_mode === 'specific' ? 'specific' : 'all'
+            setScopeMode(restoredMode)
+            if (restoredMode === 'specific' && Array.isArray(data.selected_doc_ids)) {
+                setSelectedDocIds(data.selected_doc_ids)
+            } else {
+                setSelectedDocIds([])
+            }
+
+            if (window.innerWidth <= 860) {
+                setIsSidebarOpen(false)
+            }
+        } catch (err) {
+            console.error('Failed to load conversation:', err)
+            setError(err.message || 'Could not load conversation history.')
+        }
+    }
+
+    const handleStartRename = (conv, e) => {
+        e?.stopPropagation()
+        setEditingConvId(conv.id)
+        setEditingTitle(conv.title)
+        setDeletingConvId(null)
+    }
+
+    const handleSaveRename = async (convId) => {
+        const cleanTitle = editingTitle.trim()
+        if (!cleanTitle) {
+            setEditingConvId(null)
+            return
+        }
+        try {
+            await apiRequest(`/conversations/${convId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ title: cleanTitle }),
+            })
+            setConversations((prev) =>
+                prev.map((c) => (c.id === convId ? { ...c, title: cleanTitle } : c))
+            )
+            if (activeConversationId === convId) {
+                setActiveConversationTitle(cleanTitle)
+            }
+        } catch (err) {
+            console.error('Failed to rename conversation:', err)
+            setError(err.message || 'Failed to rename conversation.')
+        } finally {
+            setEditingConvId(null)
+            setEditingTitle('')
+        }
+    }
+
+    const handleCancelRename = () => {
+        setEditingConvId(null)
+        setEditingTitle('')
+    }
+
+    const handleConfirmDelete = async (convId, e) => {
+        e?.stopPropagation()
+        try {
+            setIsDeleting(true)
+            await apiRequest(`/conversations/${convId}`, {
+                method: 'DELETE',
+            })
+            setConversations((prev) => prev.filter((c) => c.id !== convId))
+            if (activeConversationId === convId) {
+                handleNewChat()
+            }
+        } catch (err) {
+            console.error('Failed to delete conversation:', err)
+            setError(err.message || 'Failed to delete conversation.')
+        } finally {
+            setIsDeleting(false)
+            setDeletingConvId(null)
+        }
+    }
+
     useEffect(() => {
         fetchDocuments()
+        const initChat = async () => {
+            const list = await fetchConversations()
+            const savedConvId = sessionStorage.getItem('cognidocs_active_chat_id')
+            if (savedConvId) {
+                const targetId = parseInt(savedConvId, 10)
+                const exists = list.some((c) => c.id === targetId)
+                if (exists) {
+                    await handleSelectConversation(targetId)
+                } else {
+                    sessionStorage.removeItem('cognidocs_active_chat_id')
+                }
+            }
+        }
+        initChat()
+
         return () => {
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort()
@@ -236,7 +426,7 @@ function AskAI() {
         }
     }
 
-    // Document Scope handlers with request cancellation & conversation reset
+    // Document Scope handlers with request cancellation & asynchronous scope sync
     const handleScopeModeChange = (newMode) => {
         if (newMode !== scopeMode) {
             activeRequestIdRef.current++
@@ -245,9 +435,6 @@ function AskAI() {
                 abortControllerRef.current = null
             }
             setLoading(false)
-            if (messages.length > 0) {
-                setMessages([])
-            }
             setError('')
             setSuggestedQuestions([])
             setScopeMode(newMode)
@@ -255,6 +442,12 @@ function AskAI() {
                 setIsDocPickerOpen(true)
             } else {
                 setIsDocPickerOpen(false)
+            }
+            if (activeConversationId) {
+                apiRequest(`/conversations/${activeConversationId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ scope_mode: newMode }),
+                }).catch(() => {})
             }
         }
     }
@@ -266,16 +459,18 @@ function AskAI() {
             abortControllerRef.current = null
         }
         setLoading(false)
-        if (messages.length > 0) {
-            setMessages([])
-        }
         setError('')
         setSuggestedQuestions([])
-        setSelectedDocIds((prev) =>
-            prev.includes(docId)
-                ? prev.filter((id) => id !== docId)
-                : [...prev, docId]
-        )
+        const nextIds = selectedDocIds.includes(docId)
+            ? selectedDocIds.filter((id) => id !== docId)
+            : [...selectedDocIds, docId]
+        setSelectedDocIds(nextIds)
+        if (activeConversationId) {
+            apiRequest(`/conversations/${activeConversationId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ selected_doc_ids: nextIds }),
+            }).catch(() => {})
+        }
     }
 
     const handleSelectAllDocs = () => {
@@ -285,12 +480,16 @@ function AskAI() {
             abortControllerRef.current = null
         }
         setLoading(false)
-        if (messages.length > 0) {
-            setMessages([])
-        }
         setError('')
         setSuggestedQuestions([])
-        setSelectedDocIds(documents.map((d) => d.id))
+        const allIds = documents.map((d) => d.id)
+        setSelectedDocIds(allIds)
+        if (activeConversationId) {
+            apiRequest(`/conversations/${activeConversationId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ selected_doc_ids: allIds }),
+            }).catch(() => {})
+        }
     }
 
     const handleClearDocs = () => {
@@ -300,15 +499,18 @@ function AskAI() {
             abortControllerRef.current = null
         }
         setLoading(false)
-        if (messages.length > 0) {
-            setMessages([])
-        }
         setError('')
         setSuggestedQuestions([])
         setSelectedDocIds([])
+        if (activeConversationId) {
+            apiRequest(`/conversations/${activeConversationId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ selected_doc_ids: [] }),
+            }).catch(() => {})
+        }
     }
 
-    // New Chat handler: cancels pending requests, clears conversation messages, preserves document scope
+    // New Chat handler: cancels pending requests, resets active conversation, preserves document scope
     const handleNewChat = () => {
         activeRequestIdRef.current++
         if (abortControllerRef.current) {
@@ -316,6 +518,9 @@ function AskAI() {
             abortControllerRef.current = null
         }
         setLoading(false)
+        setActiveConversationId(null)
+        setActiveConversationTitle('')
+        sessionStorage.removeItem('cognidocs_active_chat_id')
         setMessages([])
         setQuestion('')
         setError('')
@@ -324,6 +529,9 @@ function AskAI() {
         setExpandedSourcesDrawers({})
         textareaRef.current?.focus()
         fetchSuggestedQuestions(scopeMode, selectedDocIds)
+        if (window.innerWidth <= 860) {
+            setIsSidebarOpen(false)
+        }
     }
 
     const getFileTypeBadge = (doc) => {
@@ -411,6 +619,7 @@ function AskAI() {
                         document_ids: scopeMode === 'specific' ? selectedDocIds : null,
                         top_k: 6,
                         conversation_history: historyPayload,
+                        conversation_id: activeConversationId,
                     }),
                 }
             )
@@ -437,6 +646,16 @@ function AskAI() {
             }
 
             setMessages((prev) => [...prev, asstMsg])
+
+            // If a conversation was auto-created or resumed, update active chat state and refresh history
+            if (data?.conversation_id) {
+                setActiveConversationId(data.conversation_id)
+                sessionStorage.setItem('cognidocs_active_chat_id', String(data.conversation_id))
+                if (data.conversation_title) {
+                    setActiveConversationTitle(data.conversation_title)
+                }
+                fetchConversations()
+            }
         } catch (err) {
             // If request was superseded or cancelled, ignore silently
             if (currentRequestId !== activeRequestIdRef.current) {
@@ -648,84 +867,252 @@ function AskAI() {
     }
 
     return (
-        <main className="ask-ai-page chat-layout-page">
+        <div className="ask-ai-root-container">
             {/* =================================
-                COMPACT CHAT TOPBAR
+                CHAT HISTORY SIDEBAR
             ================================= */}
-            <header className="chat-topbar" aria-label="Ask AI Toolbar">
-                <div className="chat-topbar-left">
-                    <div className="chat-title-group">
-                        <span className="chat-title-icon" aria-hidden="true">✦</span>
-                        <h2 className="chat-title">Ask AI</h2>
-                        <span className="chat-scope-badge">Grounded Reasoning</span>
-                    </div>
-
-                    {/* Compact Knowledge Scope Bar */}
-                    <div className="compact-scope-bar" role="radiogroup" aria-label="Knowledge Scope">
-                        <button
-                            type="button"
-                            role="radio"
-                            aria-checked={scopeMode === 'all'}
-                            className={`compact-scope-pill ${scopeMode === 'all' ? 'active' : ''}`}
-                            onClick={() => handleScopeModeChange('all')}
-                            disabled={loading}
-                        >
-                            <span className="scope-pill-icon" aria-hidden="true">🌐</span>
-                            <span>All Documents</span>
-                            {documents.length > 0 && (
-                                <span className="scope-count-badge">{documents.length}</span>
-                            )}
-                        </button>
-
-                        <button
-                            type="button"
-                            role="radio"
-                            aria-checked={scopeMode === 'specific'}
-                            className={`compact-scope-pill ${scopeMode === 'specific' ? 'active' : ''}`}
-                            onClick={() => handleScopeModeChange('specific')}
-                            disabled={loading}
-                        >
-                            <span className="scope-pill-icon" aria-hidden="true">📑</span>
-                            <span>Specific</span>
-                            {selectedDocIds.length > 0 && (
-                                <span className="scope-count-badge scope-count-active">
-                                    {selectedDocIds.length}
-                                </span>
-                            )}
-                        </button>
-
-                        {scopeMode === 'specific' && (
-                            <button
-                                type="button"
-                                className={`scope-picker-toggle-btn ${isDocPickerOpen ? 'open' : ''}`}
-                                onClick={() => setIsDocPickerOpen((prev) => !prev)}
-                                disabled={loading}
-                                title="Toggle document selection panel"
-                                aria-expanded={isDocPickerOpen}
-                            >
-                                <span>{selectedDocIds.length} of {documents.length} selected</span>
-                                <span className="dropdown-caret" aria-hidden="true">{isDocPickerOpen ? '▴' : '▾'}</span>
-                            </button>
-                        )}
-                    </div>
+            <aside className={`chat-history-sidebar ${isSidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`} aria-label="Conversation History">
+                <div className="sidebar-header">
+                    <button
+                        type="button"
+                        className="sidebar-new-chat-btn"
+                        onClick={handleNewChat}
+                        disabled={loading}
+                        title="Start a new chat session"
+                    >
+                        <span className="sidebar-new-chat-icon" aria-hidden="true">+</span>
+                        <span>New Chat</span>
+                    </button>
+                    <button
+                        type="button"
+                        className="sidebar-collapse-btn"
+                        onClick={() => setIsSidebarOpen(false)}
+                        title="Collapse chat history"
+                        aria-label="Collapse sidebar"
+                    >
+                        ◀
+                    </button>
                 </div>
 
-                <div className="chat-topbar-right">
-                    {messages.length > 0 && (
+                <div className="sidebar-conversations-list" role="navigation" aria-label="Saved Chats">
+                    {conversationsLoading ? (
+                        <div className="sidebar-loading-state">
+                            <span className="suggestion-spinner" aria-hidden="true"></span>
+                            <span>Loading chats...</span>
+                        </div>
+                    ) : conversations.length === 0 ? (
+                        <div className="sidebar-empty-state">
+                            <span className="sidebar-empty-icon" aria-hidden="true">💬</span>
+                            <p className="sidebar-empty-title">No conversations yet</p>
+                            <span className="sidebar-empty-hint">Your saved chats will appear here</span>
+                        </div>
+                    ) : (
+                        groupConversationsByDate(conversations).map((group) => (
+                            <div key={group.label} className="sidebar-date-group">
+                                <span className="sidebar-group-heading">{group.label}</span>
+                                {group.items.map((conv) => {
+                                    const isActive = conv.id === activeConversationId
+                                    const isEditing = editingConvId === conv.id
+                                    const isDeletingThis = deletingConvId === conv.id
+                                    return (
+                                        <div
+                                            key={conv.id}
+                                            className={`sidebar-conv-item ${isActive ? 'active' : ''}`}
+                                            onClick={() => handleSelectConversation(conv.id)}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleSelectConversation(conv.id)
+                                            }}
+                                        >
+                                            <span className="conv-item-icon" aria-hidden="true">💬</span>
+
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    className="conv-inline-edit-input"
+                                                    value={editingTitle}
+                                                    autoFocus
+                                                    maxLength={100}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault()
+                                                            handleSaveRename(conv.id)
+                                                        }
+                                                        if (e.key === 'Escape') {
+                                                            handleCancelRename()
+                                                        }
+                                                    }}
+                                                    onBlur={() => handleSaveRename(conv.id)}
+                                                />
+                                            ) : (
+                                                <span className="conv-item-title" title={conv.title}>
+                                                    {conv.title}
+                                                </span>
+                                            )}
+
+                                            {!isEditing && (
+                                                <div className="conv-item-actions" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        type="button"
+                                                        className="conv-icon-btn conv-rename-btn"
+                                                        onClick={(e) => handleStartRename(conv, e)}
+                                                        title="Rename chat"
+                                                        aria-label={`Rename ${conv.title}`}
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="conv-icon-btn conv-delete-btn"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setDeletingConvId(conv.id)
+                                                        }}
+                                                        title="Delete chat"
+                                                        aria-label={`Delete ${conv.title}`}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {isDeletingThis && (
+                                                <div className="conv-delete-confirm-popover" onClick={(e) => e.stopPropagation()}>
+                                                    <span className="delete-confirm-text">Delete?</span>
+                                                    <div className="delete-confirm-actions">
+                                                        <button
+                                                            type="button"
+                                                            className="confirm-btn-yes"
+                                                            disabled={isDeleting}
+                                                            onClick={(e) => handleConfirmDelete(conv.id, e)}
+                                                        >
+                                                            {isDeleting ? '...' : 'Yes'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="confirm-btn-no"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setDeletingConvId(null)
+                                                            }}
+                                                        >
+                                                            No
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </aside>
+
+            {/* Mobile backdrop scrim */}
+            {isSidebarOpen && (
+                <div
+                    className="chat-sidebar-backdrop"
+                    onClick={() => setIsSidebarOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+
+            {/* =================================
+                MAIN CHAT PANE
+            ================================= */}
+            <main className="ask-ai-page chat-layout-page chat-main-pane">
+                {/* COMPACT CHAT TOPBAR */}
+                <header className="chat-topbar" aria-label="Ask AI Toolbar">
+                    <div className="chat-topbar-left">
+                        {!isSidebarOpen && (
+                            <button
+                                type="button"
+                                className="chat-sidebar-toggle-btn"
+                                onClick={() => setIsSidebarOpen(true)}
+                                title="Open chat history sidebar"
+                                aria-label="Open conversation history"
+                            >
+                                <span aria-hidden="true">☰</span>
+                            </button>
+                        )}
+
+                        <div className="chat-title-group">
+                            <span className="chat-title-icon" aria-hidden="true">✦</span>
+                            <h2 className="chat-title" title={activeConversationTitle || 'Ask AI'}>
+                                {activeConversationTitle || 'Ask AI'}
+                            </h2>
+                            <span className="chat-scope-badge">Grounded Reasoning</span>
+                        </div>
+
+                        {/* Compact Knowledge Scope Bar */}
+                        <div className="compact-scope-bar" role="radiogroup" aria-label="Knowledge Scope">
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={scopeMode === 'all'}
+                                className={`compact-scope-pill ${scopeMode === 'all' ? 'active' : ''}`}
+                                onClick={() => handleScopeModeChange('all')}
+                                disabled={loading}
+                            >
+                                <span className="scope-pill-icon" aria-hidden="true">🌐</span>
+                                <span>All Documents</span>
+                                {documents.length > 0 && (
+                                    <span className="scope-count-badge">{documents.length}</span>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                role="radio"
+                                aria-checked={scopeMode === 'specific'}
+                                className={`compact-scope-pill ${scopeMode === 'specific' ? 'active' : ''}`}
+                                onClick={() => handleScopeModeChange('specific')}
+                                disabled={loading}
+                            >
+                                <span className="scope-pill-icon" aria-hidden="true">📑</span>
+                                <span>Specific</span>
+                                {selectedDocIds.length > 0 && (
+                                    <span className="scope-count-badge scope-count-active">
+                                        {selectedDocIds.length}
+                                    </span>
+                                )}
+                            </button>
+
+                            {scopeMode === 'specific' && (
+                                <button
+                                    type="button"
+                                    className={`scope-picker-toggle-btn ${isDocPickerOpen ? 'open' : ''}`}
+                                    onClick={() => setIsDocPickerOpen((prev) => !prev)}
+                                    disabled={loading}
+                                    title="Toggle document selection panel"
+                                    aria-expanded={isDocPickerOpen}
+                                >
+                                    <span>{selectedDocIds.length} of {documents.length} selected</span>
+                                    <span className="dropdown-caret" aria-hidden="true">{isDocPickerOpen ? '▴' : '▾'}</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="chat-topbar-right">
                         <button
                             type="button"
                             className="chat-new-chat-btn"
                             onClick={handleNewChat}
                             disabled={loading}
-                            title="Clear conversation and start a new inquiry"
+                            title="Start a new chat inquiry"
                             aria-label="Start a new chat"
                         >
                             <span className="new-chat-plus" aria-hidden="true">+</span>
                             <span>New Chat</span>
                         </button>
-                    )}
-                </div>
-            </header>
+                    </div>
+                </header>
 
             {/* =================================
                 COLLAPSIBLE DOCUMENT SELECTOR PANEL
@@ -1172,7 +1559,8 @@ function AskAI() {
                 </div>
             </footer>
         </main>
-    )
+    </div>
+)
 }
 
 export default AskAI

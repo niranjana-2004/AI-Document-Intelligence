@@ -133,19 +133,157 @@ ANSWER:
         )
 
 
-MAX_SUMMARY_INPUT_CHARS = 12000
+MAX_SUMMARY_INPUT_CHARS = 9000
 
 SUMMARY_FORMAT_INSTRUCTIONS = {
-    "numbered": "Present the summary as a structured, numbered list of main points.",
-    "paragraphs": "Present the summary as cohesive, well-organized paragraphs.",
-    "bullets": "Present the summary as clear, structured bullet points.",
-    "headings": "Present the summary organized under relevant, content-specific headings and subheadings.",
+    "numbered": (
+        "Strict format: Output EXCLUSIVELY as a sequentially numbered list (1., 2., 3., etc.). "
+        "Every main point must begin with a sequential number. "
+        "Do not use bullet points (*, -, •) or unnumbered narrative paragraphs."
+    ),
+    "paragraphs": (
+        "Strict format: Output EXCLUSIVELY as continuous narrative prose paragraphs. "
+        "Do not use any list markers, numbers (1., 2.), bullet points (*, -, •), or itemized lists. "
+        "Separate distinct paragraphs with a blank line."
+    ),
+    "bullets": (
+        "Strict format: Output EXCLUSIVELY as a bulleted list where each main point begins with '- '. "
+        "Every point must begin on a new line with '- '. "
+        "Do not use numbered lists (1., 2., 3.) or unbulleted paragraphs."
+    ),
+    "headings": (
+        "Strict format: Organize the summary into 2-4 distinct content-specific sections using markdown headings ('### Section Name'). "
+        "Under each heading, provide concise explanations or details relevant to that section. "
+        "Do not output an unstructured flat list."
+    ),
 }
 
-SUMMARY_LENGTH_INSTRUCTIONS = {
-    "brief": "Keep the summary concise and high-level (approximately 1-2 paragraphs or 3-5 key points), highlighting only essential takeaways.",
-    "detailed": "Provide a comprehensive, detailed summary covering important concepts, context, findings, and nuances.",
+SUMMARY_LENGTH_CONFIG = {
+    "brief": {
+        "max_input_chars": 5000,
+        "max_output_tokens": 240,
+        "instruction": (
+            "Strict length: BRIEF summary (target 100-180 words, 3-5 points or 1-2 concise paragraphs). "
+            "Focus only on the high-level purpose, core findings/qualifications, and primary conclusion."
+        )
+    },
+    "detailed": {
+        "max_input_chars": 9000,
+        "max_output_tokens": 650,
+        "instruction": (
+            "Strict length: DETAILED summary (target 300-500 words). "
+            "Provide comprehensive coverage of core objectives, technical details, methodologies, "
+            "supporting evidence, qualifications, and conclusions."
+        )
+    }
 }
+
+
+def clean_summary_preamble(text: str) -> str:
+    """Strip common conversational model intros and wrapping markdown blocks."""
+    text = text.strip()
+    if text.startswith("```") and text.endswith("```"):
+        lines = text.split("\n")
+        if len(lines) >= 3:
+            text = "\n".join(lines[1:-1]).strip()
+
+    preamble_patterns = [
+        r"^(?:Here\s+(?:is|are|'s)|Below\s+is)\s+(?:a\s+|the\s+|an\s+)?(?:concise\s+|detailed\s+|brief\s+)?summary[^\n]*\n+",
+        r"^(?:Here\s+(?:is|are|'s)|Below\s+is)\s+(?:a\s+|the\s+|an\s+)?(?:concise\s+|detailed\s+|brief\s+)?summary[^:\n]*:\s*",
+        r"^(?:Document\s+Summary|Executive\s+Summary|AI\s+Summary|Summary)[^:\n]*:\s*",
+        r"^#+\s*(?:Document\s+Summary|Executive\s+Summary|AI\s+Summary|Summary)\s*"
+    ]
+    for pattern in preamble_patterns:
+        text = re.sub(pattern, "", text, flags=re.IGNORECASE).strip()
+    return text
+
+
+def enforce_summary_format(raw_text: str, summary_format: str) -> str:
+    """
+    Deterministic output formatting step preserving exact model meaning and facts
+    while ensuring strict adherence to the requested presentation structure.
+    """
+    text = clean_summary_preamble(raw_text)
+    if not text:
+        return raw_text
+
+    fmt = summary_format.lower().strip() if summary_format else "numbered"
+    raw_lines = [line.strip() for line in text.split("\n") if line.strip()]
+    if not raw_lines:
+        return text
+
+    if fmt == "numbered":
+        numbered_items = []
+        item_counter = 1
+        for line in raw_lines:
+            cleaned = re.sub(r"^(?:\d+[\.\)]|[-*•–—])\s*", "", line).strip()
+            if cleaned:
+                numbered_items.append(f"{item_counter}. {cleaned}")
+                item_counter += 1
+        return "\n".join(numbered_items) if numbered_items else text
+
+    elif fmt == "bullets":
+        bullet_items = []
+        for line in raw_lines:
+            cleaned = re.sub(r"^(?:\d+[\.\)]|[-*•–—])\s*", "", line).strip()
+            if cleaned:
+                bullet_items.append(f"- {cleaned}")
+        return "\n".join(bullet_items) if bullet_items else text
+
+    elif fmt == "paragraphs":
+        raw_paras = [p.strip() for p in text.split("\n\n") if p.strip()]
+        if len(raw_paras) > 1:
+            clean_paras = []
+            for para in raw_paras:
+                p_lines = [re.sub(r"^(?:\d+[\.\)]|[-*•–—])\s*", "", l).strip() for l in para.split("\n") if l.strip()]
+                if p_lines:
+                    clean_paras.append(" ".join(p_lines))
+            return "\n\n".join(clean_paras) if clean_paras else text
+
+        cleaned_sentences = []
+        for line in raw_lines:
+            cleaned = re.sub(r"^(?:\d+[\.\)]|[-*•–—])\s*", "", line).strip()
+            if cleaned:
+                cleaned_sentences.append(cleaned)
+        if len(cleaned_sentences) > 4:
+            mid = len(cleaned_sentences) // 2
+            p1 = " ".join(cleaned_sentences[:mid])
+            p2 = " ".join(cleaned_sentences[mid:])
+            return f"{p1}\n\n{p2}"
+        return " ".join(cleaned_sentences) if cleaned_sentences else text
+
+    elif fmt == "headings":
+        formatted_lines = []
+        has_heading = False
+        for line in raw_lines:
+            bold_match = re.match(r"^\*\*(.+?)\*\*:?\s*(.*)$", line)
+            heading_match = re.match(r"^#{1,6}\s+(.+)$", line)
+            if bold_match and len(bold_match.group(1)) < 60:
+                title = bold_match.group(1).rstrip(":")
+                rest = bold_match.group(2).strip()
+                formatted_lines.append(f"\n### {title}")
+                if rest:
+                    formatted_lines.append(rest)
+                has_heading = True
+            elif heading_match:
+                title = heading_match.group(1).strip()
+                formatted_lines.append(f"\n### {title}")
+                has_heading = True
+            else:
+                formatted_lines.append(line)
+
+        result = "\n".join(formatted_lines).strip()
+        if not has_heading:
+            parts = [p.strip() for p in result.split("\n\n") if p.strip()]
+            if len(parts) == 1:
+                result = f"### Key Overview & Findings\n{parts[0]}"
+            elif len(parts) == 2:
+                result = f"### Overview & Objectives\n{parts[0]}\n\n### Key Findings & Conclusions\n{parts[1]}"
+            elif len(parts) >= 3:
+                result = f"### Overview\n{parts[0]}\n\n### Methodology & Details\n{parts[1]}\n\n### Key Outcomes & Conclusions\n" + "\n\n".join(parts[2:])
+        return result
+
+    return text
 
 
 def prepare_summary_input(text: str, max_chars: int = MAX_SUMMARY_INPUT_CHARS) -> tuple[str, bool]:
@@ -218,12 +356,15 @@ def generate_summary(
         format_key,
         SUMMARY_FORMAT_INSTRUCTIONS["numbered"]
     )
-    length_instruction = SUMMARY_LENGTH_INSTRUCTIONS.get(
+    length_cfg = SUMMARY_LENGTH_CONFIG.get(
         length_key,
-        SUMMARY_LENGTH_INSTRUCTIONS["detailed"]
+        SUMMARY_LENGTH_CONFIG["detailed"]
     )
+    length_instruction = length_cfg["instruction"]
+    max_input_chars = length_cfg["max_input_chars"]
+    max_output_tokens = length_cfg["max_output_tokens"]
 
-    bounded_text, is_sampled = prepare_summary_input(text)
+    bounded_text, is_sampled = prepare_summary_input(text, max_chars=max_input_chars)
 
     if is_sampled:
         source_header = (
@@ -265,7 +406,9 @@ SUMMARY:
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "temperature": 0.3
+                    "temperature": 0.2,
+                    "top_p": 0.9,
+                    "num_predict": max_output_tokens
                 }
             },
             timeout=300
@@ -273,12 +416,12 @@ SUMMARY:
 
         response.raise_for_status()
         data = response.json()
-        summary = data.get("response", "").strip()
+        raw_summary = data.get("response", "").strip()
 
-        if not summary:
-            return "I couldn't generate a summary for this document."
+        if not raw_summary:
+            raise LLMServiceError("Ollama returned an empty summary response.")
 
-        return summary
+        return enforce_summary_format(raw_summary, format_key)
 
     except requests.exceptions.ConnectionError:
         raise LLMConnectionError(

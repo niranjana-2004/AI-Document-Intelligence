@@ -29,3 +29,4 @@ from app.models.user import User
 from app.models.otp import OTPVerification
 from app.models.password_reset_token import PasswordResetToken
 from app.models.activity import ActivityLog
+from app.models.conversation import Conversation, ConversationMessage

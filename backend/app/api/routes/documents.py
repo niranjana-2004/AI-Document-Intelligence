@@ -13,6 +13,7 @@ from app.services.question_service import answer_question, get_document_suggeste
 from app.schemas.question import QuestionRequest, SuggestedQuestionsRequest, SuggestedQuestionsResponse
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from typing import cast
 from app.services.llm_service import (
     generate_summary,
@@ -24,6 +25,7 @@ from app.services.text_processing_service import detect_chunk_category
 from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.models.activity import ActivityLog
+from app.models.conversation import Conversation, ConversationMessage
 
 router = APIRouter(
     prefix="/documents",
@@ -146,6 +148,22 @@ def ask_question(
                     detail="One or more selected documents were not found."
                 )
 
+        conversation: Conversation | None = None
+        if request.conversation_id is not None:
+            conversation = (
+                db.query(Conversation)
+                .filter(
+                    Conversation.id == request.conversation_id,
+                    Conversation.user_id == current_user.id
+                )
+                .first()
+            )
+            if not conversation:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Conversation not found."
+                )
+
         answer = answer_question(
             query=request.query,
             db=db,
@@ -155,6 +173,45 @@ def ask_question(
             user_id=cast(int, current_user.id)
         )
 
+        # Persist conversation and messages on successful answer
+        query_text = str(request.query).strip()
+        if conversation is None:
+            first_line = query_text.split("\n")[0].strip()
+            title = (first_line[:47] + "...") if len(first_line) > 50 else first_line
+            if not title:
+                title = "New Conversation"
+
+            scope_mode = "specific" if effective_document_ids is not None else "all"
+            conversation = Conversation(
+                user_id=current_user.id,
+                title=title,
+                scope_mode=scope_mode,
+                selected_doc_ids=effective_document_ids
+            )
+            db.add(conversation)
+            db.flush()
+        else:
+            conversation.scope_mode = "specific" if effective_document_ids is not None else "all"
+            conversation.selected_doc_ids = effective_document_ids
+            conversation.updated_at = func.now()
+
+        user_message = ConversationMessage(
+            conversation_id=conversation.id,
+            role="user",
+            content=query_text,
+            sources=None
+        )
+        db.add(user_message)
+
+        assistant_message = ConversationMessage(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=answer.get("answer", ""),
+            sources=answer.get("results", [])
+        )
+        db.add(assistant_message)
+        db.flush()
+
         # Record successful AI question activity
         activity = ActivityLog(
             user_id=current_user.id,
@@ -163,6 +220,10 @@ def ask_question(
 
         db.add(activity)
         db.commit()
+
+        answer["conversation_id"] = conversation.id
+        answer["conversation_title"] = conversation.title
+        answer["message_id"] = assistant_message.id
 
         return answer
 

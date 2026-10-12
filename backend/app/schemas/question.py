@@ -34,6 +34,7 @@ class QuestionRequest(BaseModel):
     document_ids: list[int] | None = Field(default=None, max_length=20)
     top_k: int = Field(default=5, ge=1, le=20)
     conversation_history: list[ChatMessage] | None = Field(default=None, max_length=6)
+    conversation_id: int | None = None
 
     @field_validator("conversation_history")
     @classmethod
