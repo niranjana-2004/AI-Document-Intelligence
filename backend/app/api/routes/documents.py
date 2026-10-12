@@ -14,7 +14,12 @@ from app.schemas.question import QuestionRequest, SuggestedQuestionsRequest, Sug
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import cast
-from app.services.llm_service import generate_summary, LLMServiceError
+from app.services.llm_service import (
+    generate_summary,
+    LLMServiceError,
+    LLMConnectionError,
+    LLMTimeoutError
+)
 from app.services.text_processing_service import detect_chunk_category
 from app.api.dependencies import get_current_user
 from app.models.user import User
@@ -212,11 +217,80 @@ def get_suggested_questions_endpoint(
         )
 
 
+def _is_usable_summary(text: str | None) -> bool:
+    """Validate that a summary is non-empty, usable, and not a fallback empty placeholder."""
+    if not text:
+        return False
+    stripped = text.strip()
+    if not stripped:
+        return False
+    if stripped == "I couldn't generate a summary because the document is empty.":
+        return False
+    return True
+
+
+def _generate_and_persist_summary(
+    document: Document,
+    summary_format: str,
+    summary_length: str,
+    db: Session,
+    user_id: int
+) -> str:
+    """Safely generate a summary via LLM and persist it only on usable success."""
+    if not document.extracted_text or not str(document.extracted_text).strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Original document text is unavailable or empty."
+        )
+
+    try:
+        new_summary = generate_summary(
+            str(document.extracted_text),
+            summary_format=summary_format,
+            summary_length=summary_length
+        )
+    except LLMConnectionError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"LLM connection error: {error}"
+        )
+    except LLMTimeoutError as error:
+        raise HTTPException(
+            status_code=504,
+            detail=f"LLM request timed out: {error}"
+        )
+    except (LLMServiceError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail=str(error)
+        )
+
+    if not _is_usable_summary(new_summary):
+        raise HTTPException(
+            status_code=502,
+            detail="Summary generation produced empty or unusable output."
+        )
+
+    setattr(document, "summary", new_summary)
+
+    activity = ActivityLog(
+        user_id=user_id,
+        activity_type="summary"
+    )
+
+    db.add(activity)
+    db.commit()
+    db.refresh(document)
+
+    return new_summary
+
+
 @router.get("/{document_id}/summary")
 def get_document_summary(
     document_id: int,
     format: str = "numbered",
     length: str = "detailed",
+    regenerate: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -256,37 +330,22 @@ def get_document_summary(
             detail="Invalid summary length."
         )
 
-    if not document.extracted_text:
-        raise HTTPException(
-        status_code=400,
-        detail="Original document text is unavailable."
-    )
-
-    try:
-        summary = generate_summary(
-            str(document.extracted_text),
-            summary_format=format,
-            summary_length=length
-        )
-    except (LLMServiceError, RuntimeError) as error:
-        raise HTTPException(
-            status_code=503,
-            detail=str(error)
-        )
-
-    setattr(document, "summary", summary)
-
     chunk_count = db.query(DocumentChunk).filter(
         DocumentChunk.document_id == document_id
     ).count()
 
-    activity = ActivityLog(
-        user_id=current_user.id,
-        activity_type="summary"
-    )
-
-    db.add(activity)
-    db.commit()
+    if regenerate or not _is_usable_summary(document.summary):
+        summary = _generate_and_persist_summary(
+            document=document,
+            summary_format=format,
+            summary_length=length,
+            db=db,
+            user_id=cast(int, current_user.id)
+        )
+        was_regenerated = True
+    else:
+        summary = str(document.summary)
+        was_regenerated = False
 
     return {
         "document_id": document.id,
@@ -296,8 +355,27 @@ def get_document_summary(
         "chunk_count": chunk_count,
         "summary": summary,
         "summary_format": format,
-        "summary_length": length
+        "summary_length": length,
+        "regenerated": was_regenerated
     }
+
+
+@router.post("/{document_id}/regenerate-summary")
+def regenerate_document_summary(
+    document_id: int,
+    format: str = "numbered",
+    length: str = "detailed",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_document_summary(
+        document_id=document_id,
+        format=format,
+        length=length,
+        regenerate=True,
+        db=db,
+        current_user=current_user
+    )
 
 
 @router.get("/{document_id}")
@@ -388,8 +466,12 @@ async def upload_document(
     summary_error = None
 
     try:
-        summary = generate_summary(extracted_text)
-
+        raw_summary = generate_summary(extracted_text)
+        if _is_usable_summary(raw_summary):
+            summary = raw_summary
+        else:
+            summary = None
+            summary_error = "Generated summary was empty or unusable."
     except Exception as error:
         summary_error = str(error)
         print(f"Summary generation failed: {error}")

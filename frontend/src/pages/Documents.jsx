@@ -20,6 +20,11 @@ function Documents() {
     const [summaryLoading, setSummaryLoading] = useState(false)
     const [summaryFormat, setSummaryFormat] = useState('numbered')
     const [summaryLength, setSummaryLength] = useState('detailed')
+    const [summaryDocId, setSummaryDocId] = useState(null)
+    const [summaryDocFilename, setSummaryDocFilename] = useState('')
+    const [regenerating, setRegenerating] = useState(false)
+    const [summaryFeedback, setSummaryFeedback] = useState('')
+    const [summaryError, setSummaryError] = useState('')
 
     const [error, setError] = useState('')
     const [copiedDocText, setCopiedDocText] = useState(false)
@@ -147,29 +152,62 @@ function Documents() {
        SUMMARY
     ======================================== */
 
-    const handleSummary = async (documentId) => {
+    const handleSummary = async (doc) => {
+        const docId = typeof doc === 'object' ? doc.id : doc
+        const docFilename = typeof doc === 'object' ? doc.filename : ''
         try {
+            setSummaryDocId(docId)
+            setSummaryDocFilename(docFilename)
             setSummaryLoading(true)
             setSummary('')
             setError('')
+            setSummaryError('')
+            setSummaryFeedback('')
             setCopiedSummaryText(false)
 
             const data = await apiRequest(
-                `/documents/${documentId}/summary?format=${encodeURIComponent(summaryFormat)}&length=${encodeURIComponent(summaryLength)}`
+                `/documents/${docId}/summary?format=${encodeURIComponent(summaryFormat)}&length=${encodeURIComponent(summaryLength)}`
             )
 
             setSummary(
                 data.summary ||
                 'No summary available.'
             )
+            if (data.filename && !docFilename) {
+                setSummaryDocFilename(data.filename)
+            }
         } catch (err) {
             console.error('Summary error:', err)
             setError(
                 err.message ||
-                'Failed to generate summary.'
+                'Failed to load summary.'
             )
         } finally {
             setSummaryLoading(false)
+        }
+    }
+
+    const handleRegenerateSummary = async () => {
+        if (!summaryDocId || regenerating) return
+        try {
+            setRegenerating(true)
+            setSummaryError('')
+            setSummaryFeedback('')
+
+            const data = await apiRequest(
+                `/documents/${summaryDocId}/summary?format=${encodeURIComponent(summaryFormat)}&length=${encodeURIComponent(summaryLength)}&regenerate=true`
+            )
+
+            if (data.summary) {
+                setSummary(data.summary)
+                setSummaryFeedback('Summary regenerated successfully.')
+                setTimeout(() => setSummaryFeedback(''), 4000)
+            }
+        } catch (err) {
+            console.error('Regenerate error:', err)
+            setSummaryError(err.message || 'Failed to regenerate summary.')
+        } finally {
+            setRegenerating(false)
         }
     }
 
@@ -238,7 +276,13 @@ function Documents() {
 
     const closeSummary = () => {
         setSummary('')
+        setSummaryDocId(null)
+        setSummaryDocFilename('')
+        setSummaryLoading(false)
+        setRegenerating(false)
         setCopiedSummaryText(false)
+        setSummaryFeedback('')
+        setSummaryError('')
     }
 
     /* ========================================
@@ -494,11 +538,11 @@ function Documents() {
                                             <button
                                                 type="button"
                                                 className="document-action summary-action"
-                                                onClick={() => handleSummary(doc.id)}
-                                                disabled={summaryLoading}
-                                                aria-label={`Generate summary of ${doc.filename}`}
+                                                onClick={() => handleSummary(doc)}
+                                                disabled={summaryLoading && summaryDocId === doc.id}
+                                                aria-label={`View summary of ${doc.filename}`}
                                             >
-                                                {summaryLoading ? 'Generating...' : 'Summarize'}
+                                                {summaryLoading && summaryDocId === doc.id ? 'Loading...' : 'Summary'}
                                             </button>
                                         </div>
                                     </article>
@@ -569,7 +613,7 @@ function Documents() {
             {/* =================================
                 AI SUMMARY MODAL
             ================================= */}
-            {(summaryLoading || summary) && (
+            {(summaryLoading || summary || summaryDocId) && (
                 <div
                     className="modal-overlay"
                     onClick={closeSummary}
@@ -581,7 +625,11 @@ function Documents() {
                         <div className="modal-header">
                             <div>
                                 <h2 id="summary-modal-title">AI Document Summary</h2>
-                                <p>Synthesized knowledge overview</p>
+                                <p>
+                                    {summaryDocFilename
+                                        ? `${summaryDocFilename} · Synthesized overview`
+                                        : 'Synthesized knowledge overview'}
+                                </p>
                             </div>
 
                             <button
@@ -598,32 +646,85 @@ function Documents() {
                             {summaryLoading ? (
                                 <div className="documents-empty modal-loading-empty">
                                     <div className="loading-pulse-ring" aria-hidden="true"></div>
-                                    <h3>Generating summary...</h3>
+                                    <h3>Loading summary...</h3>
                                     <p>AI is analyzing and condensing key takeaways.</p>
                                 </div>
                             ) : (
                                 <>
                                     <div className="modal-content-toolbar">
                                         <div className="summary-meta-badges">
-                                            <span className="summary-badge">
-                                                Format: {summaryFormat}
-                                            </span>
-                                            <span className="summary-badge">
-                                                Length: {summaryLength}
-                                            </span>
+                                            <label className="summary-control-group">
+                                                <span>Format:</span>
+                                                <select
+                                                    className="summary-select"
+                                                    value={summaryFormat}
+                                                    onChange={(e) => setSummaryFormat(e.target.value)}
+                                                    disabled={regenerating}
+                                                    aria-label="Select summary format"
+                                                >
+                                                    <option value="numbered">Numbered</option>
+                                                    <option value="paragraphs">Paragraphs</option>
+                                                    <option value="bullets">Bullets</option>
+                                                    <option value="headings">Headings</option>
+                                                </select>
+                                            </label>
+
+                                            <label className="summary-control-group">
+                                                <span>Length:</span>
+                                                <select
+                                                    className="summary-select"
+                                                    value={summaryLength}
+                                                    onChange={(e) => setSummaryLength(e.target.value)}
+                                                    disabled={regenerating}
+                                                    aria-label="Select summary length"
+                                                >
+                                                    <option value="detailed">Detailed</option>
+                                                    <option value="brief">Brief</option>
+                                                </select>
+                                            </label>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            className="modal-copy-btn"
-                                            onClick={handleCopySummary}
-                                            title="Copy summary to clipboard"
-                                        >
-                                            {copiedSummaryText ? '✓ Copied' : 'Copy Summary'}
-                                        </button>
+                                        <div className="summary-actions-group">
+                                            <button
+                                                type="button"
+                                                className="modal-copy-btn summary-regen-btn"
+                                                onClick={handleRegenerateSummary}
+                                                disabled={regenerating}
+                                                title="Regenerate summary with AI using selected options"
+                                                aria-label="Regenerate summary"
+                                            >
+                                                {regenerating ? 'Regenerating...' : '↻ Regenerate'}
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="modal-copy-btn"
+                                                onClick={handleCopySummary}
+                                                disabled={regenerating}
+                                                title="Copy summary to clipboard"
+                                                aria-label="Copy summary to clipboard"
+                                            >
+                                                {copiedSummaryText ? '✓ Copied' : 'Copy Summary'}
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div className="summary-text">
+                                    {summaryFeedback && (
+                                        <div className="summary-status-alert summary-status-success" role="status">
+                                            {summaryFeedback}
+                                        </div>
+                                    )}
+
+                                    {summaryError && (
+                                        <div className="summary-status-alert summary-status-error" role="alert">
+                                            {summaryError}
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className="summary-text"
+                                        style={regenerating ? { opacity: 0.6 } : undefined}
+                                    >
                                         {summary}
                                     </div>
                                 </>
