@@ -1,7 +1,13 @@
+import { useId } from 'react'
+
 /**
  * CognidocsLogo Component
  *
- * Clean, flat SVG emblem combining a folded document with the letter C.
+ * Clean, flat SVG emblem visibly combining:
+ * - A recognizable document silhouette
+ * - A folded top-right corner in light violet (#C4B5FD)
+ * - A bold C-shaped form using navy (#0F172A) and violet (#8B5CF6)
+ * - Three simple document lines
  *
  * Brand Identity Tokens:
  * - Navy: #0F172A
@@ -9,21 +15,22 @@
  * - Light Violet: #C4B5FD
  * - Tagline: "Knowledge, unlocked."
  */
-
 function CognidocsLogo({
   size = '100%',
   variant = 'mark',
-  withBackground = true,
+  withBackground = false,
   className = '',
   title = 'Cognidocs Logo',
   style,
   ...props
 }) {
+  const gradientId = useId()
+
   const svgMark = (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={`cognidocs-logo-mark ${className}`.trim()}
@@ -34,26 +41,86 @@ function CognidocsLogo({
     >
       <title>{title}</title>
 
-      {/* Navy Squircle Foundation */}
+      <defs>
+        <linearGradient
+          id={gradientId}
+          x1="9"
+          y1="10"
+          x2="18"
+          y2="22"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#0F172A" />
+          <stop offset="1" stopColor="#8B5CF6" />
+        </linearGradient>
+      </defs>
+
+      {/* Optional Standalone Base Tile (disabled by default to preserve container gradients) */}
       {withBackground && (
         <rect
-          width="40"
-          height="40"
-          rx="10"
+          width="32"
+          height="32"
+          rx="8"
           fill="#0F172A"
         />
       )}
 
-      {/* Folded Document Body forming the Letter "C" */}
+      {/* 1. Recognizable Document Silhouette (with subtle border for light backgrounds) */}
       <path
-        d="M13 9C11.3431 9 10 10.3431 10 12V28C10 29.6569 11.3431 31 13 31H27C28.6569 31 30 29.6569 30 28V25H22C19.7909 25 18 23.2091 18 21V19C18 16.7909 19.7909 15 22 15H30V15L24 9H13Z"
-        fill="#8B5CF6"
+        d="M7 3C5.89543 3 5 3.89543 5 5V27C5 28.1046 5.89543 29 7 29H25C26.1046 29 27 28.1046 27 27V11L19 3H7Z"
+        fill="#FFFFFF"
+        stroke="#CBD5E1"
+        strokeWidth="0.75"
+        strokeLinejoin="round"
       />
 
-      {/* Top-Right Paper Fold Flap */}
+      {/* 2. Folded Top-Right Corner in Light Violet */}
       <path
-        d="M24 9V15H30L24 9Z"
+        d="M19 3V11H27L19 3Z"
         fill="#C4B5FD"
+      />
+      <path
+        d="M19 11L27 11"
+        stroke="#A78BFA"
+        strokeWidth="0.5"
+        strokeOpacity="0.6"
+      />
+
+      {/* 3. Bold C-Shaped Form in Navy & Violet */}
+      <path
+        d="M18 10H13C10.7909 10 9 11.7909 9 14V18C9 20.2091 10.7909 22 13 22H18"
+        stroke={`url(#${gradientId})`}
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* 4. Three Simple Document Lines */}
+      <rect
+        x="15"
+        y="14"
+        width="7"
+        height="1.6"
+        rx="0.8"
+        fill="#8B5CF6"
+      />
+      <rect
+        x="15"
+        y="17"
+        width="5.5"
+        height="1.6"
+        rx="0.8"
+        fill="#8B5CF6"
+        fillOpacity="0.75"
+      />
+      <rect
+        x="15"
+        y="20"
+        width="4"
+        height="1.6"
+        rx="0.8"
+        fill="#8B5CF6"
+        fillOpacity="0.5"
       />
     </svg>
   )
@@ -72,8 +139,8 @@ function CognidocsLogo({
       >
         <div
           style={{
-            width: typeof size === 'number' ? size : 40,
-            height: typeof size === 'number' ? size : 40,
+            width: typeof size === 'number' ? size : 32,
+            height: typeof size === 'number' ? size : 32,
             flexShrink: 0,
           }}
         >
