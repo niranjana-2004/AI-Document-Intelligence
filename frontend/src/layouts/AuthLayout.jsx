@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import CognidocsLogo from '../components/CognidocsLogo'
 import '../styles/auth.css'
 
 function AuthLayout({ children }) {
@@ -21,7 +22,9 @@ function AuthLayout({ children }) {
         <div className="auth-page">
             <div className="auth-top-bar">
                 <Link to="/" className="auth-brand" title="Back to Cognidocs Home">
-                    <div className="auth-logo">CD</div>
+                    <div className="auth-logo">
+                        <CognidocsLogo />
+                    </div>
 
                     <div>
                         <h1>Cognidocs</h1>

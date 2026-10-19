@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import CognidocsLogo from '../components/CognidocsLogo'
 import '../App.css'
 
 function About() {
@@ -44,7 +45,9 @@ function About() {
 
                 <div className="about-hero-visual">
                     <div className="about-ai-card">
-                        <div className="about-ai-icon" aria-hidden="true">CD</div>
+                        <div className="about-ai-icon" aria-hidden="true">
+                            <CognidocsLogo />
+                        </div>
 
                         <div>
                             <strong>Cognidocs Core</strong>

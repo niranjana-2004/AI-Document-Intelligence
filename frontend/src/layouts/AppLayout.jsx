@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import CognidocsLogo from '../components/CognidocsLogo'
 import '../styles/app-layout.css'
 
 function AppLayout({ children }) {
@@ -95,7 +96,7 @@ function AppLayout({ children }) {
                 {/* Brand */}
                 <div className="app-brand">
                     <div className="app-logo">
-                        CD
+                        <CognidocsLogo />
                     </div>
 
                     <div className="app-brand-text">
@@ -190,7 +191,7 @@ function AppLayout({ children }) {
                     <div className="topbar-left">
                         <div className="mobile-brand">
                             <div className="app-logo small-logo">
-                                CD
+                                <CognidocsLogo />
                             </div>
 
                             <span>

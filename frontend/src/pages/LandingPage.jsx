@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import CognidocsLogo from '../components/CognidocsLogo'
 import '../styles/landing.css'
 
 function LandingPage() {
@@ -28,7 +29,9 @@ function LandingPage() {
           ======================================== */}
       <header className="landing-nav">
         <Link to="/" className="landing-brand">
-          <div className="landing-logo-emblem">CD</div>
+          <div className="landing-logo-emblem">
+            <CognidocsLogo />
+          </div>
           <div>
             <div className="landing-brand-title">Cognidocs</div>
             <div className="landing-brand-tagline">Knowledge, unlocked.</div>
@@ -342,7 +345,9 @@ function LandingPage() {
       <footer className="landing-footer">
         <div className="footer-inner">
           <div className="footer-brand">
-            <div className="landing-logo-emblem" style={{ width: 28, height: 28, fontSize: 13 }}>CD</div>
+            <div className="landing-logo-emblem" style={{ width: 28, height: 28 }}>
+              <CognidocsLogo />
+            </div>
             <span>Cognidocs — Knowledge, unlocked.</span>
           </div>
 
