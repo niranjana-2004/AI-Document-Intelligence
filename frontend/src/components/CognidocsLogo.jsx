@@ -3,16 +3,13 @@ import { useId } from 'react'
 /**
  * CognidocsLogo Component
  *
- * Clean, flat SVG emblem visibly combining:
- * - A recognizable document silhouette
- * - A folded top-right corner in light violet (#C4B5FD)
- * - A bold C-shaped form using navy (#0F172A) and violet (#8B5CF6)
- * - Three simple document lines
- *
- * Brand Identity Tokens:
+ * Approved Brand Direction:
+ * - Concept: Layered Pages forming a stylized letter C
+ * - Style: Premium, clean, minimal, modern AI product
  * - Navy: #0F172A
  * - Violet: #8B5CF6
  * - Light Violet: #C4B5FD
+ * - Wordmark: "Cognidocs"
  * - Tagline: "Knowledge, unlocked."
  */
 function CognidocsLogo({
@@ -44,14 +41,26 @@ function CognidocsLogo({
       <defs>
         <linearGradient
           id={gradientId}
-          x1="9"
-          y1="10"
-          x2="18"
-          y2="22"
+          x1="6"
+          y1="5.5"
+          x2="16"
+          y2="24"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#0F172A" />
-          <stop offset="1" stopColor="#8B5CF6" />
+          <stop offset="0%" stopColor="#0F172A" />
+          <stop offset="60%" stopColor="#4C1D95" />
+          <stop offset="100%" stopColor="#7C3AED" />
+        </linearGradient>
+        <linearGradient
+          id={`${gradientId}-lower`}
+          x1="8"
+          y1="16"
+          x2="24.5"
+          y2="26.5"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#6D28D9" />
+          <stop offset="100%" stopColor="#8B5CF6" />
         </linearGradient>
       </defs>
 
@@ -65,62 +74,22 @@ function CognidocsLogo({
         />
       )}
 
-      {/* 1. Recognizable Document Silhouette (with subtle border for light backgrounds) */}
+      {/* Layer 1: Upper Document Page & Spine Foundation (Navy-to-Violet gradient) */}
       <path
-        d="M7 3C5.89543 3 5 3.89543 5 5V27C5 28.1046 5.89543 29 7 29H25C26.1046 29 27 28.1046 27 27V11L19 3H7Z"
-        fill="#FFFFFF"
-        stroke="#CBD5E1"
-        strokeWidth="0.75"
-        strokeLinejoin="round"
+        d="M18.5 5.5H12C8.41 5.5 5.5 8.41 5.5 12V20C5.5 23.59 8.41 26.5 12 26.5H15C11.5 24.5 9.5 21 9.5 17.5V13C9.5 11.9 10.4 11 11.5 11H18.5V5.5Z"
+        fill={`url(#${gradientId})`}
       />
 
-      {/* 2. Folded Top-Right Corner in Light Violet */}
+      {/* Layer 2: Lower Document Page (Violet Layer overlapping spine with fold angle) */}
       <path
-        d="M19 3V11H27L19 3Z"
+        d="M24.5 21V26.5H12C8.41 26.5 5.5 23.59 5.5 20V15.5L11.5 11.5V19C11.5 20.1 12.4 21 13.5 21H24.5Z"
+        fill={`url(#${gradientId}-lower)`}
+      />
+
+      {/* Layer 3: Top-Right Folded Page Flap (Light Violet Accent) */}
+      <path
+        d="M18.5 5.5L24.5 11.5H18.5V5.5Z"
         fill="#C4B5FD"
-      />
-      <path
-        d="M19 11L27 11"
-        stroke="#A78BFA"
-        strokeWidth="0.5"
-        strokeOpacity="0.6"
-      />
-
-      {/* 3. Bold C-Shaped Form in Navy & Violet */}
-      <path
-        d="M18 10H13C10.7909 10 9 11.7909 9 14V18C9 20.2091 10.7909 22 13 22H18"
-        stroke={`url(#${gradientId})`}
-        strokeWidth="3.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      {/* 4. Three Simple Document Lines */}
-      <rect
-        x="15"
-        y="14"
-        width="7"
-        height="1.6"
-        rx="0.8"
-        fill="#8B5CF6"
-      />
-      <rect
-        x="15"
-        y="17"
-        width="5.5"
-        height="1.6"
-        rx="0.8"
-        fill="#8B5CF6"
-        fillOpacity="0.75"
-      />
-      <rect
-        x="15"
-        y="20"
-        width="4"
-        height="1.6"
-        rx="0.8"
-        fill="#8B5CF6"
-        fillOpacity="0.5"
       />
     </svg>
   )
