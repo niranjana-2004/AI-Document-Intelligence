@@ -110,6 +110,19 @@ function OTP() {
             // Verification successful.
             localStorage.removeItem('registration_email')
 
+            const storedUser = localStorage.getItem('user')
+            if (storedUser) {
+                try {
+                    const parsed = JSON.parse(storedUser)
+                    if (parsed && parsed.email?.toLowerCase() === savedEmail.toLowerCase()) {
+                        parsed.is_verified = true
+                        localStorage.setItem('user', JSON.stringify(parsed))
+                    }
+                } catch {
+                    // Ignore parsing error
+                }
+            }
+
             navigate('/login')
         } catch (error) {
             setError(

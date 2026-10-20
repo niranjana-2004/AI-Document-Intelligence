@@ -6,7 +6,17 @@ import '../App.css'
 function Profile() {
     const navigate = useNavigate()
 
-    const [user, setUser] = useState(null)
+    const [user, setUser] = useState(() => {
+        const storedUser = localStorage.getItem('user')
+        if (storedUser) {
+            try {
+                return JSON.parse(storedUser)
+            } catch {
+                return null
+            }
+        }
+        return null
+    })
     const [activity, setActivity] = useState({
         documents: 0,
         ai_questions: 0,
@@ -56,16 +66,31 @@ function Profile() {
     })
 
     /* ========================================
-       LOAD USER FROM STORAGE
+       SYNC USER PROFILE WITH BACKEND
     ======================================== */
     useEffect(() => {
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
+        let isMounted = true
+
+        const fetchUserProfile = async () => {
             try {
-                setUser(JSON.parse(storedUser))
+                const data = await apiRequest('/auth/profile')
+                const profileUser = data?.user || (data?.id ? data : null)
+                if (isMounted && profileUser) {
+                    setUser((prev) => {
+                        const merged = { ...(prev || {}), ...profileUser }
+                        localStorage.setItem('user', JSON.stringify(merged))
+                        return merged
+                    })
+                }
             } catch {
-                setUser(null)
+                // Keep local state if request fails
             }
+        }
+
+        fetchUserProfile()
+
+        return () => {
+            isMounted = false
         }
     }, [])
 

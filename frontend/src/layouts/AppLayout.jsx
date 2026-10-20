@@ -3,6 +3,15 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import CognidocsLogo from '../components/CognidocsLogo'
 import '../styles/app-layout.css'
 
+const THEME_NAMES = {
+    ocean: 'Ocean Teal',
+    dark: 'Dark Slate',
+    forest: 'Forest Green',
+    rose: 'Rose Pink',
+    lavender: 'Lavender Purple',
+    sand: 'Warm Sand',
+}
+
 function AppLayout({ children }) {
     const navigate = useNavigate()
 
@@ -207,13 +216,13 @@ function AppLayout({ children }) {
                             className="theme-toggle-btn"
                             onClick={toggleTheme}
                             title={currentTheme === 'ocean' ? 'Switch to Dark appearance' : 'Switch to Ocean Teal appearance'}
-                            aria-label={`Toggle appearance. Currently ${currentTheme}.`}
+                            aria-label={`Toggle appearance. Currently ${THEME_NAMES[currentTheme] || currentTheme}.`}
                         >
                             <span className="theme-toggle-icon" aria-hidden="true">
                                 {currentTheme === 'dark' ? '☀️' : '🌙'}
                             </span>
                             <span className="theme-toggle-label">
-                                {currentTheme === 'dark' ? 'Light' : 'Dark'}
+                                {THEME_NAMES[currentTheme] || (currentTheme === 'dark' ? 'Dark Slate' : 'Ocean Teal')}
                             </span>
                         </button>
 

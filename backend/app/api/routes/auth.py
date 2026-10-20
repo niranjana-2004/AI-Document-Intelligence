@@ -171,7 +171,8 @@ def verify_otp(
 
     return {
         "message": "Email verified successfully.",
-        "email": user.email
+        "email": user.email,
+        "is_verified": True
     }
 
 @router.post("/resend-otp")
@@ -481,7 +482,45 @@ def login(
             "id": user.id,
             "full_name": user.full_name,
             "email": user.email,
+            "phone": user.phone,
+            "is_verified": bool(user.is_verified),
         }
+    }
+
+@router.get("/profile")
+def get_profile(
+    current_user: User = Depends(get_current_user),
+):
+    user_dict = {
+        "id": current_user.id,
+        "full_name": current_user.full_name,
+        "email": current_user.email,
+        "phone": current_user.phone,
+        "is_verified": bool(current_user.is_verified),
+        "created_at": current_user.created_at,
+        "last_login": current_user.last_login,
+    }
+    return {
+        "user": user_dict,
+        **user_dict,
+    }
+
+@router.get("/me")
+def get_me(
+    current_user: User = Depends(get_current_user),
+):
+    user_dict = {
+        "id": current_user.id,
+        "full_name": current_user.full_name,
+        "email": current_user.email,
+        "phone": current_user.phone,
+        "is_verified": bool(current_user.is_verified),
+        "created_at": current_user.created_at,
+        "last_login": current_user.last_login,
+    }
+    return {
+        "user": user_dict,
+        **user_dict,
     }
 
 @router.put("/profile")
@@ -503,7 +542,7 @@ def update_profile(
             "full_name": current_user.full_name,
             "email": current_user.email,
             "phone": current_user.phone,
-            "is_verified": current_user.is_verified,
+            "is_verified": bool(current_user.is_verified),
         },
     }
 
