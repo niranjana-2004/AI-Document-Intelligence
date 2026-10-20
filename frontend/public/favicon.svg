@@ -1,19 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <defs>
-    <linearGradient id="cognidocs-fav-upper" x1="6" y1="5.5" x2="16" y2="24" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0F172A"/>
-      <stop offset="60%" stop-color="#4C1D95"/>
-      <stop offset="100%" stop-color="#7C3AED"/>
+    <!-- Upper Page: Clear Cyan to Ocean Teal Gradient -->
+    <linearGradient id="fav-upper" x1="6" y1="4.5" x2="24" y2="15.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#13B8A6"/>
     </linearGradient>
-    <linearGradient id="cognidocs-fav-lower" x1="8" y1="16" x2="24.5" y2="26.5" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#6D28D9"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
+
+    <!-- Lower Page: Vivid Violet Gradient with #C4B5FD Fold Highlight -->
+    <linearGradient id="fav-lower" x1="5.5" y1="13.5" x2="24.5" y2="27.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C4B5FD"/>
+      <stop offset="22%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
     </linearGradient>
   </defs>
-  <!-- Layer 1: Upper Document Page & Spine Foundation -->
-  <path d="M18.5 5.5H12C8.41 5.5 5.5 8.41 5.5 12V20C5.5 23.59 8.41 26.5 12 26.5H15C11.5 24.5 9.5 21 9.5 17.5V13C9.5 11.9 10.4 11 11.5 11H18.5V5.5Z" fill="url(#cognidocs-fav-upper)"/>
-  <!-- Layer 2: Lower Document Page (Overlapping Spine) -->
-  <path d="M24.5 21V26.5H12C8.41 26.5 5.5 23.59 5.5 20V15.5L11.5 11.5V19C11.5 20.1 12.4 21 13.5 21H24.5Z" fill="url(#cognidocs-fav-lower)"/>
-  <!-- Layer 3: Top-Right Folded Page Flap -->
-  <path d="M18.5 5.5L24.5 11.5H18.5V5.5Z" fill="#C4B5FD"/>
+
+  <!-- Layer 1: Upper Page Ribbon (Cyan to Ocean Teal) -->
+  <path d="M23.5 7.5C20.8 5 17 4.2 13.8 4.6C8.8 5.2 5 9.2 4.5 14.2C4.2 16.5 4.8 18.5 5.8 20.2L11.5 15.2C11 14 11 12.5 11.5 11.2C12.5 8.5 15 7.2 17.5 7.6C18.8 7.8 20 8.6 20.8 9.8L23.5 7.5Z" fill="url(#fav-upper)"/>
+
+  <!-- Layer 2: Lower Page Ribbon (Vivid Violet based on #8B5CF6) -->
+  <path d="M5.2 13.5L4.5 15.5C4.2 17.8 4.8 20.2 6.5 22.5C8.8 25.8 12.8 27.5 16.8 27.5C20 27.5 22.8 26.2 24.5 24L21 20.5C19.8 21.8 18.2 22.5 16.5 22.4C13.8 22.2 11.8 20.2 11.5 17.2L5.2 13.5Z" fill="url(#fav-lower)"/>
+
+  <!-- Layer 3 Highlight: Subtle #C4B5FD Fold Edge Accent -->
+  <path d="M5.2 13.5L11.5 17.2" stroke="#C4B5FD" stroke-width="0.9" stroke-linecap="round" opacity="0.9"/>
 </svg>

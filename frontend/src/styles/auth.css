@@ -55,14 +55,12 @@
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: var(--cogni-gradient);
-    color: #ffffff;
+    background: #0f172a;
+    border: 1px solid rgba(19, 184, 166, 0.22);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
-    font-size: 17px;
-    box-shadow: 0 0 18px var(--cogni-cyan-glow);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25), 0 0 14px var(--cogni-cyan-glow);
     flex-shrink: 0;
 }
 
