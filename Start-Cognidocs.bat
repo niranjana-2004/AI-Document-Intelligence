@@ -47,10 +47,10 @@ if not exist "%PROJECT_ROOT%logs" (
 )
 
 :: -----------------------------------------------------------------------------
-:: Step 1: Check & Start Ollama
+:: Step 1: Check & Start Ollama (Non-blocking)
 :: -----------------------------------------------------------------------------
 echo [1/3] Checking Ollama API status...
-curl.exe -s --connect-timeout 2 http://127.0.0.1:11434/ >nul 2>&1
+curl.exe -s --connect-timeout 1 http://127.0.0.1:11434/ >nul 2>&1
 if %errorlevel% equ 0 (
     echo   [OK] Ollama is already running on http://127.0.0.1:11434.
     goto :ollama_done
@@ -64,30 +64,9 @@ if %errorlevel% neq 0 (
     goto :ollama_done
 )
 
-echo   [STARTING] Launching Ollama in the background (hidden)...
+echo   [STARTING] Launching Ollama in the background (non-blocking)...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_ROOT%scripts\run-hidden.ps1" -Command "ollama serve" -WorkingDirectory "%PROJECT_ROOT%." -LogFile "%PROJECT_ROOT%logs\ollama.log"
-
-echo   Waiting for Ollama API to become ready (up to 30s)...
-set "OLLAMA_READY=0"
-for /L %%i in (1,1,30) do (
-    curl.exe -s --connect-timeout 1 http://127.0.0.1:11434/ >nul 2>&1
-    if not errorlevel 1 (
-        set "OLLAMA_READY=1"
-        goto :ollama_poll_done
-    )
-    <nul set /p=.
-    ping 127.0.0.1 -n 2 >nul
-)
-
-:ollama_poll_done
-echo.
-if !OLLAMA_READY! equ 1 (
-    echo   [OK] Ollama is ready on http://127.0.0.1:11434.
-) else (
-    echo   [WARNING] Ollama did not respond within 30 seconds.
-    echo             Check log file: logs\ollama.log
-    echo             Continuing startup (backend will use deterministic search fallback)...
-)
+echo   [INFO] Ollama initialization continues in the background.
 
 :ollama_done
 echo.
@@ -96,9 +75,11 @@ echo.
 :: Step 2: Check & Start FastAPI Backend
 :: -----------------------------------------------------------------------------
 echo [2/3] Checking FastAPI backend status...
-curl.exe -s --connect-timeout 2 http://127.0.0.1:8000/health >nul 2>&1
+set "BACKEND_ALREADY_RUNNING=0"
+curl.exe -s --connect-timeout 1 http://127.0.0.1:8000/health >nul 2>&1
 if %errorlevel% equ 0 (
     echo   [OK] FastAPI backend is already running on http://127.0.0.1:8000.
+    set "BACKEND_ALREADY_RUNNING=1"
     goto :backend_done
 )
 
@@ -114,28 +95,6 @@ if not exist "%PROJECT_ROOT%backend\.venv\Scripts\uvicorn.exe" (
 echo   [STARTING] Launching FastAPI backend in the background (hidden)...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_ROOT%scripts\run-hidden.ps1" -Command ".venv\Scripts\uvicorn.exe app.main:app --host 127.0.0.1 --port 8000 --reload" -WorkingDirectory "%PROJECT_ROOT%backend" -LogFile "%PROJECT_ROOT%logs\backend.log"
 
-echo   Waiting for FastAPI backend to become ready (up to 15s)...
-set "BACKEND_READY=0"
-for /L %%i in (1,1,15) do (
-    curl.exe -s --connect-timeout 1 http://127.0.0.1:8000/health >nul 2>&1
-    if not errorlevel 1 (
-        set "BACKEND_READY=1"
-        goto :backend_poll_done
-    )
-    <nul set /p=.
-    ping 127.0.0.1 -n 2 >nul
-)
-
-:backend_poll_done
-echo.
-if !BACKEND_READY! equ 1 (
-    echo   [OK] FastAPI backend is ready on http://127.0.0.1:8000.
-) else (
-    echo   [WARNING] FastAPI backend did not respond within 15 seconds.
-    echo             Check log file: logs\backend.log
-    echo             Proceeding with frontend startup...
-)
-
 :backend_done
 echo.
 
@@ -144,7 +103,7 @@ echo.
 :: -----------------------------------------------------------------------------
 echo [3/3] Checking Vite frontend status...
 set "FRONTEND_ALREADY_RUNNING=0"
-curl.exe -s --connect-timeout 2 http://localhost:5173/ >nul 2>&1
+curl.exe -s --connect-timeout 1 http://localhost:5173/ >nul 2>&1
 if %errorlevel% equ 0 (
     echo   [OK] Vite frontend is already running on http://localhost:5173.
     set "FRONTEND_ALREADY_RUNNING=1"
@@ -175,7 +134,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_ROOT%scripts\r
 echo.
 
 :: -----------------------------------------------------------------------------
-:: Step 4: Wait for Frontend Readiness & Open Browser
+:: Step 4: Fast Readiness Polling & Open Browser
 :: -----------------------------------------------------------------------------
 set "FRONTEND_READY=0"
 
@@ -184,44 +143,96 @@ if %FRONTEND_ALREADY_RUNNING% equ 1 (
     goto :frontend_poll_done
 )
 
-echo Waiting for Vite frontend to become ready (up to 20s)...
-for /L %%i in (1,1,20) do (
-    curl.exe -s --connect-timeout 1 http://localhost:5173/ >nul 2>&1
+echo Waiting for Vite frontend to become ready (http://localhost:5173)...
+for /L %%i in (1,1,30) do (
+    curl.exe -s --connect-timeout 0.5 http://localhost:5173/ >nul 2>&1
     if not errorlevel 1 (
         set "FRONTEND_READY=1"
         goto :frontend_poll_done
     )
     <nul set /p=.
-    ping 127.0.0.1 -n 2 >nul
 )
 
 :frontend_poll_done
 echo.
-echo.
 
-if !FRONTEND_READY! equ 1 (
+if !FRONTEND_READY! neq 1 (
     echo ===================================================
-    echo   Cognidocs is ready!
-    echo   Frontend : http://localhost:5173
-    echo   Backend  : http://127.0.0.1:8000
-    echo   API Docs : http://127.0.0.1:8000/docs
-    echo   Ollama   : http://127.0.0.1:11434
-    echo   Logs     : logs\
-    echo ===================================================
-    echo Opening application in default browser...
-    start "" "http://localhost:5173"
-    ping 127.0.0.1 -n 3 >nul
-    exit /b 0
-) else (
-    echo ===================================================
-    echo   [WARNING] Frontend did not become ready within 20 seconds.
+    echo   [ERROR] Vite frontend did not become ready.
     echo   The browser was not opened automatically.
-    echo   Please check the log files for troubleshooting:
-    echo     Frontend log : logs\frontend.log
-    echo     Backend log  : logs\backend.log
-    echo     Ollama log   : logs\ollama.log
     echo ===================================================
+    if exist "%PROJECT_ROOT%logs\frontend.log" (
+        echo.
+        echo --- Recent output from logs\frontend.log ---
+        powershell.exe -NoProfile -Command "Get-Content -Path '%PROJECT_ROOT%logs\frontend.log' -Tail 15 -ErrorAction SilentlyContinue"
+        echo ---------------------------------------------
+    )
+    echo.
+    echo Please check logs\frontend.log for details.
     echo.
     pause
     exit /b 1
 )
+
+echo Opening application in default browser...
+start "" "http://localhost:5173"
+
+:: -----------------------------------------------------------------------------
+:: Step 5: Verify FastAPI Backend Readiness
+:: -----------------------------------------------------------------------------
+set "BACKEND_READY=0"
+
+if %BACKEND_ALREADY_RUNNING% equ 1 (
+    set "BACKEND_READY=1"
+    goto :backend_poll_done
+)
+
+echo Waiting for FastAPI backend to become ready (http://127.0.0.1:8000/health)...
+for /L %%i in (1,1,30) do (
+    curl.exe -s --connect-timeout 0.5 http://127.0.0.1:8000/health >nul 2>&1
+    if not errorlevel 1 (
+        set "BACKEND_READY=1"
+        goto :backend_poll_done
+    )
+    <nul set /p=.
+)
+
+:backend_poll_done
+echo.
+
+if !BACKEND_READY! neq 1 (
+    echo ===================================================
+    echo   [ERROR] FastAPI backend did not become ready.
+    echo   Frontend is accessible, but backend API is unavailable.
+    echo ===================================================
+    if exist "%PROJECT_ROOT%logs\backend.log" (
+        echo.
+        echo --- Recent output from logs\backend.log ---
+        powershell.exe -NoProfile -Command "Get-Content -Path '%PROJECT_ROOT%logs\backend.log' -Tail 15 -ErrorAction SilentlyContinue"
+        echo --------------------------------------------
+    )
+    echo.
+    echo Please check logs\backend.log for details.
+    echo.
+    pause
+    exit /b 1
+)
+
+:: -----------------------------------------------------------------------------
+:: Final Summary Banner
+:: -----------------------------------------------------------------------------
+echo ===================================================
+echo   Cognidocs is ready!
+echo   Frontend : http://localhost:5173
+echo   Backend  : http://127.0.0.1:8000
+echo   API Docs : http://127.0.0.1:8000/docs
+curl.exe -s --connect-timeout 0.2 http://127.0.0.1:11434/ >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   Ollama   : http://127.0.0.1:11434 (Ready)
+) else (
+    echo   Ollama   : http://127.0.0.1:11434 (Initializing in background)
+)
+echo   Logs     : logs\
+echo ===================================================
+ping 127.0.0.1 -n 2 >nul
+exit /b 0

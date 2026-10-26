@@ -1,5 +1,4 @@
-from networkx.generators import internet_as_graphs
-from app.models import document_chunk
+import math
 import re
 from typing import cast
 from app.models.document import Document
@@ -601,6 +600,10 @@ def semantic_search(
         expanded_query
     )
 
+    query_magnitude = math.sqrt(
+        sum(a * a for a in query_embedding)
+    )
+
     intent = detect_query_intent(query)
 
     category = detect_query_category(query)
@@ -615,13 +618,12 @@ def semantic_search(
         intent = None
         category = None
 
-    query_db = db.query(DocumentChunk)
+    query_db = (
+        db.query(DocumentChunk, Document.filename)
+        .join(Document, Document.id == DocumentChunk.document_id)
+    )
     if user_id is not None:
-        query_db = (
-            query_db
-            .join(Document, Document.id == DocumentChunk.document_id)
-            .filter(Document.user_id == user_id)
-        )
+        query_db = query_db.filter(Document.user_id == user_id)
     if document_ids is not None:
         query_db = query_db.filter(
             DocumentChunk.document_id.in_(document_ids)
@@ -631,16 +633,14 @@ def semantic_search(
             DocumentChunk.document_id == document_id
         )
 
-    chunks = query_db.all()
+    chunk_rows = query_db.all()
 
-    doc_query = db.query(Document.id, Document.filename)
-    if user_id is not None:
-        doc_query = doc_query.filter(Document.user_id == user_id)
-    if document_ids is not None:
-        doc_query = doc_query.filter(Document.id.in_(document_ids))
-    elif document_id is not None:
-        doc_query = doc_query.filter(Document.id == document_id)
-    doc_filenames = {row.id: row.filename for row in doc_query.all()}
+    chunks = []
+    doc_filenames = {}
+    for chunk, fname in chunk_rows:
+        chunks.append(chunk)
+        if chunk.document_id not in doc_filenames:
+            doc_filenames[chunk.document_id] = fname
 
     results = []
 
@@ -718,7 +718,62 @@ def semantic_search(
 
         if not chunk.embedding:
             continue
-        
+
+        # --------------------------------------------------
+        # Early context filtering
+        # --------------------------------------------------
+
+        if query_context == "internship":
+
+            chunk_category = (
+                chunk.category or ""
+            ).lower()
+
+            if chunk_category != "internship":
+                continue
+
+        content_lower = chunk.content.lower()
+
+        # --------------------------------------------------
+        # Early document section filtering
+        # --------------------------------------------------
+
+        if intent in SECTION_FILTER_INTENTS and has_section_marker_in_docs:
+
+            required_category = SECTION_FILTER_INTENTS[intent]
+
+            section_markers = SECTION_MARKERS.get(
+                required_category,
+                []
+            )
+
+            section_present = any(
+                marker in content_lower 
+                for marker in section_markers
+            )
+
+            if not section_present:
+                continue
+
+        # --------------------------------------------------
+        # Early subsection filtering
+        # --------------------------------------------------
+
+        if intent in SUBSECTION_MARKERS and has_subsection_marker_in_docs:
+
+            subsection_present = False
+
+            for marker in SUBSECTION_MARKERS[intent]:
+
+                if marker in content_lower:
+                    subsection_present = True
+                    break
+
+            # For specific subsection queries, only return
+            # chunks that actually contain that subsection.
+            if not subsection_present:
+                continue
+
         # --------------------------------------------------
         # Ambiguous language query boost
         # --------------------------------------------------
@@ -726,7 +781,6 @@ def semantic_search(
         language_category_boost = 0.0
 
         if ambiguous_language_query:
-            content_lower = chunk.content.lower()
 
             if "languages known" in content_lower:
                 language_category_boost = 0.80
@@ -736,7 +790,8 @@ def semantic_search(
 
         similarity = cosine_similarity(
             query_embedding,
-            chunk.embedding
+            chunk.embedding,
+            magnitude1=query_magnitude
         )
 
         keyword_score = calculate_keyword_score(
@@ -753,63 +808,6 @@ def semantic_search(
             intent,
             chunk.content
         )
-
-        # --------------------------------------------------
-        # Context filtering
-        # --------------------------------------------------
-
-        if query_context == "internship":
-
-            chunk_category = (
-                chunk.category or ""
-            ).lower()
-
-            if chunk_category != "internship":
-                continue
-
-        # --------------------------------------------------
-        # Strong document section filtering
-        # --------------------------------------------------
-
-        if intent in SECTION_FILTER_INTENTS and has_section_marker_in_docs:
-
-            required_category = SECTION_FILTER_INTENTS[intent]
-
-            section_markers = SECTION_MARKERS.get(
-                required_category,
-                []
-            )
-
-            content_lower = chunk.content.lower()
-
-            section_present = any(
-            marker in content_lower 
-            for marker in section_markers
-            )
-
-            if not section_present:
-                continue
-        # --------------------------------------------------
-        # Strong subsection filtering
-        # --------------------------------------------------
-
-
-        if intent in SUBSECTION_MARKERS and has_subsection_marker_in_docs:
-
-            subsection_present = False
-
-            content_lower = chunk.content.lower()
-
-            for marker in SUBSECTION_MARKERS[intent]:
-
-                if marker in content_lower:
-                    subsection_present = True
-                    break
-
-            # For specific subsection queries, only return
-            # chunks that actually contain that subsection.
-            if not subsection_present:
-                continue
 
         # --------------------------------------------------
         # General relevance filtering
