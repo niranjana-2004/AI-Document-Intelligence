@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+    X,
+    Edit3,
+} from 'lucide-react'
 import { apiRequest } from '../services/api'
 import '../App.css'
 
@@ -249,7 +253,8 @@ function Profile() {
                     }}
                     aria-label="Edit Profile"
                 >
-                    Edit Profile
+                    <Edit3 size={15} />
+                    <span>Edit Profile</span>
                 </button>
             </section>
 
@@ -530,7 +535,7 @@ function Profile() {
                                 onClick={() => setShowEditModal(false)}
                                 aria-label="Close edit profile modal"
                             >
-                                ✕
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -675,7 +680,7 @@ function Profile() {
                                 onClick={() => setShowPasswordModal(false)}
                                 aria-label="Close change password modal"
                             >
-                                ✕
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -831,7 +836,7 @@ function Profile() {
                                 onClick={() => setShowDeleteModal(false)}
                                 aria-label="Close delete account modal"
                             >
-                                ✕
+                                <X size={18} />
                             </button>
                         </div>
 

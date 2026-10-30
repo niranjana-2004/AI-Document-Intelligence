@@ -47,50 +47,50 @@
 }
 
 
-/* 🌙 Dark — Deep Teal / Cognidocs Dark */
+/* 🌙 Dark — Deep Charcoal Navy / Premium AI Dark SaaS */
 [data-theme="dark"] {
-  --bg-primary: #0b171b;
-  --surface: #12272d;
-  --surface-secondary: #18363d;
+  --bg-primary: #070a13;
+  --surface: #0e1526;
+  --surface-secondary: #141d33;
 
-  --text-primary: #f3fffd;
-  --text-secondary: #b8d4d0;
-  --text-muted: #86aaa5;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
 
-  --accent: #25d8c6;
-  --accent-hover: #16b8a7;
-  --accent-soft: #164d49;
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --accent-soft: rgba(139, 92, 246, 0.16);
 
-  --hero-bg: #19363d;
+  --hero-bg: #0b1122;
   --hero-text: #ffffff;
 
-  --border: #2c5358;
-  --border-light: #24444a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.05);
 
-  --danger: #ff8585;
-  --danger-soft: #4b292d;
-  --error: #ff9388;
-  --error-soft: #4b2b28;
+  --danger: #f87171;
+  --danger-soft: rgba(239, 68, 68, 0.16);
+  --error: #fb7185;
+  --error-soft: rgba(244, 63, 94, 0.16);
 
-  --shadow-color: rgba(0, 0, 0, 0.35);
+  --shadow-color: rgba(0, 0, 0, 0.6);
 
   /* Cognidocs Brand & Glowing Accents */
-  --cogni-cyan: #00f2fe;
-  --cogni-teal: #25d8c6;
+  --cogni-cyan: #38bdf8;
+  --cogni-teal: #2dd4bf;
   --cogni-violet: #a855f7;
-  --cogni-cyan-glow: rgba(0, 242, 254, 0.42);
-  --cogni-teal-glow: rgba(37, 216, 198, 0.35);
+  --cogni-cyan-glow: rgba(56, 189, 248, 0.35);
+  --cogni-teal-glow: rgba(45, 212, 191, 0.28);
   --cogni-violet-glow: rgba(168, 85, 247, 0.35);
-  --cogni-gradient: linear-gradient(135deg, #00f2fe 0%, #25d8c6 50%, #a855f7 100%);
-  --cogni-gradient-subtle: linear-gradient(135deg, rgba(0, 242, 254, 0.16) 0%, rgba(168, 85, 247, 0.16) 100%);
+  --cogni-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+  --cogni-gradient-subtle: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(168, 85, 247, 0.15) 100%);
 
   /* Glassmorphism Tokens */
-  --glass-bg: rgba(18, 39, 45, 0.68);
-  --glass-bg-hover: rgba(24, 54, 61, 0.82);
-  --glass-border: rgba(37, 216, 198, 0.24);
-  --glass-border-glow: rgba(0, 242, 254, 0.50);
-  --glass-blur: blur(14px);
-  --glass-shadow: 0 14px 36px -4px rgba(0, 0, 0, 0.45), 0 4px 16px -2px rgba(0, 242, 254, 0.12);
+  --glass-bg: rgba(14, 21, 38, 0.72);
+  --glass-bg-hover: rgba(20, 29, 51, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-glow: rgba(139, 92, 246, 0.45);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 
@@ -298,10 +298,39 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Outfit", "Plus Jakarta Sans", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.45);
 }
 
 /* ========================================
@@ -350,6 +379,24 @@ body {
 
 .glow-border {
   border-color: var(--glass-border-glow) !important;
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+  opacity: 0.4;
+  z-index: 0;
+  animation: cogniFloat 8s ease-in-out infinite alternate;
+}
+
+.ambient-orb-violet {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%);
+}
+
+.ambient-orb-cyan {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, transparent 70%);
 }
 
 /* ========================================

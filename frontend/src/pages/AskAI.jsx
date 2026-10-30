@@ -1,7 +1,28 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import {
+    Sparkles,
+    Plus,
+    ChevronLeft,
+    ChevronDown,
+    ChevronUp,
+    MessageSquare,
+    Edit3,
+    Trash2,
+    PanelLeft,
+    Globe,
+    Send,
+    BookOpen,
+    Layers,
+} from 'lucide-react'
 import { apiRequest } from '../services/api'
 import '../App.css'
+
+let msgCounter = 0
+function createMessageId(prefix) {
+    msgCounter += 1
+    return `${prefix}-${Date.now()}-${msgCounter}`
+}
 
 /**
  * Normalizes completed conversation history to strictly respect backend constraints:
@@ -82,7 +103,6 @@ function normalizeConversationHistory(messagesList) {
                     role: turn.role,
                     content: truncated,
                 })
-                remainingBudget -= truncated.length
             }
             break
         }
@@ -174,7 +194,25 @@ function AskAI() {
     const suggestionsRequestIdRef = useRef(0)
     const suggestionsAbortControllerRef = useRef(null)
 
+    const fetchDocuments = async () => {
+        try {
+            setDocsLoading(true)
+            setDocsError('')
+            const data = await apiRequest('/documents/')
+            const list = Array.isArray(data)
+                ? data
+                : (data && Array.isArray(data.documents) ? data.documents : [])
+            setDocuments(list)
+        } catch (err) {
+            console.error('Error fetching documents for Ask AI:', err)
+            setDocsError(err.message || 'Unable to load documents.')
+        } finally {
+            setDocsLoading(false)
+        }
+    }
+
     const fetchSuggestedQuestions = async (forcedScopeMode = scopeMode, forcedDocIds = selectedDocIds) => {
+        await Promise.resolve()
         // Cancel any pending suggestion request
         if (suggestionsAbortControllerRef.current) {
             suggestionsAbortControllerRef.current.abort()
@@ -354,23 +392,51 @@ function AskAI() {
     }
 
     useEffect(() => {
-        fetchDocuments()
+        let ignore = false
         const initChat = async () => {
-            const list = await fetchConversations()
-            const savedConvId = sessionStorage.getItem('cognidocs_active_chat_id')
-            if (savedConvId) {
-                const targetId = parseInt(savedConvId, 10)
-                const exists = list.some((c) => c.id === targetId)
-                if (exists) {
-                    await handleSelectConversation(targetId)
-                } else {
-                    sessionStorage.removeItem('cognidocs_active_chat_id')
+            try {
+                const data = await apiRequest('/documents/')
+                if (!ignore) {
+                    const list = Array.isArray(data)
+                        ? data
+                        : (data && Array.isArray(data.documents) ? data.documents : [])
+                    setDocuments(list)
                 }
+            } catch (err) {
+                if (!ignore) {
+                    console.error('Error fetching documents for Ask AI:', err)
+                    setDocsError(err.message || 'Unable to load documents.')
+                }
+            } finally {
+                if (!ignore) setDocsLoading(false)
+            }
+
+            try {
+                const data = await apiRequest('/conversations')
+                const list = Array.isArray(data) ? data : []
+                if (!ignore) {
+                    setConversations(list)
+                    const savedConvId = sessionStorage.getItem('cognidocs_active_chat_id')
+                    if (savedConvId) {
+                        const targetId = parseInt(savedConvId, 10)
+                        const exists = list.some((c) => c.id === targetId)
+                        if (exists) {
+                            handleSelectConversation(targetId)
+                        } else {
+                            sessionStorage.removeItem('cognidocs_active_chat_id')
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to fetch conversation history:', err)
+            } finally {
+                if (!ignore) setConversationsLoading(false)
             }
         }
         initChat()
 
         return () => {
+            ignore = true
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort()
             }
@@ -378,18 +444,26 @@ function AskAI() {
                 suggestionsAbortControllerRef.current.abort()
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // Refresh suggested questions on scope changes or when document collection finishes loading
     useEffect(() => {
-        if (!docsLoading) {
-            fetchSuggestedQuestions(scopeMode, selectedDocIds)
-        }
+        if (docsLoading) return
+        let ignore = false
+        const timer = setTimeout(() => {
+            if (!ignore) {
+                fetchSuggestedQuestions(scopeMode, selectedDocIds)
+            }
+        }, 0)
         return () => {
+            ignore = true
+            clearTimeout(timer)
             if (suggestionsAbortControllerRef.current) {
                 suggestionsAbortControllerRef.current.abort()
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scopeMode, selectedDocIds, documents.length, docsLoading])
 
     // Auto-scroll to bottom of conversation thread on new messages or loading
@@ -408,23 +482,6 @@ function AskAI() {
             return () => clearTimeout(timer)
         }
     }, [highlightedCitation])
-
-    const fetchDocuments = async () => {
-        try {
-            setDocsLoading(true)
-            setDocsError('')
-            const data = await apiRequest('/documents/')
-            const list = Array.isArray(data)
-                ? data
-                : (data && Array.isArray(data.documents) ? data.documents : [])
-            setDocuments(list)
-        } catch (err) {
-            console.error('Error fetching documents for Ask AI:', err)
-            setDocsError(err.message || 'Unable to load documents.')
-        } finally {
-            setDocsLoading(false)
-        }
-    }
 
     // Document Scope handlers with request cancellation & asynchronous scope sync
     const handleScopeModeChange = (newMode) => {
@@ -596,7 +653,7 @@ function AskAI() {
 
         // Optimistically append user message to chat thread
         const userMsg = {
-            id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            id: createMessageId('user'),
             role: 'user',
             content: queryText,
             timestamp: new Date().toISOString(),
@@ -638,7 +695,7 @@ function AskAI() {
             const sourcesList = Array.isArray(data?.results) ? data.results : []
 
             const asstMsg = {
-                id: `asst-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                id: createMessageId('asst'),
                 role: 'assistant',
                 content: aiAnswer,
                 sources: sourcesList,
@@ -880,7 +937,7 @@ function AskAI() {
                         disabled={loading}
                         title="Start a new chat session"
                     >
-                        <span className="sidebar-new-chat-icon" aria-hidden="true">+</span>
+                        <Plus size={16} className="sidebar-new-chat-icon" />
                         <span>New Chat</span>
                     </button>
                     <button
@@ -890,7 +947,7 @@ function AskAI() {
                         title="Collapse chat history"
                         aria-label="Collapse sidebar"
                     >
-                        ◀
+                        <ChevronLeft size={16} />
                     </button>
                 </div>
 
@@ -902,7 +959,7 @@ function AskAI() {
                         </div>
                     ) : conversations.length === 0 ? (
                         <div className="sidebar-empty-state">
-                            <span className="sidebar-empty-icon" aria-hidden="true">💬</span>
+                            <MessageSquare size={32} className="sidebar-empty-icon text-muted" aria-hidden="true" />
                             <p className="sidebar-empty-title">No conversations yet</p>
                             <span className="sidebar-empty-hint">Your saved chats will appear here</span>
                         </div>
@@ -925,7 +982,9 @@ function AskAI() {
                                                 if (e.key === 'Enter') handleSelectConversation(conv.id)
                                             }}
                                         >
-                                            <span className="conv-item-icon" aria-hidden="true">💬</span>
+                                            <span className="conv-item-icon" aria-hidden="true">
+                                                <MessageSquare size={14} />
+                                            </span>
 
                                             {isEditing ? (
                                                 <input
@@ -962,7 +1021,7 @@ function AskAI() {
                                                         title="Rename chat"
                                                         aria-label={`Rename ${conv.title}`}
                                                     >
-                                                        ✏️
+                                                        <Edit3 size={13} />
                                                     </button>
                                                     <button
                                                         type="button"
@@ -974,7 +1033,7 @@ function AskAI() {
                                                         title="Delete chat"
                                                         aria-label={`Delete ${conv.title}`}
                                                     >
-                                                        🗑️
+                                                        <Trash2 size={13} />
                                                     </button>
                                                 </div>
                                             )}
@@ -1037,12 +1096,12 @@ function AskAI() {
                                 title="Open chat history sidebar"
                                 aria-label="Open conversation history"
                             >
-                                <span aria-hidden="true">☰</span>
+                                <PanelLeft size={18} aria-hidden="true" />
                             </button>
                         )}
 
                         <div className="chat-title-group">
-                            <span className="chat-title-icon" aria-hidden="true">✦</span>
+                            <Sparkles size={16} className="chat-title-icon text-accent" aria-hidden="true" />
                             <h2 className="chat-title" title={activeConversationTitle || 'Ask AI'}>
                                 {activeConversationTitle || 'Ask AI'}
                             </h2>
@@ -1059,7 +1118,9 @@ function AskAI() {
                                 onClick={() => handleScopeModeChange('all')}
                                 disabled={loading}
                             >
-                                <span className="scope-pill-icon" aria-hidden="true">🌐</span>
+                                <span className="scope-pill-icon" aria-hidden="true">
+                                    <Globe size={14} />
+                                </span>
                                 <span>All Documents</span>
                                 {documents.length > 0 && (
                                     <span className="scope-count-badge">{documents.length}</span>
@@ -1074,7 +1135,9 @@ function AskAI() {
                                 onClick={() => handleScopeModeChange('specific')}
                                 disabled={loading}
                             >
-                                <span className="scope-pill-icon" aria-hidden="true">📑</span>
+                                <span className="scope-pill-icon" aria-hidden="true">
+                                    <Layers size={14} />
+                                </span>
                                 <span>Specific</span>
                                 {selectedDocIds.length > 0 && (
                                     <span className="scope-count-badge scope-count-active">
@@ -1093,7 +1156,9 @@ function AskAI() {
                                     aria-expanded={isDocPickerOpen}
                                 >
                                     <span>{selectedDocIds.length} of {documents.length} selected</span>
-                                    <span className="dropdown-caret" aria-hidden="true">{isDocPickerOpen ? '▴' : '▾'}</span>
+                                    <span className="dropdown-caret" aria-hidden="true">
+                                        {isDocPickerOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    </span>
                                 </button>
                             )}
                         </div>
@@ -1108,7 +1173,7 @@ function AskAI() {
                             title="Start a new chat inquiry"
                             aria-label="Start a new chat"
                         >
-                            <span className="new-chat-plus" aria-hidden="true">+</span>
+                            <Plus size={15} className="new-chat-plus" aria-hidden="true" />
                             <span>New Chat</span>
                         </button>
                     </div>
@@ -1225,7 +1290,9 @@ function AskAI() {
                 {/* EMPTY STATE */}
                 {messages.length === 0 && !loading && (
                     <section className="chat-empty-state" aria-label="Ask AI overview">
-                        <div className="chat-empty-glow-icon" aria-hidden="true">✦</div>
+                        <div className="chat-empty-glow-icon" aria-hidden="true">
+                            <Sparkles size={38} />
+                        </div>
                         <h3 className="chat-empty-title">Cognidocs Intelligence Ready</h3>
                         <p className="chat-empty-desc">
                             Ask anything about your uploaded documents. Cognidocs AI retrieves exact passages and formulates context-grounded answers with traceable citations.
@@ -1255,7 +1322,9 @@ function AskAI() {
                                             disabled={loading}
                                             title={`Ask: "${suggestion}"`}
                                         >
-                                            <span className="suggestion-sparkle" aria-hidden="true">✨</span>
+                                            <span className="suggestion-sparkle" aria-hidden="true">
+                                                <Sparkles size={12} />
+                                            </span>
                                             <span>{suggestion}</span>
                                         </button>
                                     ))}
@@ -1298,7 +1367,7 @@ function AskAI() {
                             return (
                                 <div key={msg.id} className="chat-row chat-row-assistant">
                                     <div className="assistant-avatar" aria-hidden="true">
-                                        <span>✦</span>
+                                        <Sparkles size={16} />
                                     </div>
 
                                     <div className="assistant-bubble-column">
@@ -1335,7 +1404,9 @@ function AskAI() {
                                                     aria-expanded={isDrawerExpanded}
                                                     title="Toggle verified supporting source excerpts"
                                                 >
-                                                    <span className="sources-drawer-icon" aria-hidden="true">📚</span>
+                                                    <span className="sources-drawer-icon" aria-hidden="true">
+                                                        <BookOpen size={15} />
+                                                    </span>
                                                     <span className="sources-drawer-label">
                                                         {sortedSources.length}{' '}
                                                         {sortedSources.length === 1 ? 'Source referenced' : 'Sources referenced'}
@@ -1439,7 +1510,7 @@ function AskAI() {
                         {loading && (
                             <div className="chat-row chat-row-assistant chat-row-loading">
                                 <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
-                                    <span>✦</span>
+                                    <Sparkles size={16} />
                                 </div>
                                 <div className="assistant-bubble-column">
                                     <div className="chat-bubble-assistant chat-bubble-loading">
@@ -1465,7 +1536,7 @@ function AskAI() {
                     <div className="chat-thread-container">
                         <div className="chat-row chat-row-assistant chat-row-loading">
                             <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
-                                <span>✦</span>
+                                <Sparkles size={16} />
                             </div>
                             <div className="assistant-bubble-column">
                                 <div className="chat-bubble-assistant chat-bubble-loading">
@@ -1552,7 +1623,7 @@ function AskAI() {
                             {loading ? (
                                 <span className="send-spinner" aria-hidden="true"></span>
                             ) : (
-                                <span className="send-icon" aria-hidden="true">↑</span>
+                                <Send size={15} aria-hidden="true" />
                             )}
                         </button>
                     </div>

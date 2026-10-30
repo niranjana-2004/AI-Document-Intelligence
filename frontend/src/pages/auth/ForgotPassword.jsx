@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { Mail, CheckCircle2, AlertCircle } from 'lucide-react'
 import AuthLayout from '../../layouts/AuthLayout'
 import { apiRequest } from '../../services/api'
 
@@ -57,7 +58,7 @@ function ForgotPassword() {
                 }),
             })
 
-            // The reset link has been dispatched or queued generically
+            // The reset link has been dispatched
             setSubmittedEmail(trimmedEmail)
             setLinkSent(true)
             setShowSuccessPopup(true)
@@ -80,28 +81,31 @@ function ForgotPassword() {
                     <h2>Forgot your password?</h2>
 
                     <p>
-                        Enter your registered email address and we'll
-                        send you a password reset link.
+                        Enter your registered email address and we'll send you a secure password reset link.
                     </p>
                 </div>
 
                 {error && (
                     <div className="auth-error" role="alert">
-                        {error}
+                        <AlertCircle size={16} />
+                        <span>{error}</span>
                     </div>
                 )}
 
                 {linkSent && !error && !showSuccessPopup && (
                     <div className="auth-success-message" role="status" aria-live="polite">
-                        If an account exists for <strong>{submittedEmail || email.trim()}</strong>,
-                        a password reset link has been dispatched. Delivery may take a moment—please check your inbox and spam folder.
+                        <CheckCircle2 size={16} />
+                        <span>
+                            If an account exists for <strong>{submittedEmail || email.trim()}</strong>,
+                            a password reset link has been dispatched.
+                        </span>
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label htmlFor="forgotEmail">
-                            Email
+                            Email Address
                         </label>
 
                         <input
@@ -126,13 +130,21 @@ function ForgotPassword() {
                         aria-busy={loading}
                         aria-disabled={loading || cooldownSeconds > 0}
                     >
-                        {loading
-                            ? 'Sending reset link...'
-                            : cooldownSeconds > 0
-                                ? `Resend reset link (${cooldownSeconds}s)`
-                                : linkSent
-                                    ? 'Resend reset link'
-                                    : 'Send reset link'}
+                        {loading ? (
+                            <>
+                                <span className="spinner-inline" aria-hidden="true"></span>
+                                <span>Sending reset link...</span>
+                            </>
+                        ) : cooldownSeconds > 0 ? (
+                            `Resend reset link (${cooldownSeconds}s)`
+                        ) : linkSent ? (
+                            'Resend reset link'
+                        ) : (
+                            <>
+                                <Mail size={16} />
+                                <span>Send Reset Link</span>
+                            </>
+                        )}
                     </button>
                 </form>
 
@@ -143,7 +155,7 @@ function ForgotPassword() {
                 <p className="auth-switch">
                     Remember your password?{' '}
                     <Link to="/login">
-                        Login
+                        Sign In
                     </Link>
                 </p>
             </div>
@@ -162,7 +174,7 @@ function ForgotPassword() {
                         onClick={(event) => event.stopPropagation()}
                     >
                         <div className="reset-success-icon" aria-hidden="true">
-                            ✓
+                            <CheckCircle2 size={32} />
                         </div>
 
                         <h3 id="reset-modal-title">Check your email</h3>
@@ -170,7 +182,7 @@ function ForgotPassword() {
                         <p>
                             If an account is registered with
                             <strong> {submittedEmail || email.trim()}</strong>,
-                            a password reset link has been sent.
+                            a password reset link has been dispatched.
                         </p>
 
                         <p>

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { KeyRound, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react'
 import AuthLayout from '../../layouts/AuthLayout'
 import { apiRequest } from '../../services/api'
 
@@ -166,7 +167,7 @@ function OTP() {
                 '',
             ])
 
-            setInfoMessage('A new OTP has been sent. Please check your email inbox.')
+            setInfoMessage('A new verification code has been dispatched. Please check your inbox.')
             inputRefs.current[0]?.focus()
         } catch (error) {
             setError(
@@ -183,7 +184,6 @@ function OTP() {
             <div className="auth-card">
                 <div className="auth-card-header">
                     <h2>Verify your account</h2>
-
                     <p>
                         {registrationEmail ? (
                             <>
@@ -197,14 +197,16 @@ function OTP() {
                 </div>
 
                 {error && (
-                    <div className="auth-error">
-                        {error}
+                    <div className="auth-error" role="alert">
+                        <AlertCircle size={16} />
+                        <span>{error}</span>
                     </div>
                 )}
 
                 {infoMessage && (
-                    <div className="auth-success-message">
-                        {infoMessage}
+                    <div className="auth-success-message" role="status">
+                        <CheckCircle2 size={16} />
+                        <span>{infoMessage}</span>
                     </div>
                 )}
 
@@ -242,9 +244,17 @@ function OTP() {
                         className="auth-primary-button"
                         disabled={loading}
                     >
-                        {loading
-                            ? 'Verifying...'
-                            : 'Verify OTP'}
+                        {loading ? (
+                            <>
+                                <span className="spinner-inline" aria-hidden="true"></span>
+                                <span>Verifying code...</span>
+                            </>
+                        ) : (
+                            <>
+                                <KeyRound size={16} />
+                                <span>Verify Code</span>
+                            </>
+                        )}
                     </button>
                 </form>
 
@@ -259,7 +269,8 @@ function OTP() {
                         className="otp-resend-button"
                         disabled={loading}
                     >
-                        Resend OTP
+                        <RefreshCw size={13} className={loading ? 'spin-anim' : ''} />
+                        <span>Resend OTP</span>
                     </button>
                 </div>
 
@@ -269,7 +280,7 @@ function OTP() {
 
                 <p className="auth-switch">
                     <Link to="/register">
-                        Back to Create Account
+                        ← Back to Create Account
                     </Link>
                 </p>
             </div>

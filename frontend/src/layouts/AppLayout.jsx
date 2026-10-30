@@ -1,5 +1,19 @@
 import { useState, useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import {
+    LayoutDashboard,
+    Files,
+    Sparkles,
+    Search,
+    User,
+    Info,
+    LogOut,
+    Sun,
+    Moon,
+    Bell,
+    Menu,
+    X,
+} from 'lucide-react'
 import CognidocsLogo from '../components/CognidocsLogo'
 import '../styles/app-layout.css'
 
@@ -14,6 +28,8 @@ const THEME_NAMES = {
 
 function AppLayout({ children }) {
     const navigate = useNavigate()
+    const location = useLocation()
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     const [currentTheme, setCurrentTheme] = useState(() => {
         if (typeof document !== 'undefined' && document.documentElement.dataset.theme) {
@@ -65,6 +81,13 @@ function AppLayout({ children }) {
         }
     }, [])
 
+    // Close mobile menu whenever location changes
+    const [prevPath, setPrevPath] = useState(location.pathname)
+    if (prevPath !== location.pathname) {
+        setPrevPath(location.pathname)
+        setMobileMenuOpen(false)
+    }
+
     const toggleTheme = () => {
         const activeTheme =
             document.documentElement.dataset.theme ||
@@ -97,11 +120,18 @@ function AppLayout({ children }) {
     }
 
     return (
-        <div className="app-layout">
+        <div className={`app-layout ${mobileMenuOpen ? 'mobile-menu-active' : ''}`}>
+            {/* Mobile backdrop */}
+            {mobileMenuOpen && (
+                <div
+                    className="app-mobile-backdrop"
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
 
             {/* Sidebar */}
-            <aside className="app-sidebar">
-
+            <aside className={`app-sidebar ${mobileMenuOpen ? 'mobile-drawer-open' : ''}`}>
                 {/* Brand */}
                 <div className="app-brand">
                     <div className="app-logo">
@@ -112,44 +142,64 @@ function AppLayout({ children }) {
                         <h1>Cognidocs</h1>
                         <span>Knowledge, unlocked.</span>
                     </div>
+
+                    {/* Close button inside mobile drawer */}
+                    <button
+                        type="button"
+                        className="mobile-sidebar-close"
+                        onClick={() => setMobileMenuOpen(false)}
+                        aria-label="Close navigation"
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
 
                 {/* Navigation */}
                 <nav className="app-navigation" aria-label="Workspace navigation">
-
                     <p className="nav-section-title">
                         Workspace
                     </p>
 
                     <NavLink
                         to="/dashboard"
-                        className="nav-item"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
-                        <span className="nav-icon" aria-hidden="true">⌂</span>
+                        <span className="nav-icon" aria-hidden="true">
+                            <LayoutDashboard size={18} />
+                        </span>
                         <span>Dashboard</span>
                     </NavLink>
 
                     <NavLink
                         to="/documents"
-                        className="nav-item"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
-                        <span className="nav-icon" aria-hidden="true">▤</span>
+                        <span className="nav-icon" aria-hidden="true">
+                            <Files size={18} />
+                        </span>
                         <span>Documents</span>
                     </NavLink>
 
                     <NavLink
                         to="/ask-ai"
-                        className="nav-item"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
-                        <span className="nav-icon" aria-hidden="true">✦</span>
-                        <span>Ask AI</span>
+                        <span className="nav-icon" aria-hidden="true">
+                            <Sparkles size={18} />
+                        </span>
+                        <span className="nav-label-with-badge">
+                            <span>Ask AI</span>
+                            <span className="nav-badge-ai">AI</span>
+                        </span>
                     </NavLink>
 
                     <NavLink
                         to="/search"
-                        className="nav-item"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
-                        <span className="nav-icon" aria-hidden="true">⌕</span>
+                        <span className="nav-icon" aria-hidden="true">
+                            <Search size={18} />
+                        </span>
                         <span>Search</span>
                     </NavLink>
 
@@ -159,58 +209,70 @@ function AppLayout({ children }) {
 
                     <NavLink
                         to="/profile"
-                        className="nav-item"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
-                        <span className="nav-icon" aria-hidden="true">◯</span>
+                        <span className="nav-icon" aria-hidden="true">
+                            <User size={18} />
+                        </span>
                         <span>Profile</span>
                     </NavLink>
 
                     <NavLink
                         to="/about"
-                        className="nav-item"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
-                        <span className="nav-icon" aria-hidden="true">ⓘ</span>
+                        <span className="nav-icon" aria-hidden="true">
+                            <Info size={18} />
+                        </span>
                         <span>About</span>
                     </NavLink>
-
                 </nav>
 
                 {/* Sidebar Bottom */}
                 <div className="sidebar-bottom">
-
                     <button
                         type="button"
                         className="logout-button"
                         onClick={handleLogout}
                     >
-                        <span className="nav-icon" aria-hidden="true">↪</span>
+                        <span className="nav-icon" aria-hidden="true">
+                            <LogOut size={18} />
+                        </span>
                         <span>Logout</span>
                     </button>
-
                 </div>
-
             </aside>
 
             {/* Main Area */}
             <div className="app-main">
-
                 {/* Top Bar */}
                 <header className="app-topbar">
-
                     <div className="topbar-left">
+                        {/* Mobile hamburger menu toggle */}
+                        <button
+                            type="button"
+                            className="mobile-menu-toggle"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                        >
+                            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                        </button>
+
                         <div className="mobile-brand">
                             <div className="app-logo small-logo">
                                 <CognidocsLogo />
                             </div>
 
-                            <span>
-                                Cognidocs
-                            </span>
+                            <span>Cognidocs</span>
+                        </div>
+
+                        <div className="topbar-status-pill">
+                            <span className="topbar-status-dot"></span>
+                            <span className="topbar-status-text">Intelligence Engine Active</span>
                         </div>
                     </div>
 
                     <div className="topbar-right">
-
                         <button
                             type="button"
                             className="theme-toggle-btn"
@@ -219,7 +281,7 @@ function AppLayout({ children }) {
                             aria-label={`Toggle appearance. Currently ${THEME_NAMES[currentTheme] || currentTheme}.`}
                         >
                             <span className="theme-toggle-icon" aria-hidden="true">
-                                {currentTheme === 'dark' ? '☀️' : '🌙'}
+                                {currentTheme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                             </span>
                             <span className="theme-toggle-label">
                                 {THEME_NAMES[currentTheme] || (currentTheme === 'dark' ? 'Dark Slate' : 'Ocean Teal')}
@@ -229,10 +291,11 @@ function AppLayout({ children }) {
                         <button
                             type="button"
                             className="topbar-icon-button"
-                            title="Notifications"
+                            title="Workspace Notifications"
                             aria-label="Notifications"
                         >
-                            ♢
+                            <Bell size={17} />
+                            <span className="notification-indicator"></span>
                         </button>
 
                         <button
@@ -251,18 +314,14 @@ function AppLayout({ children }) {
                                 {user?.full_name || 'User'}
                             </span>
                         </button>
-
                     </div>
-
                 </header>
 
                 {/* Page Content */}
                 <main className="app-content">
                     {children}
                 </main>
-
             </div>
-
         </div>
     )
 }

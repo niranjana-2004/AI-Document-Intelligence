@@ -1,4 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+    UploadCloud,
+    FileText,
+    Search,
+    X,
+    Check,
+    Copy,
+    RotateCw,
+    Trash2,
+    Sparkles,
+    AlertTriangle,
+    Eye,
+} from 'lucide-react'
 import { apiRequest } from '../services/api'
 import '../App.css'
 
@@ -10,8 +23,10 @@ function Documents() {
 
     const [uploading, setUploading] = useState(false)
     const [uploadMessage, setUploadMessage] = useState('')
+    const [isDragOver, setIsDragOver] = useState(false)
 
     const [searchTerm, setSearchTerm] = useState('')
+    const [selectedTypeFilter, setSelectedTypeFilter] = useState('ALL') // 'ALL' | 'PDF' | 'DOCX' | 'TXT'
 
     const [selectedDocument, setSelectedDocument] = useState(null)
     const [documentLoading, setDocumentLoading] = useState(false)
@@ -38,10 +53,6 @@ function Documents() {
        FETCH DOCUMENTS
     ======================================== */
 
-    useEffect(() => {
-        fetchDocuments()
-    }, [])
-
     const fetchDocuments = async () => {
         try {
             setLoading(true)
@@ -65,6 +76,38 @@ function Documents() {
         }
     }
 
+    useEffect(() => {
+        let ignore = false
+        const loadInitialDocuments = async () => {
+            try {
+                const data = await apiRequest('/documents/')
+                if (!ignore) {
+                    const documentList = Array.isArray(data)
+                        ? data
+                        : data.documents || []
+                    setDocuments(documentList)
+                }
+            } catch (err) {
+                if (!ignore) {
+                    console.error('Error fetching documents:', err)
+                    setError(
+                        err.message ||
+                        'Unable to connect to the backend.'
+                    )
+                }
+            } finally {
+                if (!ignore) {
+                    setLoading(false)
+                }
+            }
+        }
+
+        loadInitialDocuments()
+        return () => {
+            ignore = true
+        }
+    }, [])
+
     /* ========================================
        UPLOAD
     ======================================== */
@@ -73,12 +116,8 @@ function Documents() {
         fileInputRef.current?.click()
     }
 
-    const handleFileUpload = async (event) => {
-        const file = event.target.files[0]
-
-        if (!file) {
-            return
-        }
+    const processUploadFile = async (file) => {
+        if (!file) return
 
         const allowedTypes = [
             'application/pdf',
@@ -86,11 +125,12 @@ function Documents() {
             'text/plain',
         ]
 
-        if (!allowedTypes.includes(file.type)) {
-            setUploadMessage(
-                'Please select a PDF, DOCX, or TXT file.'
-            )
-            event.target.value = ''
+        // Check either MIME type or file extension
+        const ext = file.name.split('.').pop().toLowerCase()
+        const isValidExt = ['pdf', 'docx', 'txt'].includes(ext)
+
+        if (!allowedTypes.includes(file.type) && !isValidExt) {
+            setUploadMessage('Please select a PDF, DOCX, or TXT file.')
             return
         }
 
@@ -107,20 +147,39 @@ function Documents() {
                 body: formData,
             })
 
-            setUploadMessage(
-                `${file.name} uploaded successfully.`
-            )
-
+            setUploadMessage(`${file.name} uploaded and indexed successfully.`)
             await fetchDocuments()
         } catch (err) {
             console.error('Upload error:', err)
-            setUploadMessage(
-                err.message ||
-                'Failed to upload document.'
-            )
+            setUploadMessage(err.message || 'Failed to upload document.')
         } finally {
             setUploading(false)
-            event.target.value = ''
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''
+            }
+        }
+    }
+
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0]
+        processUploadFile(file)
+    }
+
+    const handleDragOver = (e) => {
+        e.preventDefault()
+        setIsDragOver(true)
+    }
+
+    const handleDragLeave = (e) => {
+        e.preventDefault()
+        setIsDragOver(false)
+    }
+
+    const handleDrop = (e) => {
+        e.preventDefault()
+        setIsDragOver(false)
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            processUploadFile(e.dataTransfer.files[0])
         }
     }
 
@@ -139,10 +198,7 @@ function Documents() {
             setSelectedDocument(data)
         } catch (err) {
             console.error('Open document error:', err)
-            setError(
-                err.message ||
-                'Failed to open document.'
-            )
+            setError(err.message || 'Failed to open document.')
         } finally {
             setDocumentLoading(false)
         }
@@ -169,19 +225,13 @@ function Documents() {
                 `/documents/${docId}/summary?format=${encodeURIComponent(summaryFormat)}&length=${encodeURIComponent(summaryLength)}`
             )
 
-            setSummary(
-                data.summary ||
-                'No summary available.'
-            )
+            setSummary(data.summary || 'No summary available.')
             if (data.filename && !docFilename) {
                 setSummaryDocFilename(data.filename)
             }
         } catch (err) {
             console.error('Summary error:', err)
-            setError(
-                err.message ||
-                'Failed to load summary.'
-            )
+            setError(err.message || 'Failed to load summary.')
         } finally {
             setSummaryLoading(false)
         }
@@ -236,17 +286,13 @@ function Documents() {
             setDeleteError('')
             setError('')
 
-            await apiRequest(
-                `/documents/${documentToDelete.id}`,
-                {
-                    method: 'DELETE',
-                }
-            )
+            await apiRequest(`/documents/${documentToDelete.id}`, {
+                method: 'DELETE',
+            })
 
             setDocuments((currentDocuments) =>
                 currentDocuments.filter(
-                    (document) =>
-                        document.id !== documentToDelete.id
+                    (document) => document.id !== documentToDelete.id
                 )
             )
 
@@ -319,24 +365,31 @@ function Documents() {
        FILTER DOCUMENTS
     ======================================== */
 
-    const filteredDocuments = documents.filter((document) =>
-        document.filename
+    const filteredDocuments = documents.filter((document) => {
+        const matchesSearch = document.filename
             ?.toLowerCase()
             .includes(searchTerm.toLowerCase())
-    )
+
+        if (!matchesSearch) return false
+
+        if (selectedTypeFilter === 'ALL') return true
+
+        const ext = document.filename ? document.filename.split('.').pop().toUpperCase() : ''
+        return ext === selectedTypeFilter
+    })
 
     return (
         <>
             <main className="documents-page">
                 {/* =================================
-                    PAGE HEADER
+                    PAGE HEADER & DRAG DROP ZONE
                 ================================= */}
                 <section className="documents-page-header">
                     <div className="documents-header-text">
-                        <p className="eyebrow">DOCUMENT REPOSITORY</p>
-                        <h2>Documents</h2>
+                        <p className="eyebrow">DOCUMENT VAULT</p>
+                        <h2>Documents Library</h2>
                         <p>
-                            Upload, organize, and analyze your multi-format document library.
+                            Upload, organize, inspect, and synthesize multi-format files in your AI repository.
                         </p>
                     </div>
 
@@ -350,16 +403,38 @@ function Documents() {
                         {uploading ? (
                             <>
                                 <span className="spinner-inline" aria-hidden="true"></span>
-                                <span>Uploading...</span>
+                                <span>Uploading & Indexing...</span>
                             </>
                         ) : (
                             <>
-                                <span className="upload-plus" aria-hidden="true">+</span>
+                                <UploadCloud size={17} />
                                 <span>Upload Document</span>
                             </>
                         )}
                     </button>
                 </section>
+
+                {/* Dropzone Card */}
+                <div
+                    className={`documents-dropzone ${isDragOver ? 'drag-over' : ''}`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={handleUploadClick}
+                >
+                    <div className="dropzone-icon-wrap">
+                        <UploadCloud size={28} />
+                    </div>
+                    <div className="dropzone-text">
+                        <strong>Click or drag & drop files here to upload</strong>
+                        <span>Supports Adobe PDF (.pdf), Microsoft Word (.docx), and Plain Text (.txt)</span>
+                    </div>
+                    <div className="dropzone-chips">
+                        <span className="dropzone-chip badge-pdf">PDF</span>
+                        <span className="dropzone-chip badge-docx">DOCX</span>
+                        <span className="dropzone-chip badge-txt">TXT</span>
+                    </div>
+                </div>
 
                 {/* Hidden file input */}
                 <input
@@ -376,76 +451,91 @@ function Documents() {
                 ================================= */}
                 {uploadMessage && (
                     <div className="upload-message" role="status">
-                        <span className="msg-icon" aria-hidden="true">ℹ</span>
+                        <Check size={16} className="text-accent" />
                         <span>{uploadMessage}</span>
                     </div>
                 )}
 
                 {error && (
                     <div className="error-message" role="alert">
-                        <span className="msg-icon" aria-hidden="true">⚠</span>
+                        <AlertTriangle size={16} />
                         <span>{error}</span>
                     </div>
                 )}
 
                 {/* =================================
-                    SEARCH + COUNT TOOLBAR
+                    SEARCH + FORMAT FILTER TOOLBAR
                 ================================= */}
                 <section className="documents-toolbar">
-                    <div className="documents-toolbar-title">
-                        <h3>All Documents</h3>
-                        <p>
+                    <div className="documents-toolbar-left">
+                        <div className="documents-search-wrapper">
+                            <Search size={16} className="documents-search-icon" aria-hidden="true" />
+                            <input
+                                className="documents-search"
+                                type="text"
+                                placeholder="Filter documents by name..."
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                                aria-label="Search documents by name"
+                            />
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="documents-search-clear"
+                                    onClick={() => setSearchTerm('')}
+                                    aria-label="Clear search input"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Format Filters */}
+                        <div className="documents-filter-pills" role="radiogroup" aria-label="Filter by file type">
+                            {['ALL', 'PDF', 'DOCX', 'TXT'].map((type) => (
+                                <button
+                                    key={type}
+                                    type="button"
+                                    className={`filter-pill ${selectedTypeFilter === type ? 'active' : ''}`}
+                                    onClick={() => setSelectedTypeFilter(type)}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="documents-toolbar-count">
+                        <span>
                             {documents.length === 0
                                 ? '0 documents'
                                 : filteredDocuments.length === documents.length
                                 ? `${documents.length} ${documents.length === 1 ? 'document' : 'documents'}`
-                                : `Showing ${filteredDocuments.length} of ${documents.length} documents`}
-                        </p>
-                    </div>
-
-                    <div className="documents-search-wrapper">
-                        <span className="documents-search-icon" aria-hidden="true">⌕</span>
-                        <input
-                            className="documents-search"
-                            type="text"
-                            placeholder="Search documents by name..."
-                            value={searchTerm}
-                            onChange={(event) => setSearchTerm(event.target.value)}
-                            aria-label="Search documents by name"
-                        />
-                        {searchTerm && (
-                            <button
-                                type="button"
-                                className="documents-search-clear"
-                                onClick={() => setSearchTerm('')}
-                                aria-label="Clear search input"
-                            >
-                                ✕
-                            </button>
-                        )}
+                                : `Showing ${filteredDocuments.length} of ${documents.length}`}
+                        </span>
                     </div>
                 </section>
 
                 {/* =================================
-                    DOCUMENT LIBRARY
+                    DOCUMENT LIBRARY GRID
                 ================================= */}
                 <section className="documents-library">
                     {loading && (
                         <div className="documents-empty">
                             <div className="loading-pulse-ring" aria-hidden="true"></div>
                             <h3>Loading document library...</h3>
-                            <p>Connecting to knowledge vault.</p>
+                            <p>Connecting to vector vault.</p>
                         </div>
                     )}
 
                     {!loading && documents.length === 0 && (
                         <div className="documents-empty">
                             <div className="documents-empty-icon" aria-hidden="true">
-                                📄
+                                <FileText size={44} />
                             </div>
-                            <h3>No documents yet</h3>
+                            <h3>No documents uploaded yet</h3>
                             <p>
-                                Upload your first PDF, DOCX, or TXT document to get started.
+                                Upload your first PDF, DOCX, or TXT file to start indexing and questioning your data.
                             </p>
                             <button
                                 type="button"
@@ -453,7 +543,8 @@ function Documents() {
                                 onClick={handleUploadClick}
                                 disabled={uploading}
                             >
-                                Upload Document
+                                <UploadCloud size={16} />
+                                <span>Upload Document</span>
                             </button>
                         </div>
                     )}
@@ -463,18 +554,22 @@ function Documents() {
                         filteredDocuments.length === 0 && (
                             <div className="documents-empty">
                                 <div className="documents-empty-icon" aria-hidden="true">
-                                    🔍
+                                    <Search size={44} />
                                 </div>
                                 <h3>No matching documents</h3>
                                 <p>
-                                    No documents matched &ldquo;{searchTerm}&rdquo;. Try another name.
+                                    No documents matched &ldquo;{searchTerm}&rdquo;{' '}
+                                    {selectedTypeFilter !== 'ALL' ? `in format ${selectedTypeFilter}` : ''}.
                                 </p>
                                 <button
                                     type="button"
                                     className="clear-button"
-                                    onClick={() => setSearchTerm('')}
+                                    onClick={() => {
+                                        setSearchTerm('')
+                                        setSelectedTypeFilter('ALL')
+                                    }}
                                 >
-                                    Clear Search
+                                    Reset Filters
                                 </button>
                             </div>
                         )}
@@ -485,16 +580,19 @@ function Documents() {
                                 const ext = doc.filename
                                     ? doc.filename.split('.').pop().toUpperCase()
                                     : 'DOC'
-                                const badgeLabel = ['PDF', 'DOCX', 'TXT'].includes(ext)
-                                    ? ext
-                                    : (doc.document_type || 'DOC').toUpperCase()
+                                const badgeClass =
+                                    ext === 'PDF'
+                                        ? 'badge-pdf'
+                                        : ext === 'DOCX'
+                                        ? 'badge-docx'
+                                        : 'badge-txt'
 
                                 return (
                                     <article className="document-card" key={doc.id}>
                                         <div className="document-card-top">
                                             <div className="document-card-badge-wrap">
-                                                <span className={`document-card-badge badge-${badgeLabel.toLowerCase()}`}>
-                                                    {badgeLabel}
+                                                <span className={`document-card-badge ${badgeClass}`}>
+                                                    {ext}
                                                 </span>
                                             </div>
 
@@ -505,7 +603,7 @@ function Documents() {
                                                 title={`Delete ${doc.filename}`}
                                                 aria-label={`Delete ${doc.filename}`}
                                             >
-                                                ✕
+                                                <Trash2 size={15} />
                                             </button>
                                         </div>
 
@@ -513,7 +611,7 @@ function Documents() {
                                             <h3 title={doc.filename}>{doc.filename}</h3>
                                             <div className="document-card-meta">
                                                 <span className="doc-meta-type">
-                                                    {doc.document_type || badgeLabel.toLowerCase()}
+                                                    {doc.document_type || ext.toLowerCase()}
                                                 </span>
                                                 <span className="doc-meta-dot" aria-hidden="true">·</span>
                                                 <span className="doc-meta-chars">
@@ -532,7 +630,8 @@ function Documents() {
                                                 disabled={documentLoading}
                                                 aria-label={`Inspect extracted text of ${doc.filename}`}
                                             >
-                                                Inspect Text
+                                                <Eye size={14} />
+                                                <span>Inspect Text</span>
                                             </button>
 
                                             <button
@@ -542,7 +641,8 @@ function Documents() {
                                                 disabled={summaryLoading && summaryDocId === doc.id}
                                                 aria-label={`View summary of ${doc.filename}`}
                                             >
-                                                {summaryLoading && summaryDocId === doc.id ? 'Loading...' : 'Summary'}
+                                                <Sparkles size={14} />
+                                                <span>{summaryLoading && summaryDocId === doc.id ? 'Loading...' : 'Summary'}</span>
                                             </button>
                                         </div>
                                     </article>
@@ -573,7 +673,7 @@ function Documents() {
                                     {typeof selectedDocument.text_length === 'number'
                                         ? selectedDocument.text_length.toLocaleString()
                                         : selectedDocument.text_length}{' '}
-                                    characters
+                                    characters extracted
                                 </p>
                             </div>
 
@@ -583,7 +683,7 @@ function Documents() {
                                 onClick={closeDocument}
                                 aria-label="Close document modal"
                             >
-                                ✕
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -596,7 +696,17 @@ function Documents() {
                                     onClick={handleCopyDocText}
                                     title="Copy extracted text to clipboard"
                                 >
-                                    {copiedDocText ? '✓ Copied' : 'Copy Text'}
+                                    {copiedDocText ? (
+                                        <>
+                                            <Check size={14} />
+                                            <span>Copied</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy size={14} />
+                                            <span>Copy Text</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
 
@@ -638,7 +748,7 @@ function Documents() {
                                 onClick={closeSummary}
                                 aria-label="Close summary modal"
                             >
-                                ✕
+                                <X size={18} />
                             </button>
                         </div>
 
@@ -646,8 +756,8 @@ function Documents() {
                             {summaryLoading ? (
                                 <div className="documents-empty modal-loading-empty">
                                     <div className="loading-pulse-ring" aria-hidden="true"></div>
-                                    <h3>Loading summary...</h3>
-                                    <p>AI is analyzing and condensing key takeaways.</p>
+                                    <h3>Generating AI summary...</h3>
+                                    <p>Analyzing key concepts and synthesizing takeaways.</p>
                                 </div>
                             ) : (
                                 <>
@@ -693,7 +803,8 @@ function Documents() {
                                                 title="Regenerate summary with AI using selected options"
                                                 aria-label="Regenerate summary"
                                             >
-                                                {regenerating ? 'Regenerating...' : '↻ Regenerate'}
+                                                <RotateCw size={13} className={regenerating ? 'spin-anim' : ''} />
+                                                <span>{regenerating ? 'Regenerating...' : 'Regenerate'}</span>
                                             </button>
 
                                             <button
@@ -704,20 +815,32 @@ function Documents() {
                                                 title="Copy summary to clipboard"
                                                 aria-label="Copy summary to clipboard"
                                             >
-                                                {copiedSummaryText ? '✓ Copied' : 'Copy Summary'}
+                                                {copiedSummaryText ? (
+                                                    <>
+                                                        <Check size={14} />
+                                                        <span>Copied</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Copy size={14} />
+                                                        <span>Copy Summary</span>
+                                                    </>
+                                                )}
                                             </button>
                                         </div>
                                     </div>
 
                                     {summaryFeedback && (
                                         <div className="summary-status-alert summary-status-success" role="status">
-                                            {summaryFeedback}
+                                            <Check size={15} />
+                                            <span>{summaryFeedback}</span>
                                         </div>
                                     )}
 
                                     {summaryError && (
                                         <div className="summary-status-alert summary-status-error" role="alert">
-                                            {summaryError}
+                                            <AlertTriangle size={15} />
+                                            <span>{summaryError}</span>
                                         </div>
                                     )}
 
@@ -762,19 +885,22 @@ function Documents() {
                                 disabled={deleteLoading}
                                 aria-label="Close delete confirmation"
                             >
-                                ✕
+                                <X size={18} />
                             </button>
                         </div>
 
                         <div className="modal-body delete-doc-modal-body">
                             <div className="delete-doc-warning">
-                                <span className="delete-doc-warning-icon" aria-hidden="true">⚠️</span>
+                                <div className="delete-doc-warning-icon-wrap" aria-hidden="true">
+                                    <AlertTriangle size={24} />
+                                </div>
                                 <div className="delete-doc-warning-content">
                                     <p className="delete-doc-question">
                                         Are you sure you want to delete this document?
                                     </p>
                                     <p className="delete-doc-target" title={documentToDelete.filename}>
-                                        📄 <span className="delete-doc-filename">{documentToDelete.filename}</span>
+                                        <FileText size={15} />
+                                        <span className="delete-doc-filename">{documentToDelete.filename}</span>
                                     </p>
                                     <p className="delete-doc-subtext">
                                         This action cannot be undone. All extracted text and vector embeddings will be permanently removed.

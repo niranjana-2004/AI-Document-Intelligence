@@ -1,6 +1,22 @@
 import { useState } from 'react'
+import {
+    Search as SearchIcon,
+    Sparkles,
+    FileText,
+    X,
+    ArrowRight,
+    Compass,
+    AlertCircle,
+} from 'lucide-react'
 import { apiRequest } from '../services/api'
 import '../App.css'
+
+const SUGGESTED_SEARCHES = [
+    'Security compliance protocols and encryption standards',
+    'Quarterly revenue growth and operational expenses',
+    'System architecture and vector embedding pipeline',
+    'Employee onboarding guidelines and company policy',
+]
 
 function Search() {
     const [query, setQuery] = useState('')
@@ -9,8 +25,9 @@ function Search() {
     const [error, setError] = useState('')
     const [hasSearched, setHasSearched] = useState(false)
 
-    const handleSearch = async () => {
-        if (!query.trim()) {
+    const executeSearch = async (searchQuery) => {
+        const textToSearch = searchQuery !== undefined ? searchQuery : query
+        if (!textToSearch.trim()) {
             return
         }
 
@@ -21,7 +38,7 @@ function Search() {
             setHasSearched(true)
 
             const data = await apiRequest(
-                `/documents/search?query=${encodeURIComponent(query)}&top_k=5`
+                `/documents/search?query=${encodeURIComponent(textToSearch.trim())}&top_k=5`
             )
 
             setResults(data.results || [])
@@ -29,11 +46,15 @@ function Search() {
             console.error('Search error:', err)
             setError(
                 err.message ||
-                'Unable to complete the search.'
+                'Unable to complete the semantic search.'
             )
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleSearch = () => {
+        executeSearch()
     }
 
     const handleKeyDown = (event) => {
@@ -50,6 +71,11 @@ function Search() {
         setHasSearched(false)
     }
 
+    const handleSuggestedClick = (suggestedText) => {
+        setQuery(suggestedText)
+        executeSearch(suggestedText)
+    }
+
     return (
         <main className="search-page">
             {/* =================================
@@ -57,22 +83,22 @@ function Search() {
             ================================= */}
             <section className="search-page-header">
                 <div>
-                    <p className="eyebrow">SEMANTIC EXPLORATION</p>
-                    <h2>Semantic Search</h2>
+                    <p className="eyebrow">SEMANTIC RETRIEVAL ENGINE</p>
+                    <h2>Semantic Vector Search</h2>
                     <p>
-                        Discover concepts, passages, and facts by meaning across your document library.
+                        Discover passages, conceptual links, and facts by meaning across your indexed documents.
                     </p>
                 </div>
             </section>
 
             {/* =================================
-                SEARCH BOX CARD
+                SEARCH HERO CARD
             ================================= */}
             <section className="search-box-card">
                 <div className="search-box-header">
                     <div>
-                        <h3>Neural Vector Retrieval</h3>
-                        <p>Search by meaning and context, not just exact keywords.</p>
+                        <h3>Neural Vector Search</h3>
+                        <p>Evaluates cosine distance between query embeddings and document chunks.</p>
                     </div>
 
                     {(query || hasSearched) && (
@@ -81,22 +107,23 @@ function Search() {
                             className="clear-search-button"
                             onClick={handleClear}
                         >
-                            Clear
+                            Reset Search
                         </button>
                     )}
                 </div>
 
                 <div className="search-input-row">
                     <div className="search-input-wrapper">
-                        <span className="search-icon-adornment" aria-hidden="true">⌕</span>
+                        <SearchIcon size={18} className="search-icon-adornment" aria-hidden="true" />
                         <input
                             className="full-search-input"
                             type="text"
-                            placeholder="What concepts or information are you looking for?"
+                            placeholder="Search by meaning: e.g., 'cloud security measures', 'budget forecasts'..."
                             value={query}
                             onChange={(event) => setQuery(event.target.value)}
                             onKeyDown={handleKeyDown}
                             aria-label="Semantic search query"
+                            autoFocus
                         />
                         {query && (
                             <button
@@ -105,7 +132,7 @@ function Search() {
                                 onClick={() => setQuery('')}
                                 aria-label="Clear query text"
                             >
-                                ✕
+                                <X size={15} />
                             </button>
                         )}
                     </div>
@@ -116,13 +143,25 @@ function Search() {
                         onClick={handleSearch}
                         disabled={loading || !query.trim()}
                     >
-                        {loading ? 'Searching...' : 'Search →'}
+                        {loading ? (
+                            <>
+                                <span className="spinner-inline" aria-hidden="true"></span>
+                                <span>Searching...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>Search</span>
+                                <ArrowRight size={16} />
+                            </>
+                        )}
                     </button>
                 </div>
 
-                <p className="search-hint">
-                    Press <strong>Enter</strong> to execute vector similarity search
-                </p>
+                <div className="search-shortcuts-bar">
+                    <span className="search-hint">
+                        Press <kbd>Enter ↵</kbd> to execute high-dimensional cosine similarity search
+                    </span>
+                </div>
             </section>
 
             {/* =================================
@@ -130,7 +169,7 @@ function Search() {
             ================================= */}
             {error && (
                 <div className="search-error" role="alert">
-                    <span className="msg-icon" aria-hidden="true">⚠</span>
+                    <AlertCircle size={18} />
                     <span>{error}</span>
                 </div>
             )}
@@ -140,10 +179,10 @@ function Search() {
             ================================= */}
             {loading && (
                 <section className="search-loading-card">
-                    <div className="search-loading-icon" aria-hidden="true">⌕</div>
-                    <h3>Searching your documents...</h3>
+                    <div className="loading-pulse-ring" aria-hidden="true"></div>
+                    <h3>Searching your knowledge vault...</h3>
                     <p>
-                        Calculating cosine embeddings and ranking the most relevant passages.
+                        Computing sentence embeddings and ranking document chunks by relevance.
                     </p>
                     <div className="search-loading-dots" aria-label="Loading search results">
                         <span></span>
@@ -160,10 +199,10 @@ function Search() {
                 <section className="search-results-section">
                     <div className="search-results-header">
                         <div>
-                            <h3>Search Results</h3>
+                            <h3>Ranked Relevant Passages</h3>
                             <p>
                                 Found {results.length}{' '}
-                                {results.length === 1 ? 'relevant passage' : 'relevant passages'}
+                                {results.length === 1 ? 'matching chunk' : 'matching chunks'} ordered by cosine similarity
                             </p>
                         </div>
                     </div>
@@ -183,18 +222,24 @@ function Search() {
                                 >
                                     <div className="search-result-top">
                                         <div className="search-result-number">
-                                            {String(index + 1).padStart(2, '0')}
+                                            #{String(index + 1).padStart(2, '0')}
                                         </div>
 
                                         <div className="search-result-meta">
                                             {result.filename && (
                                                 <span className="result-meta-file">
-                                                    📄 {result.filename}
+                                                    <FileText size={14} />
+                                                    <span>{result.filename}</span>
                                                 </span>
                                             )}
                                             {result.document_type && (
                                                 <span className="result-meta-type">
                                                     {result.document_type}
+                                                </span>
+                                            )}
+                                            {result.page_number != null && (
+                                                <span className="result-meta-page">
+                                                    Page {result.page_number}
                                                 </span>
                                             )}
                                             {result.category && (
@@ -207,9 +252,9 @@ function Search() {
                                         {relevanceScore !== null && (
                                             <div
                                                 className="search-result-score-badge"
-                                                title="Semantic vector similarity"
+                                                title="Cosine similarity score"
                                             >
-                                                <span className="score-label">Relevance</span>
+                                                <span className="score-label">Match</span>
                                                 <span className="score-value">{relevanceScore}%</span>
                                             </div>
                                         )}
@@ -217,7 +262,7 @@ function Search() {
 
                                     <div className="search-result-content">
                                         <p>
-                                            {result.content || result.text || 'No content available.'}
+                                            {result.content || result.text || 'No text snippet available.'}
                                         </p>
                                     </div>
 
@@ -232,7 +277,7 @@ function Search() {
                                                 ></div>
                                             </div>
                                             <span className="relevance-text-detail">
-                                                {relevanceScore}% semantic match
+                                                {relevanceScore}% semantic relevance score
                                             </span>
                                         </div>
                                     )}
@@ -248,26 +293,57 @@ function Search() {
             ================================= */}
             {!loading && hasSearched && !error && results.length === 0 && (
                 <section className="search-empty">
-                    <div className="search-empty-icon" aria-hidden="true">⌕</div>
+                    <div className="search-empty-icon" aria-hidden="true">
+                        <SearchIcon size={40} />
+                    </div>
                     <h3>No matching passages found</h3>
                     <p>
-                        No document passages matched &ldquo;{query}&rdquo;.
-                        Try phrasing your query using different concepts or broader terms.
+                        No document passages matched &ldquo;{query}&rdquo; within similarity thresholds.
+                        Try phrasing your search query with different concepts or broader terms.
                     </p>
+                    <button
+                        type="button"
+                        className="clear-button"
+                        onClick={handleClear}
+                    >
+                        Try Another Query
+                    </button>
                 </section>
             )}
 
             {/* =================================
-                INITIAL STATE
+                INITIAL STATE WITH SUGGESTIONS
             ================================= */}
             {!loading && !hasSearched && !error && (
-                <section className="search-initial">
-                    <div className="search-initial-icon" aria-hidden="true">✦</div>
-                    <h3>Explore Your Documents Semantically</h3>
-                    <p>
-                        Enter any concept, question, or keyword above. Cognidocs semantic search
-                        evaluates sentence embeddings to surface contextually related passages.
-                    </p>
+                <section className="search-initial-container">
+                    <div className="search-initial-header">
+                        <div className="search-initial-icon-wrap">
+                            <Sparkles size={24} />
+                        </div>
+                        <h3>Explore Your Document Repository</h3>
+                        <p>
+                            Cognidocs semantic search doesn't just look for verbatim keywords—it evaluates
+                            deep conceptual proximity using sentence embeddings.
+                        </p>
+                    </div>
+
+                    <div className="search-suggestions-box">
+                        <span className="suggestions-title">Example Semantic Inquiries</span>
+                        <div className="suggestions-grid">
+                            {SUGGESTED_SEARCHES.map((suggestion, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    className="suggestion-card-btn"
+                                    onClick={() => handleSuggestedClick(suggestion)}
+                                >
+                                    <Compass size={15} className="suggestion-icon" />
+                                    <span>&ldquo;{suggestion}&rdquo;</span>
+                                    <ArrowRight size={13} className="suggestion-arrow" />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </section>
             )}
         </main>

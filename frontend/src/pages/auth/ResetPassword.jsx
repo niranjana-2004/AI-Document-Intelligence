@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Eye, EyeOff, Lock, AlertCircle, CheckCircle2 } from 'lucide-react'
 import AuthLayout from '../../layouts/AuthLayout'
 import { apiRequest } from '../../services/api'
 
@@ -11,6 +12,8 @@ function ResetPassword() {
 
     const [newPassword, setNewPassword] = useState('')
     const [confirmNewPassword, setConfirmNewPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
@@ -89,71 +92,121 @@ function ResetPassword() {
         }
     }
 
+    // Dynamic password rules helper
+    const hasMinLength = newPassword.length >= 8
+    const hasUpper = /[A-Z]/.test(newPassword)
+    const hasLower = /[a-z]/.test(newPassword)
+    const hasNumber = /[0-9]/.test(newPassword)
+    const hasSpecial = /[^A-Za-z0-9]/.test(newPassword)
+
     return (
         <AuthLayout>
             <div className="auth-card">
                 <div className="auth-card-header">
                     <h2>Reset your password</h2>
-
-                    <p>
-                        Create a new password for your Cognidocs account.
-                    </p>
+                    <p>Create a secure new password for your Cognidocs account.</p>
                 </div>
 
                 {error && (
-                    <div className="auth-error">
-                        {error}
+                    <div className="auth-error" role="alert">
+                        <AlertCircle size={16} />
+                        <span>{error}</span>
                     </div>
                 )}
 
                 <form onSubmit={handleReset}>
                     <div className="form-group">
-                        <label htmlFor="newPassword">
-                            New password
-                        </label>
-
-                        <input
-                            id="newPassword"
-                            type="password"
-                            placeholder="Min 8 chars, uppercase, lowercase, special"
-                            value={newPassword}
-                            onChange={(event) => {
-                                setNewPassword(event.target.value)
-                                setError('')
-                            }}
-                            disabled={loading}
-                            autoComplete="new-password"
-                        />
-                        <small>Must be at least 8 characters with uppercase, lowercase, number, and symbol.</small>
+                        <label htmlFor="newPassword">New Password</label>
+                        <div className="password-input-wrapper">
+                            <input
+                                id="newPassword"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Min 8 characters"
+                                value={newPassword}
+                                onChange={(event) => {
+                                    setNewPassword(event.target.value)
+                                    setError('')
+                                }}
+                                disabled={loading}
+                                autoComplete="new-password"
+                                required
+                            />
+                            <button
+                                type="button"
+                                className="password-toggle-btn"
+                                onClick={() => setShowPassword(!showPassword)}
+                                title={showPassword ? 'Hide password' : 'Show password'}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="confirmNewPassword">
-                            Confirm new password
-                        </label>
-
-                        <input
-                            id="confirmNewPassword"
-                            type="password"
-                            placeholder="Re-enter your new password"
-                            value={confirmNewPassword}
-                            onChange={(event) => {
-                                setConfirmNewPassword(event.target.value)
-                                setError('')
-                            }}
-                            disabled={loading}
-                            autoComplete="new-password"
-                        />
+                        <label htmlFor="confirmNewPassword">Confirm New Password</label>
+                        <div className="password-input-wrapper">
+                            <input
+                                id="confirmNewPassword"
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                placeholder="Re-enter your new password"
+                                value={confirmNewPassword}
+                                onChange={(event) => {
+                                    setConfirmNewPassword(event.target.value)
+                                    setError('')
+                                }}
+                                disabled={loading}
+                                autoComplete="new-password"
+                                required
+                            />
+                            <button
+                                type="button"
+                                className="password-toggle-btn"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
                     </div>
+
+                    {newPassword && (
+                        <div className="password-criteria-panel">
+                            <span className={`criteria-item ${hasMinLength ? 'met' : ''}`}>
+                                <CheckCircle2 size={12} /> 8+ chars
+                            </span>
+                            <span className={`criteria-item ${hasUpper ? 'met' : ''}`}>
+                                <CheckCircle2 size={12} /> Uppercase
+                            </span>
+                            <span className={`criteria-item ${hasLower ? 'met' : ''}`}>
+                                <CheckCircle2 size={12} /> Lowercase
+                            </span>
+                            <span className={`criteria-item ${hasNumber ? 'met' : ''}`}>
+                                <CheckCircle2 size={12} /> Number
+                            </span>
+                            <span className={`criteria-item ${hasSpecial ? 'met' : ''}`}>
+                                <CheckCircle2 size={12} /> Special char
+                            </span>
+                        </div>
+                    )}
 
                     <button
                         type="submit"
                         className="auth-primary-button"
                         disabled={loading}
                     >
-                        {loading
-                            ? 'Resetting password...'
-                            : 'Reset password'}
+                        {loading ? (
+                            <>
+                                <span className="spinner-inline" aria-hidden="true"></span>
+                                <span>Resetting password...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Lock size={16} />
+                                <span>Reset Password</span>
+                            </>
+                        )}
                     </button>
                 </form>
 
@@ -164,7 +217,7 @@ function ResetPassword() {
                 <p className="auth-switch">
                     Remember your password?{' '}
                     <Link to="/login">
-                        Login
+                        Sign In
                     </Link>
                 </p>
             </div>

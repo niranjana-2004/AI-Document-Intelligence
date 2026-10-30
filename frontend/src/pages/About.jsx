@@ -1,4 +1,12 @@
 import { useNavigate } from 'react-router-dom'
+import {
+    Sparkles,
+    Search,
+    Layers,
+    ArrowRight,
+    CheckCircle2,
+    UploadCloud,
+} from 'lucide-react'
 import CognidocsLogo from '../components/CognidocsLogo'
 import '../App.css'
 
@@ -15,7 +23,7 @@ function About() {
                     <p className="eyebrow">ABOUT COGNIDOCS</p>
 
                     <h2>
-                        Knowledge, <span>unlocked.</span>
+                        Knowledge, <span className="gradient-text">unlocked.</span>
                     </h2>
 
                     <p className="about-hero-description">
@@ -30,7 +38,8 @@ function About() {
                             className="about-primary-button"
                             onClick={() => navigate('/documents')}
                         >
-                            Explore Documents →
+                            <span>Explore Documents</span>
+                            <ArrowRight size={16} />
                         </button>
 
                         <button
@@ -38,7 +47,8 @@ function About() {
                             className="about-secondary-button"
                             onClick={() => navigate('/ask-ai')}
                         >
-                            Ask AI
+                            <Sparkles size={16} />
+                            <span>Ask AI</span>
                         </button>
                     </div>
                 </div>
@@ -56,7 +66,7 @@ function About() {
                     </div>
 
                     <div className="about-floating-card about-floating-one">
-                        <span aria-hidden="true">✓</span>
+                        <CheckCircle2 size={16} className="text-accent" />
                         <div>
                             <strong>Semantic Retrieval</strong>
                             <small>Cosine vector similarity</small>
@@ -64,7 +74,7 @@ function About() {
                     </div>
 
                     <div className="about-floating-card about-floating-two">
-                        <span aria-hidden="true">✦</span>
+                        <Sparkles size={16} className="text-accent" />
                         <div>
                             <strong>Grounded Answers</strong>
                             <small>Context-verified reasoning</small>
@@ -88,7 +98,9 @@ function About() {
 
                 <div className="about-feature-grid">
                     <article className="about-feature-card">
-                        <div className="about-feature-icon" aria-hidden="true">↑</div>
+                        <div className="about-feature-icon" aria-hidden="true">
+                            <UploadCloud size={20} />
+                        </div>
                         <h4>Document Ingestion</h4>
                         <p>
                             Upload PDF, DOCX, or TXT documents. The system automatically extracts text,
@@ -97,7 +109,9 @@ function About() {
                     </article>
 
                     <article className="about-feature-card">
-                        <div className="about-feature-icon" aria-hidden="true">⌕</div>
+                        <div className="about-feature-icon" aria-hidden="true">
+                            <Search size={20} />
+                        </div>
                         <h4>Semantic Search</h4>
                         <p>
                             Search by concept rather than keyword matching. Retrieve exact passages
@@ -106,7 +120,9 @@ function About() {
                     </article>
 
                     <article className="about-feature-card">
-                        <div className="about-feature-icon" aria-hidden="true">✦</div>
+                        <div className="about-feature-icon" aria-hidden="true">
+                            <Sparkles size={20} />
+                        </div>
                         <h4>Context-Grounded Q&A</h4>
                         <p>
                             Ask questions naturally. Cognidocs supplies relevant context chunks to the language model
@@ -115,7 +131,9 @@ function About() {
                     </article>
 
                     <article className="about-feature-card">
-                        <div className="about-feature-icon" aria-hidden="true">≡</div>
+                        <div className="about-feature-icon" aria-hidden="true">
+                            <Layers size={20} />
+                        </div>
                         <h4>On-Demand Summaries</h4>
                         <p>
                             Generate condensed overviews in numbered, bulleted, or paragraph formats
@@ -180,7 +198,7 @@ function About() {
             </section>
 
             {/* =================================
-                TECHNOLOGY
+                TECHNOLOGY ARCHITECTURE
             ================================= */}
             <section className="about-section">
                 <div className="about-section-heading">
@@ -220,7 +238,7 @@ function About() {
 
                     <div className="about-tech-item">
                         <strong>Ollama LLM</strong>
-                        <span>Private, local language model inference</span>
+                        <span>Private, local language model inference (Llama 3.2)</span>
                     </div>
                 </div>
             </section>
@@ -289,7 +307,8 @@ function About() {
                         className="about-primary-button"
                         onClick={() => navigate('/documents')}
                     >
-                        View Documents
+                        <span>View Documents</span>
+                        <ArrowRight size={16} />
                     </button>
 
                     <button
@@ -297,7 +316,8 @@ function About() {
                         className="about-secondary-button"
                         onClick={() => navigate('/ask-ai')}
                     >
-                        Ask AI
+                        <Sparkles size={16} />
+                        <span>Ask AI</span>
                     </button>
                 </div>
             </section>
