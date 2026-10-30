@@ -15,6 +15,7 @@ import {
     X,
 } from 'lucide-react'
 import CognidocsLogo from '../components/CognidocsLogo'
+import PageTransition from '../components/motion/PageTransition'
 import '../styles/app-layout.css'
 
 const THEME_NAMES = {
@@ -317,9 +318,11 @@ function AppLayout({ children }) {
                     </div>
                 </header>
 
-                {/* Page Content */}
+                {/* Page Content with animated transition */}
                 <main className="app-content">
-                    {children}
+                    <PageTransition key={location.pathname}>
+                        {children}
+                    </PageTransition>
                 </main>
             </div>
         </div>

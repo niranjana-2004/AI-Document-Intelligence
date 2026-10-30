@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
 import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react'
 import AuthLayout from '../../layouts/AuthLayout'
 import { apiRequest } from '../../services/api'
@@ -272,10 +273,12 @@ function Register() {
                         </div>
                     )}
 
-                    <button
+                    <motion.button
                         type="submit"
                         className="auth-primary-button"
                         disabled={loading}
+                        whileHover={!loading ? { scale: 1.02, y: -1 } : {}}
+                        whileTap={!loading ? { scale: 0.98 } : {}}
                     >
                         {loading ? (
                             <>
@@ -288,7 +291,7 @@ function Register() {
                                 <span>Create Account</span>
                             </>
                         )}
-                    </button>
+                    </motion.button>
                 </form>
 
                 <div className="auth-divider">

@@ -1008,3 +1008,372 @@
     align-items: flex-start;
   }
 }
+
+
+/* ========================================
+   WORKFLOW 3D STAGE & ANIMATED FLOW LINES
+   ======================================== */
+
+.workflow-stage-container {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  min-height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+}
+
+.workflow-stage-content {
+  position: relative;
+  width: 100%;
+  height: 440px;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.28) 0%, rgba(56, 189, 248, 0.15) 50%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.workflow-svg-connections {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes flowDash {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes flowDashReverse {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 40;
+  }
+}
+
+.animated-flow-line {
+  animation: flowDash 1.8s linear infinite;
+}
+
+.animated-flow-line-reverse {
+  animation: flowDashReverse 2s linear infinite;
+}
+
+/* Floating Cards */
+.workflow-card {
+  position: absolute;
+  width: 210px;
+  background: rgba(14, 21, 38, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.4), 0 0 20px rgba(139, 92, 246, 0.15);
+  z-index: 3;
+}
+
+[data-theme="ocean"] .workflow-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 12px 30px rgba(14, 21, 38, 0.08);
+}
+
+.workflow-card.left-card {
+  top: 70px;
+  left: 10px;
+}
+
+.workflow-card.right-card {
+  top: 80px;
+  right: 10px;
+  width: 220px;
+}
+
+.card-top-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.file-badge-pdf {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.card-filename {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.card-badge-verified {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 20px;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.card-body-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.preview-line {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+[data-theme="ocean"] .preview-line {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.preview-line.long { width: 92%; }
+.preview-line.medium { width: 75%; }
+.preview-line.short { width: 50%; }
+
+.card-quote-box p {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin: 0 0 10px 0;
+}
+
+.card-quote-box strong {
+  color: var(--text-primary);
+}
+
+.card-footer-metrics,
+.card-citations-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 8px;
+}
+
+.badge-dim {
+  margin-left: auto;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.citation-tag {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* Central Intelligence Core */
+.workflow-core-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+@keyframes spinCW {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinCCW {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+.core-ring-spin-cw {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  animation: spinCW 24s linear infinite;
+  pointer-events: none;
+}
+
+.core-ring-spin-ccw {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  animation: spinCCW 18s linear infinite;
+  pointer-events: none;
+}
+
+.core-intelligence-orb {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(56, 189, 248, 0.85));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  z-index: 4;
+}
+
+.core-icon {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+.core-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Floating Satellite Chips */
+.floating-chip {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(14, 21, 38, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  z-index: 4;
+  white-space: nowrap;
+}
+
+[data-theme="ocean"] .floating-chip {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.floating-chip.lower-left {
+  bottom: 45px;
+  left: 30px;
+}
+
+.floating-chip.upper-center {
+  top: 15px;
+  left: 48%;
+  transform: translateX(-50%);
+}
+
+.floating-chip.lower-right {
+  bottom: 40px;
+  right: 25px;
+}
+
+.status-live-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+}
+
+.status-dot-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+  display: inline-block;
+  animation: pulseBeacon 2s infinite;
+}
+
+@keyframes pulseBeacon {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+
+@media (max-width: 768px) {
+  .workflow-stage-container {
+    max-width: 100%;
+    min-height: 400px;
+  }
+  .workflow-card.left-card {
+    left: 0;
+    width: 170px;
+    top: 30px;
+  }
+  .workflow-card.right-card {
+    right: 0;
+    width: 180px;
+    top: 40px;
+  }
+  .floating-chip.lower-left {
+    left: 5px;
+    bottom: 20px;
+  }
+  .floating-chip.lower-right {
+    right: 5px;
+    bottom: 20px;
+  }
+}

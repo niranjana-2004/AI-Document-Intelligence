@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 import {
     Search as SearchIcon,
     Sparkles,
@@ -46,8 +47,9 @@ function Search() {
             console.error('Search error:', err)
             setError(
                 err.message ||
-                'Unable to complete the semantic search.'
+                'Unable to retrieve matching passages from vector storage.'
             )
+            setResults([])
         } finally {
             setLoading(false)
         }
@@ -58,9 +60,8 @@ function Search() {
     }
 
     const handleKeyDown = (event) => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault()
-            handleSearch()
+        if (event.key === 'Enter') {
+            executeSearch()
         }
     }
 
@@ -71,9 +72,26 @@ function Search() {
         setHasSearched(false)
     }
 
-    const handleSuggestedClick = (suggestedText) => {
-        setQuery(suggestedText)
-        executeSearch(suggestedText)
+    const handleSuggestedClick = (suggestion) => {
+        setQuery(suggestion)
+        executeSearch(suggestion)
+    }
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 },
+        },
+    }
+
+    const cardVariants = {
+        hidden: { opacity: 0, y: 22 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+        },
     }
 
     return (
@@ -81,20 +99,29 @@ function Search() {
             {/* =================================
                 PAGE HEADER
             ================================= */}
-            <section className="search-page-header">
-                <div>
-                    <p className="eyebrow">SEMANTIC RETRIEVAL ENGINE</p>
-                    <h2>Semantic Vector Search</h2>
-                    <p>
-                        Discover passages, conceptual links, and facts by meaning across your indexed documents.
-                    </p>
-                </div>
-            </section>
+            <motion.section
+                className="search-header"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+            >
+                <p className="eyebrow">NEURAL RETRIEVAL</p>
+                <h2>Semantic Document Search</h2>
+                <p>
+                    Retrieve exact passages from your document vault based on conceptual similarity
+                    rather than keyword matching.
+                </p>
+            </motion.section>
 
             {/* =================================
-                SEARCH HERO CARD
+                SEARCH INPUT BOX
             ================================= */}
-            <section className="search-box-card">
+            <motion.section
+                className="search-box-card"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.1 }}
+            >
                 <div className="search-box-header">
                     <div>
                         <h3>Neural Vector Search</h3>
@@ -102,13 +129,15 @@ function Search() {
                     </div>
 
                     {(query || hasSearched) && (
-                        <button
+                        <motion.button
                             type="button"
                             className="clear-search-button"
                             onClick={handleClear}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
                             Reset Search
-                        </button>
+                        </motion.button>
                     )}
                 </div>
 
@@ -137,11 +166,13 @@ function Search() {
                         )}
                     </div>
 
-                    <button
+                    <motion.button
                         type="button"
                         className="search-submit-button"
                         onClick={handleSearch}
                         disabled={loading || !query.trim()}
+                        whileHover={!loading && query.trim() ? { scale: 1.04, y: -1 } : {}}
+                        whileTap={!loading && query.trim() ? { scale: 0.97 } : {}}
                     >
                         {loading ? (
                             <>
@@ -154,7 +185,7 @@ function Search() {
                                 <ArrowRight size={16} />
                             </>
                         )}
-                    </button>
+                    </motion.button>
                 </div>
 
                 <div className="search-shortcuts-bar">
@@ -162,23 +193,36 @@ function Search() {
                         Press <kbd>Enter ↵</kbd> to execute high-dimensional cosine similarity search
                     </span>
                 </div>
-            </section>
+            </motion.section>
 
             {/* =================================
                 ERROR BANNER
             ================================= */}
-            {error && (
-                <div className="search-error" role="alert">
-                    <AlertCircle size={18} />
-                    <span>{error}</span>
-                </div>
-            )}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        className="search-error"
+                        role="alert"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                    >
+                        <AlertCircle size={18} />
+                        <span>{error}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* =================================
-                LOADING STATE
+                LOADING STATE WITH RADAR PULSE
             ================================= */}
             {loading && (
-                <section className="search-loading-card">
+                <motion.section
+                    className="search-loading-card"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                >
                     <div className="loading-pulse-ring" aria-hidden="true"></div>
                     <h3>Searching your knowledge vault...</h3>
                     <p>
@@ -189,11 +233,11 @@ function Search() {
                         <span></span>
                         <span></span>
                     </div>
-                </section>
+                </motion.section>
             )}
 
             {/* =================================
-                SEARCH RESULTS
+                SEARCH RESULTS (ANIMATED)
             ================================= */}
             {!loading && hasSearched && !error && results.length > 0 && (
                 <section className="search-results-section">
@@ -207,7 +251,12 @@ function Search() {
                         </div>
                     </div>
 
-                    <div className="search-results-list">
+                    <motion.div
+                        className="search-results-list"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
                         {results.map((result, index) => {
                             const rawScore = result.score ?? result.similarity
                             const relevanceScore =
@@ -216,9 +265,12 @@ function Search() {
                                     : null
 
                             return (
-                                <article
+                                <motion.article
                                     className="search-result-card"
                                     key={result.id || result.chunk_id || index}
+                                    variants={cardVariants}
+                                    whileHover={{ y: -4, scale: 1.01 }}
+                                    transition={{ duration: 0.2 }}
                                 >
                                     <div className="search-result-top">
                                         <div className="search-result-number">
@@ -269,22 +321,28 @@ function Search() {
                                     {relevanceScore !== null && (
                                         <div className="search-result-footer">
                                             <div className="relevance-bar-track">
-                                                <div
+                                                <motion.div
                                                     className="relevance-bar-fill"
-                                                    style={{
+                                                    initial={{ width: '0%' }}
+                                                    animate={{
                                                         width: `${Math.min(100, Math.max(0, relevanceScore))}%`,
                                                     }}
-                                                ></div>
+                                                    transition={{
+                                                        duration: 0.85,
+                                                        delay: 0.15 + index * 0.08,
+                                                        ease: [0.16, 1, 0.3, 1],
+                                                    }}
+                                                />
                                             </div>
                                             <span className="relevance-text-detail">
                                                 {relevanceScore}% semantic relevance score
                                             </span>
                                         </div>
                                     )}
-                                </article>
+                                </motion.article>
                             )
                         })}
-                    </div>
+                    </motion.div>
                 </section>
             )}
 
@@ -292,7 +350,11 @@ function Search() {
                 NO RESULTS STATE
             ================================= */}
             {!loading && hasSearched && !error && results.length === 0 && (
-                <section className="search-empty">
+                <motion.section
+                    className="search-empty"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                >
                     <div className="search-empty-icon" aria-hidden="true">
                         <SearchIcon size={40} />
                     </div>
@@ -301,21 +363,28 @@ function Search() {
                         No document passages matched &ldquo;{query}&rdquo; within similarity thresholds.
                         Try phrasing your search query with different concepts or broader terms.
                     </p>
-                    <button
+                    <motion.button
                         type="button"
                         className="clear-button"
                         onClick={handleClear}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.96 }}
                     >
                         Try Another Query
-                    </button>
-                </section>
+                    </motion.button>
+                </motion.section>
             )}
 
             {/* =================================
                 INITIAL STATE WITH SUGGESTIONS
             ================================= */}
             {!loading && !hasSearched && !error && (
-                <section className="search-initial-container">
+                <motion.section
+                    className="search-initial-container"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                >
                     <div className="search-initial-header">
                         <div className="search-initial-icon-wrap">
                             <Sparkles size={24} />
@@ -331,20 +400,22 @@ function Search() {
                         <span className="suggestions-title">Example Semantic Inquiries</span>
                         <div className="suggestions-grid">
                             {SUGGESTED_SEARCHES.map((suggestion, idx) => (
-                                <button
+                                <motion.button
                                     key={idx}
                                     type="button"
                                     className="suggestion-card-btn"
                                     onClick={() => handleSuggestedClick(suggestion)}
+                                    whileHover={{ scale: 1.03, x: 4 }}
+                                    whileTap={{ scale: 0.97 }}
                                 >
                                     <Compass size={15} className="suggestion-icon" />
                                     <span>&ldquo;{suggestion}&rdquo;</span>
                                     <ArrowRight size={13} className="suggestion-arrow" />
-                                </button>
+                                </motion.button>
                             ))}
                         </div>
                     </div>
-                </section>
+                </motion.section>
             )}
         </main>
     )

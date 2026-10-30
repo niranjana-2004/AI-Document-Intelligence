@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'motion/react'
 import {
   Sparkles,
   Search,
@@ -13,6 +14,7 @@ import {
   MessageSquare,
   Zap,
 } from 'lucide-react'
+import AnimatedCounter from '../components/motion/AnimatedCounter'
 import { apiRequest } from '../services/api'
 import '../App.css'
 
@@ -110,30 +112,48 @@ function Dashboard() {
 
       const data = await apiRequest(`/documents/${documentId}`)
       setSelectedDocument(data)
-    } catch (error) {
-      console.error('Open document error:', error)
-      setError(
-        error.message ||
-        'Failed to open document.'
-      )
+    } catch (openErr) {
+      console.error('Open document error:', openErr)
+      setError(openErr.message || 'Failed to open document.')
     } finally {
       setDocumentLoading(false)
+    }
+  }
+
+  const handleCopyDocText = async () => {
+    if (!selectedDocument?.extracted_text) return
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(selectedDocument.extracted_text)
+        setCopiedDocText(true)
+        setTimeout(() => setCopiedDocText(false), 2000)
+      }
+    } catch (copyErr) {
+      console.error('Copy document text failed:', copyErr)
+    }
+  }
+
+  const handleCopySummary = async () => {
+    if (!summary) return
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(summary)
+        setCopiedSummaryText(true)
+        setTimeout(() => setCopiedSummaryText(false), 2000)
+      }
+    } catch (copyErr) {
+      console.error('Copy summary failed:', copyErr)
     }
   }
 
   const handleSummary = async (documentId) => {
     try {
       setSummaryLoading(true)
-      setSummary('')
       setError('')
       setCopiedSummaryText(false)
 
       const data = await apiRequest(`/documents/${documentId}/summary`)
-
-      setSummary(
-        data.summary ||
-        'No summary available.'
-      )
+      setSummary(data.summary || 'No summary available.')
 
       // Refresh activity count safely
       try {
@@ -148,109 +168,57 @@ function Dashboard() {
       } catch (refreshErr) {
         console.warn('Unable to refresh activity counts after summary:', refreshErr)
       }
-    } catch (error) {
-      console.error('Summary error:', error)
-      setError(
-        error.message ||
-        'Failed to generate summary.'
-      )
+    } catch (summaryErr) {
+      console.error('Summary error:', summaryErr)
+      setError(summaryErr.message || 'Failed to generate summary.')
     } finally {
       setSummaryLoading(false)
     }
   }
 
   const handleAskAI = async () => {
-    if (!question.trim()) {
-      return
-    }
+    if (!question.trim()) return
 
     try {
       setQuestionLoading(true)
       setQuestionAnswer('')
 
-      const data = await apiRequest(
-        '/documents/ask',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            query: question,
-            document_id: null,
-            top_k: 5,
-          }),
-        }
-      )
+      const data = await apiRequest('/documents/ask', {
+        method: 'POST',
+        body: JSON.stringify({
+          query: question,
+          document_id: null,
+          top_k: 5,
+        }),
+      })
 
       const answer =
-        data.answer ||
-        data.response ||
-        data.result ||
-        'No answer returned.'
-
+        data.answer || data.response || data.result || 'No answer returned.'
       setQuestionAnswer(answer)
-    } catch (error) {
-      console.error('Ask AI error:', error)
-      setQuestionAnswer(
-        error.message ||
-        'Failed to get answer.'
-      )
+    } catch (askErr) {
+      console.error('Ask AI error:', askErr)
+      setQuestionAnswer(askErr.message || 'Failed to get answer.')
     } finally {
       setQuestionLoading(false)
     }
   }
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      return
-    }
+    if (!searchQuery.trim()) return
 
     try {
       setSearchLoading(true)
       setSearchResults([])
 
       const data = await apiRequest(
-        `/documents/search?query=${encodeURIComponent(
-          searchQuery
-        )}&top_k=5`
+        `/documents/search?query=${encodeURIComponent(searchQuery)}&top_k=5`
       )
-
       setSearchResults(data.results || [])
-    } catch (error) {
-      console.error('Search error:', error)
-      setSearchResults([
-        {
-          error:
-            error.message ||
-            'Search failed.',
-        },
-      ])
+    } catch (searchErr) {
+      console.error('Search error:', searchErr)
+      setSearchResults([{ error: 'Failed to complete search.' }])
     } finally {
       setSearchLoading(false)
-    }
-  }
-
-  const handleCopyDocText = async () => {
-    if (!selectedDocument?.extracted_text) return
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(selectedDocument.extracted_text)
-        setCopiedDocText(true)
-        setTimeout(() => setCopiedDocText(false), 2000)
-      }
-    } catch (err) {
-      console.error('Clipboard copy failed:', err)
-    }
-  }
-
-  const handleCopySummary = async () => {
-    if (!summary) return
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(summary)
-        setCopiedSummaryText(true)
-        setTimeout(() => setCopiedSummaryText(false), 2000)
-      }
-    } catch (err) {
-      console.error('Clipboard copy failed:', err)
     }
   }
 
@@ -271,9 +239,21 @@ function Dashboard() {
     setSearchResults([])
   }
 
-  const displayedDocuments = showAll
-    ? documents
-    : documents.slice(0, 5)
+  const displayedDocuments = showAll ? documents : documents.slice(0, 5)
+
+  // Stagger variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08 },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  }
 
   return (
     <>
@@ -281,11 +261,14 @@ function Dashboard() {
         {/* =========================
             WELCOME SECTION
         ========================== */}
-        <section className="welcome">
+        <motion.section
+          className="welcome"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
           <div className="welcome-content">
-            <p className="eyebrow">
-              COGNIDOCS WORKSPACE
-            </p>
+            <p className="eyebrow">COGNIDOCS WORKSPACE</p>
 
             <h2>
               {greetingTime}, {user?.full_name ? user.full_name.split(' ')[0] : 'there'}.
@@ -298,37 +281,55 @@ function Dashboard() {
           </div>
 
           <div className="welcome-actions">
-            <button
+            <motion.button
+              type="button"
               className="welcome-action-primary"
               onClick={() => setShowAskModal(true)}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.97 }}
             >
               <Sparkles size={16} />
               <span>Ask AI</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              type="button"
               className="welcome-action-secondary"
               onClick={() => setShowSearchModal(true)}
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.97 }}
             >
               <Search size={16} />
               <span>Search Documents</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              type="button"
               className="welcome-action-secondary"
               onClick={() => navigate('/documents')}
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.97 }}
             >
               <UploadCloud size={16} />
               <span>Upload Document</span>
-            </button>
+            </motion.button>
           </div>
-        </section>
+        </motion.section>
 
         {/* =========================
-            STATISTICS CARDS
+            STATISTICS CARDS (ANIMATED)
         ========================== */}
-        <section className="stats">
-          <div className="stat-card">
+        <motion.section
+          className="stats"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div
+            className="stat-card"
+            variants={itemVariants}
+            whileHover={{ y: -6, scale: 1.02 }}
+          >
             <div className="stat-card-header">
               <span className="stat-label">Documents</span>
               <div className="stat-icon-wrap" style={{ color: '#38bdf8' }}>
@@ -337,15 +338,17 @@ function Dashboard() {
             </div>
 
             <strong className="stat-value">
-              {loading ? '...' : documents.length}
+              {loading ? '...' : <AnimatedCounter value={documents.length} />}
             </strong>
 
-            <span className="stat-description">
-              Indexed in vector repository
-            </span>
-          </div>
+            <span className="stat-description">Indexed in vector repository</span>
+          </motion.div>
 
-          <div className="stat-card">
+          <motion.div
+            className="stat-card"
+            variants={itemVariants}
+            whileHover={{ y: -6, scale: 1.02 }}
+          >
             <div className="stat-card-header">
               <span className="stat-label">AI Questions</span>
               <div className="stat-icon-wrap" style={{ color: '#c084fc' }}>
@@ -354,15 +357,17 @@ function Dashboard() {
             </div>
 
             <strong className="stat-value">
-              {loading ? '...' : activityCounts.ai_questions}
+              {loading ? '...' : <AnimatedCounter value={activityCounts.ai_questions} />}
             </strong>
 
-            <span className="stat-description">
-              Grounded answers generated
-            </span>
-          </div>
+            <span className="stat-description">Grounded answers generated</span>
+          </motion.div>
 
-          <div className="stat-card">
+          <motion.div
+            className="stat-card"
+            variants={itemVariants}
+            whileHover={{ y: -6, scale: 1.02 }}
+          >
             <div className="stat-card-header">
               <span className="stat-label">AI Summaries</span>
               <div className="stat-icon-wrap" style={{ color: '#2dd4bf' }}>
@@ -371,15 +376,17 @@ function Dashboard() {
             </div>
 
             <strong className="stat-value">
-              {loading ? '...' : summaryCount}
+              {loading ? '...' : <AnimatedCounter value={summaryCount} />}
             </strong>
 
-            <span className="stat-description">
-              Document syntheses produced
-            </span>
-          </div>
+            <span className="stat-description">Document syntheses produced</span>
+          </motion.div>
 
-          <div className="stat-card">
+          <motion.div
+            className="stat-card"
+            variants={itemVariants}
+            whileHover={{ y: -6, scale: 1.02 }}
+          >
             <div className="stat-card-header">
               <span className="stat-label">Supported Formats</span>
               <div className="stat-icon-wrap" style={{ color: '#f59e0b' }}>
@@ -387,15 +394,11 @@ function Dashboard() {
               </div>
             </div>
 
-            <strong className="stat-value format-value">
-              PDF · DOCX · TXT
-            </strong>
+            <strong className="stat-value format-value">PDF · DOCX · TXT</strong>
 
-            <span className="stat-description">
-              Multi-format parsing active
-            </span>
-          </div>
-        </section>
+            <span className="stat-description">Multi-format parsing active</span>
+          </motion.div>
+        </motion.section>
 
         {/* =========================
             RECENT DOCUMENTS + ACTIVITY
@@ -411,6 +414,7 @@ function Dashboard() {
 
               {documents.length > 5 && (
                 <button
+                  type="button"
                   className="view-all"
                   onClick={() => setShowAll(!showAll)}
                 >
@@ -419,11 +423,7 @@ function Dashboard() {
               )}
             </div>
 
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
+            {error && <div className="error-message">{error}</div>}
 
             {loading && (
               <div className="empty-state">
@@ -446,18 +446,26 @@ function Dashboard() {
                   and exploring your knowledge base.
                 </p>
 
-                <button
+                <motion.button
+                  type="button"
                   className="upload-secondary"
                   onClick={() => navigate('/documents')}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   <UploadCloud size={16} />
                   <span>Go to Documents</span>
-                </button>
+                </motion.button>
               </div>
             )}
 
             {!loading && documents.length > 0 && (
-              <div className="document-list">
+              <motion.div
+                className="document-list"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
                 {displayedDocuments.map((doc) => {
                   const ext = doc.filename
                     ? doc.filename.split('.').pop().toUpperCase()
@@ -470,10 +478,13 @@ function Dashboard() {
                       : 'badge-txt'
 
                   return (
-                    <div className="document-item" key={doc.id}>
-                      <div className={`doc-item-badge ${badgeClass}`}>
-                        {ext}
-                      </div>
+                    <motion.div
+                      className="document-item"
+                      key={doc.id}
+                      variants={itemVariants}
+                      whileHover={{ x: 4, transition: { duration: 0.15 } }}
+                    >
+                      <div className={`doc-item-badge ${badgeClass}`}>{ext}</div>
 
                       <div className="document-info">
                         <h4 title={doc.filename}>{doc.filename}</h4>
@@ -490,6 +501,7 @@ function Dashboard() {
 
                       <div className="document-actions">
                         <button
+                          type="button"
                           className="document-action"
                           onClick={() => handleOpenDocument(doc.id)}
                         >
@@ -497,16 +509,17 @@ function Dashboard() {
                         </button>
 
                         <button
+                          type="button"
                           className="document-action summary-action"
                           onClick={() => handleSummary(doc.id)}
                         >
                           Summarize
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   )
                 })}
-              </div>
+              </motion.div>
             )}
           </div>
 
@@ -521,7 +534,13 @@ function Dashboard() {
 
             <div className="activity-list">
               <div className="activity-item">
-                <div className="activity-icon" style={{ background: 'rgba(192, 132, 252, 0.15)', color: '#c084fc' }}>
+                <div
+                  className="activity-icon"
+                  style={{
+                    background: 'rgba(192, 132, 252, 0.15)',
+                    color: '#c084fc',
+                  }}
+                >
                   <MessageSquare size={18} />
                 </div>
 
@@ -531,12 +550,18 @@ function Dashboard() {
                 </div>
 
                 <strong className="activity-count">
-                  {loading ? '...' : activityCounts.ai_questions}
+                  {loading ? '...' : <AnimatedCounter value={activityCounts.ai_questions} />}
                 </strong>
               </div>
 
               <div className="activity-item">
-                <div className="activity-icon" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+                <div
+                  className="activity-icon"
+                  style={{
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    color: '#38bdf8',
+                  }}
+                >
                   <Search size={18} />
                 </div>
 
@@ -546,12 +571,18 @@ function Dashboard() {
                 </div>
 
                 <strong className="activity-count">
-                  {loading ? '...' : activityCounts.searches}
+                  {loading ? '...' : <AnimatedCounter value={activityCounts.searches} />}
                 </strong>
               </div>
 
               <div className="activity-item">
-                <div className="activity-icon" style={{ background: 'rgba(45, 212, 191, 0.15)', color: '#2dd4bf' }}>
+                <div
+                  className="activity-icon"
+                  style={{
+                    background: 'rgba(45, 212, 191, 0.15)',
+                    color: '#2dd4bf',
+                  }}
+                >
                   <Layers size={18} />
                 </div>
 
@@ -561,12 +592,18 @@ function Dashboard() {
                 </div>
 
                 <strong className="activity-count">
-                  {loading ? '...' : summaryCount}
+                  {loading ? '...' : <AnimatedCounter value={summaryCount} />}
                 </strong>
               </div>
 
               <div className="activity-item">
-                <div className="activity-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+                <div
+                  className="activity-icon"
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    color: '#f59e0b',
+                  }}
+                >
                   <Zap size={18} />
                 </div>
 
@@ -589,9 +626,7 @@ function Dashboard() {
             <div>
               <p className="eyebrow">INTELLIGENCE PIPELINE</p>
               <h3>How Cognidocs processes your knowledge</h3>
-              <p>
-                From raw multi-format ingestion to context-verified AI answers.
-              </p>
+              <p>From raw multi-format ingestion to context-verified AI answers.</p>
             </div>
           </div>
 
@@ -601,7 +636,8 @@ function Dashboard() {
               <div>
                 <h4>Upload</h4>
                 <p>
-                  Add PDF, Word (.docx), or text (.txt) files into your secure workspace.
+                  Add PDF, Word (.docx), or text (.txt) files into your secure
+                  workspace.
                 </p>
               </div>
             </div>
@@ -611,7 +647,8 @@ function Dashboard() {
               <div>
                 <h4>Understand</h4>
                 <p>
-                  Content is parsed, partitioned into semantic chunks, and embedded into vectors.
+                  Content is parsed, partitioned into semantic chunks, and embedded
+                  into vectors.
                 </p>
               </div>
             </div>
@@ -621,7 +658,8 @@ function Dashboard() {
               <div>
                 <h4>Ask</h4>
                 <p>
-                  Interrogate documents with local AI and receive answers anchored by citations.
+                  Interrogate documents with local AI and receive answers anchored
+                  by citations.
                 </p>
               </div>
             </div>
@@ -631,7 +669,8 @@ function Dashboard() {
               <div>
                 <h4>Discover</h4>
                 <p>
-                  Perform neural semantic searches across passages to uncover hidden facts.
+                  Perform neural semantic searches across passages to uncover
+                  hidden facts.
                 </p>
               </div>
             </div>
@@ -640,261 +679,320 @@ function Dashboard() {
       </main>
 
       {/* =========================
-          DOCUMENT TEXT MODAL
+          ANIMATED MODALS
       ========================== */}
-      {selectedDocument && (
-        <div className="modal-overlay" onClick={closeDocument}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <h2>{selectedDocument.filename}</h2>
-                <p>
-                  {selectedDocument.document_type} ·{' '}
-                  {typeof selectedDocument.text_length === 'number'
-                    ? selectedDocument.text_length.toLocaleString()
-                    : selectedDocument.text_length}{' '}
-                  characters
-                </p>
-              </div>
+      <AnimatePresence>
+        {/* DOCUMENT TEXT MODAL */}
+        {selectedDocument && (
+          <motion.div
+            className="modal-overlay"
+            onClick={closeDocument}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+          >
+            <motion.div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.94, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 15 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="modal-header">
+                <div>
+                  <h2>{selectedDocument.filename}</h2>
+                  <p>
+                    {selectedDocument.document_type} ·{' '}
+                    {typeof selectedDocument.text_length === 'number'
+                      ? selectedDocument.text_length.toLocaleString()
+                      : selectedDocument.text_length}{' '}
+                    characters
+                  </p>
+                </div>
 
-              <button
-                className="modal-close"
-                onClick={closeDocument}
-                aria-label="Close document dialog"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="modal-content-toolbar">
-                <h3>Extracted Text Content</h3>
                 <button
                   type="button"
-                  className="modal-copy-btn"
-                  onClick={handleCopyDocText}
+                  className="modal-close"
+                  onClick={closeDocument}
+                  aria-label="Close document dialog"
                 >
-                  {copiedDocText ? (
-                    <>
-                      <Check size={14} />
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      <span>Copy Text</span>
-                    </>
-                  )}
+                  <X size={18} />
                 </button>
               </div>
 
-              <div className="document-text">
-                {documentLoading
-                  ? 'Loading document...'
-                  : selectedDocument.extracted_text || 'No text extracted.'}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================
-          SUMMARY MODAL
-      ========================== */}
-      {(summaryLoading || summary) && (
-        <div className="modal-overlay" onClick={() => setSummary('')}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <h2>AI Document Summary</h2>
-                <p>Generated by local AI intelligence</p>
-              </div>
-
-              <button
-                className="modal-close"
-                onClick={() => setSummary('')}
-                aria-label="Close summary dialog"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {summaryLoading ? (
-                <div className="empty-state">
-                  <div className="loading-pulse-ring" aria-hidden="true"></div>
-                  <h4>Synthesizing summary...</h4>
-                  <p>AI is analyzing and condensing key takeaways.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="modal-content-toolbar">
-                    <span className="summary-status-pill">Overview Ready</span>
-                    <button
-                      type="button"
-                      className="modal-copy-btn"
-                      onClick={handleCopySummary}
-                    >
-                      {copiedSummaryText ? (
-                        <>
-                          <Check size={14} />
-                          <span>Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={14} />
-                          <span>Copy Summary</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="summary-text">{summary}</div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================
-          ASK AI MODAL
-      ========================== */}
-      {showAskModal && (
-        <div className="modal-overlay" onClick={closeAskModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <h2>Quick Ask AI</h2>
-                <p>Query your document knowledge base</p>
-              </div>
-
-              <button
-                className="modal-close"
-                onClick={closeAskModal}
-                aria-label="Close Ask AI dialog"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <textarea
-                className="question-input"
-                placeholder="Example: What are the main recommendations mentioned in the documents?"
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                rows={4}
-              />
-
-              <div className="modal-action-row">
-                <button
-                  className="primary-action"
-                  onClick={handleAskAI}
-                  disabled={questionLoading || !question.trim()}
-                >
-                  <Sparkles size={16} />
-                  <span>{questionLoading ? 'Thinking...' : 'Ask AI'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="secondary-action"
-                  onClick={() => {
-                    closeAskModal()
-                    navigate('/ask-ai')
-                  }}
-                >
-                  Open Full Chat →
-                </button>
-              </div>
-
-              {questionAnswer && (
-                <div className="answer-box">
-                  <div className="answer-box-header">
-                    <Sparkles size={15} className="text-accent" />
-                    <h3>Grounded Answer</h3>
-                  </div>
-                  <p>{questionAnswer}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================
-          SEARCH MODAL
-      ========================== */}
-      {showSearchModal && (
-        <div className="modal-overlay" onClick={closeSearchModal}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <h2>Quick Semantic Search</h2>
-                <p>Find relevant passages by meaning</p>
-              </div>
-
-              <button
-                className="modal-close"
-                onClick={closeSearchModal}
-                aria-label="Close search dialog"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="search-row">
-                <input
-                  className="search-input"
-                  type="text"
-                  placeholder="Enter a concept, query, or topic..."
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      handleSearch()
-                    }
-                  }}
-                  autoFocus
-                />
-
-                <button
-                  className="primary-action"
-                  onClick={handleSearch}
-                  disabled={searchLoading || !searchQuery.trim()}
-                >
-                  <Search size={15} />
-                  <span>{searchLoading ? 'Searching...' : 'Search'}</span>
-                </button>
-              </div>
-
-              <div className="search-results">
-                {searchResults.map((result, index) => (
-                  <div className="search-result" key={index}>
-                    {result.error ? (
-                      <p>{result.error}</p>
+              <div className="modal-body">
+                <div className="modal-content-toolbar">
+                  <h3>Extracted Text Content</h3>
+                  <button
+                    type="button"
+                    className="modal-copy-btn"
+                    onClick={handleCopyDocText}
+                  >
+                    {copiedDocText ? (
+                      <>
+                        <Check size={14} />
+                        <span>Copied</span>
+                      </>
                     ) : (
                       <>
-                        <div className="search-result-top">
-                          <span className="search-result-num">Result {index + 1}</span>
-                          {result.score != null && (
-                            <span className="search-result-score">
-                              {Math.round(result.score * 100)}% match
-                            </span>
-                          )}
-                        </div>
-                        <p>
-                          {result.content || result.text || JSON.stringify(result)}
-                        </p>
+                        <Copy size={14} />
+                        <span>Copy Text</span>
                       </>
                     )}
-                  </div>
-                ))}
+                  </button>
+                </div>
+
+                <div className="document-text">
+                  {documentLoading
+                    ? 'Loading document...'
+                    : selectedDocument.extracted_text || 'No text extracted.'}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* SUMMARY MODAL */}
+        {(summaryLoading || summary) && (
+          <motion.div
+            className="modal-overlay"
+            onClick={() => setSummary('')}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+          >
+            <motion.div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.94, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 15 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="modal-header">
+                <div>
+                  <h2>AI Document Summary</h2>
+                  <p>Generated by local AI intelligence</p>
+                </div>
+
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={() => setSummary('')}
+                  aria-label="Close summary dialog"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                {summaryLoading ? (
+                  <div className="empty-state">
+                    <div className="loading-pulse-ring" aria-hidden="true"></div>
+                    <h4>Synthesizing summary...</h4>
+                    <p>AI is analyzing and condensing key takeaways.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="modal-content-toolbar">
+                      <span className="summary-status-pill">Overview Ready</span>
+                      <button
+                        type="button"
+                        className="modal-copy-btn"
+                        onClick={handleCopySummary}
+                      >
+                        {copiedSummaryText ? (
+                          <>
+                            <Check size={14} />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} />
+                            <span>Copy Summary</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="summary-text">{summary}</div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ASK AI MODAL */}
+        {showAskModal && (
+          <motion.div
+            className="modal-overlay"
+            onClick={closeAskModal}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+          >
+            <motion.div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.94, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 15 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="modal-header">
+                <div>
+                  <h2>Quick Ask AI</h2>
+                  <p>Query your document knowledge base</p>
+                </div>
+
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={closeAskModal}
+                  aria-label="Close Ask AI dialog"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <textarea
+                  className="question-input"
+                  placeholder="Example: What are the main recommendations mentioned in the documents?"
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  rows={4}
+                />
+
+                <div className="modal-action-row">
+                  <button
+                    type="button"
+                    className="primary-action"
+                    onClick={handleAskAI}
+                    disabled={questionLoading || !question.trim()}
+                  >
+                    <Sparkles size={16} />
+                    <span>{questionLoading ? 'Thinking...' : 'Ask AI'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-action"
+                    onClick={() => {
+                      closeAskModal()
+                      navigate('/ask-ai')
+                    }}
+                  >
+                    Open Full Chat →
+                  </button>
+                </div>
+
+                {questionAnswer && (
+                  <div className="answer-box">
+                    <div className="answer-box-header">
+                      <Sparkles size={15} className="text-accent" />
+                      <h3>Grounded Answer</h3>
+                    </div>
+                    <p>{questionAnswer}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* SEARCH MODAL */}
+        {showSearchModal && (
+          <motion.div
+            className="modal-overlay"
+            onClick={closeSearchModal}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+          >
+            <motion.div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.94, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 15 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="modal-header">
+                <div>
+                  <h2>Quick Semantic Search</h2>
+                  <p>Find relevant passages by meaning</p>
+                </div>
+
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={closeSearchModal}
+                  aria-label="Close search dialog"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div className="search-row">
+                  <input
+                    className="search-input"
+                    type="text"
+                    placeholder="Enter a concept, query, or topic..."
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        handleSearch()
+                      }
+                    }}
+                    autoFocus
+                  />
+
+                  <button
+                    type="button"
+                    className="primary-action"
+                    onClick={handleSearch}
+                    disabled={searchLoading || !searchQuery.trim()}
+                  >
+                    <Search size={15} />
+                    <span>{searchLoading ? 'Searching...' : 'Search'}</span>
+                  </button>
+                </div>
+
+                <div className="search-results">
+                  {searchResults.map((result, index) => (
+                    <div className="search-result" key={index}>
+                      {result.error ? (
+                        <p>{result.error}</p>
+                      ) : (
+                        <>
+                          <div className="search-result-top">
+                            <span className="search-result-num">Result {index + 1}</span>
+                            {result.score != null && (
+                              <span className="search-result-score">
+                                {Math.round(result.score * 100)}% match
+                              </span>
+                            )}
+                          </div>
+                          <p>
+                            {result.content || result.text || JSON.stringify(result)}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

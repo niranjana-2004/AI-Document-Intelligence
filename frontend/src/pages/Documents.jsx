@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 import {
     UploadCloud,
     FileText,
@@ -415,12 +416,15 @@ function Documents() {
                 </section>
 
                 {/* Dropzone Card */}
-                <div
+                <motion.div
                     className={`documents-dropzone ${isDragOver ? 'drag-over' : ''}`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     onClick={handleUploadClick}
+                    whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+                    whileTap={{ scale: 0.99 }}
+                    animate={isDragOver ? { scale: 1.02, borderColor: '#38bdf8' } : {}}
                 >
                     <div className="dropzone-icon-wrap">
                         <UploadCloud size={28} />
@@ -434,7 +438,7 @@ function Documents() {
                         <span className="dropzone-chip badge-docx">DOCX</span>
                         <span className="dropzone-chip badge-txt">TXT</span>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Hidden file input */}
                 <input
@@ -575,7 +579,18 @@ function Documents() {
                         )}
 
                     {!loading && filteredDocuments.length > 0 && (
-                        <div className="documents-grid">
+                        <motion.div
+                            className="documents-grid"
+                            variants={{
+                                hidden: { opacity: 0 },
+                                visible: {
+                                    opacity: 1,
+                                    transition: { staggerChildren: 0.08 },
+                                },
+                            }}
+                            initial="hidden"
+                            animate="visible"
+                        >
                             {filteredDocuments.map((doc) => {
                                 const ext = doc.filename
                                     ? doc.filename.split('.').pop().toUpperCase()
@@ -588,7 +603,15 @@ function Documents() {
                                         : 'badge-txt'
 
                                 return (
-                                    <article className="document-card" key={doc.id}>
+                                    <motion.article
+                                        className="document-card"
+                                        key={doc.id}
+                                        variants={{
+                                            hidden: { opacity: 0, y: 20 },
+                                            visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+                                        }}
+                                        whileHover={{ y: -6, scale: 1.02 }}
+                                    >
                                         <div className="document-card-top">
                                             <div className="document-card-badge-wrap">
                                                 <span className={`document-card-badge ${badgeClass}`}>
@@ -645,298 +668,327 @@ function Documents() {
                                                 <span>{summaryLoading && summaryDocId === doc.id ? 'Loading...' : 'Summary'}</span>
                                             </button>
                                         </div>
-                                    </article>
+                                    </motion.article>
                                 )
                             })}
-                        </div>
+                        </motion.div>
                     )}
                 </section>
             </main>
 
             {/* =================================
-                DOCUMENT EXTRACTED TEXT MODAL
+                ANIMATED MODALS WITH ANIMATEPRESENCE
             ================================= */}
-            {selectedDocument && (
-                <div
-                    className="modal-overlay"
-                    onClick={closeDocument}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="doc-modal-title"
-                >
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <div>
-                                <h2 id="doc-modal-title">{selectedDocument.filename}</h2>
-                                <p>
-                                    {selectedDocument.document_type} ·{' '}
-                                    {typeof selectedDocument.text_length === 'number'
-                                        ? selectedDocument.text_length.toLocaleString()
-                                        : selectedDocument.text_length}{' '}
-                                    characters extracted
-                                </p>
-                            </div>
+            <AnimatePresence>
+                {/* DOCUMENT EXTRACTED TEXT MODAL */}
+                {selectedDocument && (
+                    <motion.div
+                        className="modal-overlay"
+                        onClick={closeDocument}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="doc-modal-title"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.22 }}
+                    >
+                        <motion.div
+                            className="modal"
+                            onClick={(e) => e.stopPropagation()}
+                            initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                            <div className="modal-header">
+                                <div>
+                                    <h2 id="doc-modal-title">{selectedDocument.filename}</h2>
+                                    <p>
+                                        {selectedDocument.document_type} ·{' '}
+                                        {typeof selectedDocument.text_length === 'number'
+                                            ? selectedDocument.text_length.toLocaleString()
+                                            : selectedDocument.text_length}{' '}
+                                        characters extracted
+                                    </p>
+                                </div>
 
-                            <button
-                                type="button"
-                                className="modal-close"
-                                onClick={closeDocument}
-                                aria-label="Close document modal"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        <div className="modal-body">
-                            <div className="modal-content-toolbar">
-                                <h3>Extracted Text Content</h3>
                                 <button
                                     type="button"
-                                    className="modal-copy-btn"
-                                    onClick={handleCopyDocText}
-                                    title="Copy extracted text to clipboard"
+                                    className="modal-close"
+                                    onClick={closeDocument}
+                                    aria-label="Close document modal"
                                 >
-                                    {copiedDocText ? (
-                                        <>
-                                            <Check size={14} />
-                                            <span>Copied</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy size={14} />
-                                            <span>Copy Text</span>
-                                        </>
-                                    )}
+                                    <X size={18} />
                                 </button>
                             </div>
 
-                            <div className="document-text">
-                                {documentLoading
-                                    ? 'Loading document...'
-                                    : selectedDocument.extracted_text || 'No text content available.'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* =================================
-                AI SUMMARY MODAL
-            ================================= */}
-            {(summaryLoading || summary || summaryDocId) && (
-                <div
-                    className="modal-overlay"
-                    onClick={closeSummary}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="summary-modal-title"
-                >
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <div>
-                                <h2 id="summary-modal-title">AI Document Summary</h2>
-                                <p>
-                                    {summaryDocFilename
-                                        ? `${summaryDocFilename} · Synthesized overview`
-                                        : 'Synthesized knowledge overview'}
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                className="modal-close"
-                                onClick={closeSummary}
-                                aria-label="Close summary modal"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        <div className="modal-body">
-                            {summaryLoading ? (
-                                <div className="documents-empty modal-loading-empty">
-                                    <div className="loading-pulse-ring" aria-hidden="true"></div>
-                                    <h3>Generating AI summary...</h3>
-                                    <p>Analyzing key concepts and synthesizing takeaways.</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="modal-content-toolbar">
-                                        <div className="summary-meta-badges">
-                                            <label className="summary-control-group">
-                                                <span>Format:</span>
-                                                <select
-                                                    className="summary-select"
-                                                    value={summaryFormat}
-                                                    onChange={(e) => setSummaryFormat(e.target.value)}
-                                                    disabled={regenerating}
-                                                    aria-label="Select summary format"
-                                                >
-                                                    <option value="numbered">Numbered</option>
-                                                    <option value="paragraphs">Paragraphs</option>
-                                                    <option value="bullets">Bullets</option>
-                                                    <option value="headings">Headings</option>
-                                                </select>
-                                            </label>
-
-                                            <label className="summary-control-group">
-                                                <span>Length:</span>
-                                                <select
-                                                    className="summary-select"
-                                                    value={summaryLength}
-                                                    onChange={(e) => setSummaryLength(e.target.value)}
-                                                    disabled={regenerating}
-                                                    aria-label="Select summary length"
-                                                >
-                                                    <option value="detailed">Detailed</option>
-                                                    <option value="brief">Brief</option>
-                                                </select>
-                                            </label>
-                                        </div>
-
-                                        <div className="summary-actions-group">
-                                            <button
-                                                type="button"
-                                                className="modal-copy-btn summary-regen-btn"
-                                                onClick={handleRegenerateSummary}
-                                                disabled={regenerating}
-                                                title="Regenerate summary with AI using selected options"
-                                                aria-label="Regenerate summary"
-                                            >
-                                                <RotateCw size={13} className={regenerating ? 'spin-anim' : ''} />
-                                                <span>{regenerating ? 'Regenerating...' : 'Regenerate'}</span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className="modal-copy-btn"
-                                                onClick={handleCopySummary}
-                                                disabled={regenerating}
-                                                title="Copy summary to clipboard"
-                                                aria-label="Copy summary to clipboard"
-                                            >
-                                                {copiedSummaryText ? (
-                                                    <>
-                                                        <Check size={14} />
-                                                        <span>Copied</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Copy size={14} />
-                                                        <span>Copy Summary</span>
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {summaryFeedback && (
-                                        <div className="summary-status-alert summary-status-success" role="status">
-                                            <Check size={15} />
-                                            <span>{summaryFeedback}</span>
-                                        </div>
-                                    )}
-
-                                    {summaryError && (
-                                        <div className="summary-status-alert summary-status-error" role="alert">
-                                            <AlertTriangle size={15} />
-                                            <span>{summaryError}</span>
-                                        </div>
-                                    )}
-
-                                    <div
-                                        className="summary-text"
-                                        style={regenerating ? { opacity: 0.6 } : undefined}
+                            <div className="modal-body">
+                                <div className="modal-content-toolbar">
+                                    <h3>Extracted Text Content</h3>
+                                    <button
+                                        type="button"
+                                        className="modal-copy-btn"
+                                        onClick={handleCopyDocText}
+                                        title="Copy extracted text to clipboard"
                                     >
-                                        {summary}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+                                        {copiedDocText ? (
+                                            <>
+                                                <Check size={14} />
+                                                <span>Copied</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy size={14} />
+                                                <span>Copy Text</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
 
-            {/* =================================
-                DELETE DOCUMENT CONFIRMATION MODAL
-            ================================= */}
-            {documentToDelete && (
-                <div
-                    className="modal-overlay"
-                    onClick={!deleteLoading ? handleCancelDelete : undefined}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="delete-doc-modal-title"
-                >
-                    <div
-                        className="modal delete-doc-modal"
-                        onClick={(e) => e.stopPropagation()}
+                                <div className="document-text">
+                                    {documentLoading
+                                        ? 'Loading document...'
+                                        : selectedDocument.extracted_text || 'No text content available.'}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* AI SUMMARY MODAL */}
+                {(summaryLoading || summary || summaryDocId) && (
+                    <motion.div
+                        className="modal-overlay"
+                        onClick={closeSummary}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="summary-modal-title"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.22 }}
                     >
-                        <div className="modal-header">
-                            <div>
-                                <h2 id="delete-doc-modal-title">Delete Document</h2>
-                                <p>Permanent document removal</p>
-                            </div>
-
-                            <button
-                                type="button"
-                                className="modal-close"
-                                onClick={handleCancelDelete}
-                                disabled={deleteLoading}
-                                aria-label="Close delete confirmation"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        <div className="modal-body delete-doc-modal-body">
-                            <div className="delete-doc-warning">
-                                <div className="delete-doc-warning-icon-wrap" aria-hidden="true">
-                                    <AlertTriangle size={24} />
-                                </div>
-                                <div className="delete-doc-warning-content">
-                                    <p className="delete-doc-question">
-                                        Are you sure you want to delete this document?
-                                    </p>
-                                    <p className="delete-doc-target" title={documentToDelete.filename}>
-                                        <FileText size={15} />
-                                        <span className="delete-doc-filename">{documentToDelete.filename}</span>
-                                    </p>
-                                    <p className="delete-doc-subtext">
-                                        This action cannot be undone. All extracted text and vector embeddings will be permanently removed.
+                        <motion.div
+                            className="modal"
+                            onClick={(e) => e.stopPropagation()}
+                            initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                            <div className="modal-header">
+                                <div>
+                                    <h2 id="summary-modal-title">AI Document Summary</h2>
+                                    <p>
+                                        {summaryDocFilename
+                                            ? `${summaryDocFilename} · Synthesized overview`
+                                            : 'Synthesized knowledge overview'}
                                     </p>
                                 </div>
+
+                                <button
+                                    type="button"
+                                    className="modal-close"
+                                    onClick={closeSummary}
+                                    aria-label="Close summary modal"
+                                >
+                                    <X size={18} />
+                                </button>
                             </div>
 
-                            {deleteError && (
-                                <p className="delete-doc-error" role="alert">
-                                    {deleteError}
-                                </p>
-                            )}
-                        </div>
+                            <div className="modal-body">
+                                {summaryLoading ? (
+                                    <div className="documents-empty modal-loading-empty">
+                                        <div className="loading-pulse-ring" aria-hidden="true"></div>
+                                        <h3>Generating AI summary...</h3>
+                                        <p>Analyzing key concepts and synthesizing takeaways.</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="modal-content-toolbar">
+                                            <div className="summary-meta-badges">
+                                                <label className="summary-control-group">
+                                                    <span>Format:</span>
+                                                    <select
+                                                        className="summary-select"
+                                                        value={summaryFormat}
+                                                        onChange={(e) => setSummaryFormat(e.target.value)}
+                                                        disabled={regenerating}
+                                                        aria-label="Select summary format"
+                                                    >
+                                                        <option value="numbered">Numbered</option>
+                                                        <option value="paragraphs">Paragraphs</option>
+                                                        <option value="bullets">Bullets</option>
+                                                        <option value="headings">Headings</option>
+                                                    </select>
+                                                </label>
 
-                        <div className="delete-doc-actions">
-                            <button
-                                type="button"
-                                className="delete-doc-cancel-btn"
-                                onClick={handleCancelDelete}
-                                disabled={deleteLoading}
-                            >
-                                Cancel
-                            </button>
+                                                <label className="summary-control-group">
+                                                    <span>Length:</span>
+                                                    <select
+                                                        className="summary-select"
+                                                        value={summaryLength}
+                                                        onChange={(e) => setSummaryLength(e.target.value)}
+                                                        disabled={regenerating}
+                                                        aria-label="Select summary length"
+                                                    >
+                                                        <option value="detailed">Detailed</option>
+                                                        <option value="brief">Brief</option>
+                                                    </select>
+                                                </label>
+                                            </div>
 
-                            <button
-                                type="button"
-                                className="delete-doc-confirm-btn"
-                                onClick={handleConfirmDelete}
-                                disabled={deleteLoading}
-                            >
-                                {deleteLoading ? 'Deleting...' : 'Delete document'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                                            <div className="summary-actions-group">
+                                                <button
+                                                    type="button"
+                                                    className="modal-copy-btn summary-regen-btn"
+                                                    onClick={handleRegenerateSummary}
+                                                    disabled={regenerating}
+                                                    title="Regenerate summary with AI using selected options"
+                                                    aria-label="Regenerate summary"
+                                                >
+                                                    <RotateCw size={13} className={regenerating ? 'spin-anim' : ''} />
+                                                    <span>{regenerating ? 'Regenerating...' : 'Regenerate'}</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    className="modal-copy-btn"
+                                                    onClick={handleCopySummary}
+                                                    disabled={regenerating}
+                                                    title="Copy summary to clipboard"
+                                                    aria-label="Copy summary to clipboard"
+                                                >
+                                                    {copiedSummaryText ? (
+                                                        <>
+                                                            <Check size={14} />
+                                                            <span>Copied</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Copy size={14} />
+                                                            <span>Copy Summary</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {summaryFeedback && (
+                                            <div className="summary-status-alert summary-status-success" role="status">
+                                                <Check size={15} />
+                                                <span>{summaryFeedback}</span>
+                                            </div>
+                                        )}
+
+                                        {summaryError && (
+                                            <div className="summary-status-alert summary-status-error" role="alert">
+                                                <AlertTriangle size={15} />
+                                                <span>{summaryError}</span>
+                                            </div>
+                                        )}
+
+                                        <div
+                                            className="summary-text"
+                                            style={regenerating ? { opacity: 0.6 } : undefined}
+                                        >
+                                            {summary}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* DELETE DOCUMENT CONFIRMATION MODAL */}
+                {documentToDelete && (
+                    <motion.div
+                        className="modal-overlay"
+                        onClick={!deleteLoading ? handleCancelDelete : undefined}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="delete-doc-modal-title"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.22 }}
+                    >
+                        <motion.div
+                            className="modal delete-doc-modal"
+                            onClick={(e) => e.stopPropagation()}
+                            initial={{ opacity: 0, scale: 0.94, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.94, y: 15 }}
+                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                            <div className="modal-header">
+                                <div>
+                                    <h2 id="delete-doc-modal-title">Delete Document</h2>
+                                    <p>Permanent document removal</p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className="modal-close"
+                                    onClick={handleCancelDelete}
+                                    disabled={deleteLoading}
+                                    aria-label="Close delete confirmation"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body delete-doc-modal-body">
+                                <div className="delete-doc-warning">
+                                    <div className="delete-doc-warning-icon-wrap" aria-hidden="true">
+                                        <AlertTriangle size={24} />
+                                    </div>
+                                    <div className="delete-doc-warning-content">
+                                        <p className="delete-doc-question">
+                                            Are you sure you want to delete this document?
+                                        </p>
+                                        <p className="delete-doc-target" title={documentToDelete.filename}>
+                                            <FileText size={15} />
+                                            <span className="delete-doc-filename">{documentToDelete.filename}</span>
+                                        </p>
+                                        <p className="delete-doc-subtext">
+                                            This action cannot be undone. All extracted text and vector embeddings will be permanently removed.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {deleteError && (
+                                    <p className="delete-doc-error" role="alert">
+                                        {deleteError}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="delete-doc-actions">
+                                <button
+                                    type="button"
+                                    className="delete-doc-cancel-btn"
+                                    onClick={handleCancelDelete}
+                                    disabled={deleteLoading}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="delete-doc-confirm-btn"
+                                    onClick={handleConfirmDelete}
+                                    disabled={deleteLoading}
+                                >
+                                    {deleteLoading ? 'Deleting...' : 'Delete document'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     )
 }

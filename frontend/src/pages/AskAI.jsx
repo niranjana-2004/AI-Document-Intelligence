@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { motion } from 'motion/react'
 import {
     Sparkles,
     Plus,
@@ -15,6 +16,7 @@ import {
     BookOpen,
     Layers,
 } from 'lucide-react'
+import NeuralWaveform from '../components/motion/NeuralWaveform'
 import { apiRequest } from '../services/api'
 import '../App.css'
 
@@ -1287,12 +1289,17 @@ function AskAI() {
                 CHAT SCROLL CONTAINER & THREAD
             ================================= */}
             <div className="chat-scroll-container">
-                {/* EMPTY STATE */}
+                {/* EMPTY STATE WITH NEURAL WAVEFORM */}
                 {messages.length === 0 && !loading && (
-                    <section className="chat-empty-state" aria-label="Ask AI overview">
-                        <div className="chat-empty-glow-icon" aria-hidden="true">
-                            <Sparkles size={38} />
-                        </div>
+                    <motion.section
+                        className="chat-empty-state"
+                        aria-label="Ask AI overview"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        <NeuralWaveform isGenerating={false} statusText="Grounded Intelligence Active" />
+
                         <h3 className="chat-empty-title">Cognidocs Intelligence Ready</h3>
                         <p className="chat-empty-desc">
                             Ask anything about your uploaded documents. Cognidocs AI retrieves exact passages and formulates context-grounded answers with traceable citations.
@@ -1314,19 +1321,21 @@ function AskAI() {
                             ) : suggestedQuestions.length > 0 ? (
                                 <div className="chat-suggestions-chips">
                                     {suggestedQuestions.map((suggestion) => (
-                                        <button
+                                        <motion.button
                                             key={suggestion}
                                             type="button"
                                             className="chat-suggestion-chip"
                                             onClick={() => handleSuggestedQuestion(suggestion)}
                                             disabled={loading}
                                             title={`Ask: "${suggestion}"`}
+                                            whileHover={{ scale: 1.03, y: -2 }}
+                                            whileTap={{ scale: 0.97 }}
                                         >
                                             <span className="suggestion-sparkle" aria-hidden="true">
                                                 <Sparkles size={12} />
                                             </span>
                                             <span>{suggestion}</span>
-                                        </button>
+                                        </motion.button>
                                     ))}
                                 </div>
                             ) : !docsLoading && documents.length > 0 ? (
@@ -1335,7 +1344,7 @@ function AskAI() {
                                 </p>
                             ) : null}
                         </div>
-                    </section>
+                    </motion.section>
                 )}
 
                 {/* CONVERSATION MESSAGES */}
@@ -1344,14 +1353,20 @@ function AskAI() {
                         {messages.map((msg, idx) => {
                             if (msg.role === 'user') {
                                 return (
-                                    <div key={msg.id} className="chat-row chat-row-user">
+                                    <motion.div
+                                        key={msg.id}
+                                        className="chat-row chat-row-user"
+                                        initial={{ opacity: 0, y: 15 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                                    >
                                         <div className="chat-bubble-user" tabIndex={0}>
                                             <p className="chat-user-text">{msg.content}</p>
                                             <span className="chat-user-time">
                                                 {formatTimestamp(msg.timestamp)}
                                             </span>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )
                             }
 
@@ -1365,7 +1380,13 @@ function AskAI() {
                             const isDrawerExpanded = Boolean(expandedSourcesDrawers[msg.id])
 
                             return (
-                                <div key={msg.id} className="chat-row chat-row-assistant">
+                                <motion.div
+                                    key={msg.id}
+                                    className="chat-row chat-row-assistant"
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                                >
                                     <div className="assistant-avatar" aria-hidden="true">
                                         <Sparkles size={16} />
                                     </div>
@@ -1502,29 +1523,30 @@ function AskAI() {
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </motion.div>
                             )
                         })}
 
-                        {/* SYNTHESIZING TYPING INDICATOR */}
+                        {/* SYNTHESIZING TYPING INDICATOR WITH NEURAL WAVEFORM */}
                         {loading && (
-                            <div className="chat-row chat-row-assistant chat-row-loading">
+                            <motion.div
+                                className="chat-row chat-row-assistant chat-row-loading"
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
                                 <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
                                     <Sparkles size={16} />
                                 </div>
                                 <div className="assistant-bubble-column">
                                     <div className="chat-bubble-assistant chat-bubble-loading">
-                                        <div className="chat-typing-dots" aria-label="Synthesizing response">
-                                            <span></span>
-                                            <span></span>
-                                            <span></span>
-                                        </div>
-                                        <span className="chat-loading-hint">
-                                            Scanning document chunks & synthesizing grounded answer...
-                                        </span>
+                                        <NeuralWaveform
+                                            isGenerating={true}
+                                            compact={true}
+                                            statusText="Scanning document chunks & synthesizing answer..."
+                                        />
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         )}
 
                         <div ref={messagesEndRef} />
@@ -1534,23 +1556,24 @@ function AskAI() {
                 {/* Initial loading state when messages array is empty */}
                 {messages.length === 0 && loading && (
                     <div className="chat-thread-container">
-                        <div className="chat-row chat-row-assistant chat-row-loading">
+                        <motion.div
+                            className="chat-row chat-row-assistant chat-row-loading"
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
                             <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
                                 <Sparkles size={16} />
                             </div>
                             <div className="assistant-bubble-column">
                                 <div className="chat-bubble-assistant chat-bubble-loading">
-                                    <div className="chat-typing-dots" aria-label="Synthesizing response">
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                    </div>
-                                    <span className="chat-loading-hint">
-                                        Scanning document chunks & synthesizing grounded answer...
-                                    </span>
+                                    <NeuralWaveform
+                                        isGenerating={true}
+                                        compact={true}
+                                        statusText="Scanning document chunks & synthesizing answer..."
+                                    />
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 )}
             </div>
@@ -1612,11 +1635,13 @@ function AskAI() {
                             )}
                         </div>
 
-                        <button
+                        <motion.button
                             type="button"
                             className="composer-send-button"
                             onClick={handleAskAI}
                             disabled={isSubmitDisabled}
+                            whileHover={!isSubmitDisabled ? { scale: 1.08 } : {}}
+                            whileTap={!isSubmitDisabled ? { scale: 0.93 } : {}}
                             title="Send inquiry"
                             aria-label="Send inquiry"
                         >
@@ -1625,7 +1650,7 @@ function AskAI() {
                             ) : (
                                 <Send size={15} aria-hidden="true" />
                             )}
-                        </button>
+                        </motion.button>
                     </div>
                 </div>
             </footer>

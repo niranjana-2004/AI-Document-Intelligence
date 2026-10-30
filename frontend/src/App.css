@@ -6692,3 +6692,131 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ========================================
+   NEURAL WAVEFORM & AI ACTIVITY PULSE
+   ======================================== */
+
+.neural-waveform-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+.waveform-orb-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.waveform-energy-halo {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.45) 0%, rgba(56, 189, 248, 0.2) 60%, transparent 80%);
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+.waveform-core-sphere {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+  border: 1.5px solid rgba(139, 92, 246, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.waveform-active-icon {
+  color: #38bdf8;
+}
+
+.waveform-idle-icon {
+  color: #a78bfa;
+}
+
+.spin-slow {
+  animation: spinCW 6s linear infinite;
+}
+
+.waveform-bars-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 48px;
+}
+
+.waveform-bar {
+  width: 4px;
+  min-height: 8px;
+  border-radius: 3px;
+  background: linear-gradient(to top, #8b5cf6, #38bdf8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.waveform-status-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  font-size: 12px;
+  font-weight: 500;
+  color: #c4b5fd;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.live-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulseBeacon 1.4s infinite;
+}
+
+/* Compact version for topbars / composer */
+.neural-waveform-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: rgba(14, 21, 38, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.compact-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+}
+
+.compact-waveform-bar {
+  width: 3px;
+  min-height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to top, #8b5cf6, #38bdf8);
+}
+
+.compact-status-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}

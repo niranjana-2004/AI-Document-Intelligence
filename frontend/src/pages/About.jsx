@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'motion/react'
 import {
     Sparkles,
     Search,
@@ -97,7 +98,7 @@ function About() {
                 </div>
 
                 <div className="about-feature-grid">
-                    <article className="about-feature-card">
+                    <motion.article className="about-feature-card" whileHover={{ y: -6, scale: 1.02 }}>
                         <div className="about-feature-icon" aria-hidden="true">
                             <UploadCloud size={20} />
                         </div>
@@ -106,9 +107,9 @@ function About() {
                             Upload PDF, DOCX, or TXT documents. The system automatically extracts text,
                             generates sentence embeddings, and partitions content into semantic chunks.
                         </p>
-                    </article>
+                    </motion.article>
 
-                    <article className="about-feature-card">
+                    <motion.article className="about-feature-card" whileHover={{ y: -6, scale: 1.02 }}>
                         <div className="about-feature-icon" aria-hidden="true">
                             <Search size={20} />
                         </div>
@@ -117,9 +118,9 @@ function About() {
                             Search by concept rather than keyword matching. Retrieve exact passages
                             ranked by mathematical vector proximity to your intent.
                         </p>
-                    </article>
+                    </motion.article>
 
-                    <article className="about-feature-card">
+                    <motion.article className="about-feature-card" whileHover={{ y: -6, scale: 1.02 }}>
                         <div className="about-feature-icon" aria-hidden="true">
                             <Sparkles size={20} />
                         </div>
@@ -128,9 +129,9 @@ function About() {
                             Ask questions naturally. Cognidocs supplies relevant context chunks to the language model
                             to generate accurate, grounded responses.
                         </p>
-                    </article>
+                    </motion.article>
 
-                    <article className="about-feature-card">
+                    <motion.article className="about-feature-card" whileHover={{ y: -6, scale: 1.02 }}>
                         <div className="about-feature-icon" aria-hidden="true">
                             <Layers size={20} />
                         </div>
@@ -139,7 +140,7 @@ function About() {
                             Generate condensed overviews in numbered, bulleted, or paragraph formats
                             to distill key document findings in seconds.
                         </p>
-                    </article>
+                    </motion.article>
                 </div>
             </section>
 

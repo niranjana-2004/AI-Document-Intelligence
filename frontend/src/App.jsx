@@ -2,7 +2,10 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  useLocation,
 } from 'react-router-dom'
+import { AnimatePresence } from 'motion/react'
+import { useEffect } from 'react'
 
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
@@ -20,61 +23,27 @@ import About from './pages/About'
 import LandingPage from './pages/LandingPage'
 import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
-import { useEffect } from 'react'
 
-function App() {
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('app_theme') || 'ocean'
-    document.documentElement.dataset.theme = savedTheme
-  }, [])
+function AnimatedRoutes() {
+  const location = useLocation()
+
   return (
-    <BrowserRouter>
-
-      <Routes>
-
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         {/* =========================
             AUTHENTICATION
         ========================== */}
-
-        <Route
-          path="/"
-          element={<LandingPage />}
-        />
-
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-
-        <Route
-          path="/register"
-          element={<Register />}
-        />
-
-        <Route
-          path="/otp"
-          element={<OTP />}
-        />
-
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
-
-        <Route
-          path="/reset-password"
-          element={<ResetPassword />}
-        />
-
-        <Route
-          path="/password-reset-success"
-          element={<PasswordResetSuccess />}
-        />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/otp" element={<OTP />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/password-reset-success" element={<PasswordResetSuccess />} />
 
         {/* =========================
             APPLICATION
         ========================== */}
-
         <Route
           path="/dashboard"
           element={
@@ -138,9 +107,20 @@ function App() {
             </ProtectedRoute>
           }
         />
-
       </Routes>
+    </AnimatePresence>
+  )
+}
 
+function App() {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('app_theme') || 'ocean'
+    document.documentElement.dataset.theme = savedTheme
+  }, [])
+
+  return (
+    <BrowserRouter>
+      <AnimatedRoutes />
     </BrowserRouter>
   )
 }
