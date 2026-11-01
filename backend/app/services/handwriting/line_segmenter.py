@@ -1,8 +1,10 @@
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import List, Tuple
 import cv2
 import numpy as np
 from PIL import Image
+from scipy.ndimage import gaussian_filter1d
+from scipy.signal import find_peaks
 
 logger = logging.getLogger(__name__)
 
@@ -17,15 +19,18 @@ class LineCrop:
 def segment_page_into_lines(
     color_or_gray_image: np.ndarray,
     min_line_height: int = 15,
-    padding: int = 8
+    padding: int = 6
 ) -> Tuple[List[LineCrop], bool]:
     """
-    Segment a handwritten page into horizontal text line crops using morphological analysis.
+    Segment a handwritten document page into individual text line crops using
+    smoothed horizontal projection profile analysis with local minima valley detection.
+
+    Handles ascender/descender vertical overlap and preserves natural reading order.
 
     Args:
         color_or_gray_image: Input numpy image array (BGR or Grayscale).
         min_line_height: Minimum pixel height for a valid text line.
-        padding: Pixel padding added around each detected text line box.
+        padding: Pixel padding added around detected text lines.
 
     Returns:
         (line_crops, is_empty_page)
@@ -39,12 +44,12 @@ def segment_page_into_lines(
 
     h, w = gray.shape[:2]
 
-    # Guard: if image is virtually uniform / blank paper with no variance
+    # 1. Blank page detection via standard deviation
     if float(np.std(gray)) < 3.0:
         logger.info("Page detected as empty or blank (near-zero grayscale variance)")
         return [], True
 
-    # Invert threshold: text ink is white (255), background paper is black (0)
+    # 2. Otsu thresholding for ink vs background
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
@@ -52,82 +57,98 @@ def segment_page_into_lines(
     total_pixels = h * w
     ink_ratio = ink_pixel_count / total_pixels
 
-    # Empty page detection: less than 0.05% non-background pixels
     if ink_ratio < 0.0005:
         logger.info("Page detected as empty or blank (ink ratio < 0.05%)")
         return [], True
 
-    # Horizontal dilation: merge words on the same line into unified line strips
-    # Use adaptive kernel width relative to page width
-    kernel_width = max(25, int(w * 0.035))
-    kernel_height = max(2, int(h * 0.003))
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
-    dilated = cv2.dilate(thresh, kernel, iterations=2)
+    # 3. Horizontal Projection Profile & Valley Finding
+    row_ink = np.sum(thresh > 0, axis=1).astype(np.float32)
+    # Adaptive Gaussian smoothing parameter based on page height
+    sigma = max(8.0, min(14.0, h / 100.0))
+    smoothed = gaussian_filter1d(row_ink, sigma=sigma)
 
-    # Find bounding contours
-    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Minimum line distance (~2.0% of page height) and prominence threshold
+    min_dist = max(22, int(h * 0.02))
+    prominence = max(15.0, float(np.percentile(smoothed, 50) * 0.3))
+    peaks, _ = find_peaks(smoothed, distance=min_dist, prominence=prominence)
 
-    raw_boxes = []
-    min_width = max(30, int(w * 0.04))
-
-    for c in contours:
-        x, y, box_w, box_h = cv2.boundingRect(c)
-        if box_h >= min_line_height and box_w >= min_width:
-            raw_boxes.append((x, y, box_w, box_h))
-
-    # Fallback if morphological dilation found no distinct lines but ink exists
-    if not raw_boxes:
-        # Find non-zero bounding rect of the whole ink area
-        x, y, box_w, box_h = cv2.boundingRect(thresh)
-        if box_w > 10 and box_h > 10:
-            raw_boxes.append((x, y, box_w, box_h))
-        else:
-            return [], True
-
-    # Sort bounding boxes in natural reading order: top-to-bottom
-    # Group boxes that have substantial vertical overlap
-    sorted_by_y = sorted(raw_boxes, key=lambda b: b[1])
-
-    merged_lines = []
-    for box in sorted_by_y:
-        x, y, box_w, box_h = box
-        matched = False
-        for idx, line in enumerate(merged_lines):
-            lx, ly, lw, lh = line
-            # Check if this box overlaps vertically with existing line
-            overlap = min(y + box_h, ly + lh) - max(y, ly)
-            min_h = min(box_h, lh)
-            if min_h > 0 and (overlap / min_h) > 0.45:
-                # Merge boxes on the same line
-                new_x = min(x, lx)
-                new_y = min(y, ly)
-                new_w = max(x + box_w, lx + lw) - new_x
-                new_h = max(y + box_h, ly + lh) - new_y
-                merged_lines[idx] = (new_x, new_y, new_w, new_h)
-                matched = True
-                break
-        if not matched:
-            merged_lines.append(box)
-
-    # Final sort top-to-bottom
-    merged_lines.sort(key=lambda b: b[1])
-
-    line_crops: List[LineCrop] = []
+    strips = []
     pil_image_full = Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
 
-    for idx, (bx, by, bw, bh) in enumerate(merged_lines):
-        # Apply padding clamped to image bounds
-        crop_x1 = max(0, bx - padding)
-        crop_y1 = max(0, by - padding)
-        crop_x2 = min(w, bx + bw + padding)
-        crop_y2 = min(h, by + bh + padding)
+    if len(peaks) >= 1:
+        # Determine top boundary
+        first_ink = np.where(row_ink[:peaks[0]] > 5)[0]
+        top_y = max(0, first_ink[0] - padding) if len(first_ink) > 0 else max(0, int(peaks[0] - (min_dist * 1.5)))
+
+        valleys = [top_y]
+        for i in range(len(peaks) - 1):
+            p1 = peaks[i]
+            p2 = peaks[i + 1]
+            # Valley is the local minimum ink row between two consecutive text line peaks
+            valley_y = p1 + int(np.argmin(smoothed[p1:p2]))
+            valleys.append(valley_y)
+
+        # Determine bottom boundary
+        last_ink = np.where(row_ink[peaks[-1]:] > 5)[0]
+        bottom_y = min(h, peaks[-1] + last_ink[-1] + padding) if len(last_ink) > 0 else min(h, int(peaks[-1] + (min_dist * 1.5)))
+        valleys.append(bottom_y)
+
+        for i in range(len(valleys) - 1):
+            y1 = max(0, valleys[i])
+            y2 = min(h, valleys[i + 1])
+            if y2 - y1 < min_line_height:
+                continue
+
+            # Detect horizontal word bounds in this strip
+            strip_thresh = thresh[y1:y2, :]
+            col_sums = np.sum(strip_thresh > 0, axis=0)
+            cols = np.where(col_sums > 2)[0]
+            if len(cols) > 0:
+                x1 = max(0, int(cols[0]) - padding * 2)
+                x2 = min(w, int(cols[-1]) + padding * 2)
+            else:
+                x1, x2 = 0, w
+
+            box_w = max(10, x2 - x1)
+            box_h = y2 - y1
+            strips.append((x1, y1, box_w, box_h))
+
+    # 4. Fallback: If projection profile found 0 peaks (irregular or scattered single words)
+    if not strips:
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (max(20, int(w * 0.03)), 3))
+        dilated = cv2.dilate(thresh, kernel, iterations=1)
+        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        min_width = max(25, int(w * 0.03))
+        raw_boxes = []
+        for c in contours:
+            x, y, box_w, box_h = cv2.boundingRect(c)
+            if box_h >= min_line_height and box_w >= min_width:
+                raw_boxes.append((x, y, box_w, box_h))
+
+        if not raw_boxes:
+            x, y, box_w, box_h = cv2.boundingRect(thresh)
+            if box_w > 10 and box_h > 10:
+                raw_boxes.append((x, y, box_w, box_h))
+            else:
+                return [], True
+
+        raw_boxes.sort(key=lambda b: b[1])
+        strips = raw_boxes
+
+    # 5. Extract LineCrop objects
+    line_crops: List[LineCrop] = []
+    for idx, (bx, by, bw, bh) in enumerate(strips):
+        crop_x1 = max(0, bx)
+        crop_y1 = max(0, by)
+        crop_x2 = min(w, bx + bw)
+        crop_y2 = min(h, by + bh)
 
         cropped_pil = pil_image_full.crop((crop_x1, crop_y1, crop_x2, crop_y2))
         line_crops.append(LineCrop(
             line_index=idx + 1,
             image=cropped_pil,
-            bbox=(crop_x1, crop_y1, crop_x2 - crop_x1, crop_y2 - crop_y1)
+            bbox=(int(bx), int(by), int(bw), int(bh))
         ))
 
-    logger.info(f"Segmented page into {len(line_crops)} text line crops.")
+    logger.info(f"Segmented page into {len(line_crops)} distinct handwritten lines.")
     return line_crops, False

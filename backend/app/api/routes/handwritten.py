@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.sql import func
 
 from app.core.database import get_db
@@ -242,12 +243,11 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
     total_pages = len(pages)
     for idx, page in enumerate(pages):
         img_to_ocr = Path(page.processed_image_path or page.original_image_path)
+        orig_img = Path(page.original_image_path) if page.original_image_path else None
         try:
-            ocr_res = transcribe_page_image(img_to_ocr)
+            ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img)
             page.raw_transcription = ocr_res["full_text"]
-            # Preserve user edits if previously edited, otherwise set to raw
-            if not page.edited_transcription:
-                page.edited_transcription = ocr_res["full_text"]
+            page.edited_transcription = ocr_res["full_text"]
             page.confidence_score = ocr_res["confidence_score"]
             page.ocr_metadata = {
                 "lines": ocr_res["lines"],
@@ -364,8 +364,9 @@ def process_single_page_ocr(
         )
 
     img_to_ocr = Path(page.processed_image_path or page.original_image_path)
+    orig_img = Path(page.original_image_path) if page.original_image_path else None
     try:
-        ocr_res = transcribe_page_image(img_to_ocr)
+        ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img)
         page.raw_transcription = ocr_res["full_text"]
         page.edited_transcription = ocr_res["full_text"]
         page.confidence_score = ocr_res["confidence_score"]
@@ -392,6 +393,112 @@ def process_single_page_ocr(
         "transcription": page.edited_transcription,
         "lines": (page.ocr_metadata or {}).get("lines", []),
         "error": page.error_message
+    }
+
+
+@router.post("/{document_id}/pages/{page_number}/lines/{line_index}/ocr")
+def process_single_line_ocr(
+    document_id: int,
+    page_number: int,
+    line_index: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Trigger re-recognition of an individual line on demand.
+    """
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.user_id == current_user.id,
+            Document.is_handwritten == True
+        )
+        .first()
+    )
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Handwritten document not found."
+        )
+
+    page = (
+        db.query(HandwrittenPage)
+        .filter(
+            HandwrittenPage.document_id == document_id,
+            HandwrittenPage.page_number == page_number
+        )
+        .first()
+    )
+
+    if not page or not page.ocr_metadata or "lines" not in page.ocr_metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Line data for page {page_number} not found."
+        )
+
+    lines = list(page.ocr_metadata.get("lines", []))
+    target_line = None
+    for l in lines:
+        if l.get("line_index") == line_index:
+            target_line = l
+            break
+
+    if not target_line:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Line {line_index} not found on page {page_number}."
+        )
+
+    bbox = target_line.get("bbox")
+    if not bbox or len(bbox) != 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Line does not have valid bounding box coordinates."
+        )
+
+    img_path = Path(page.processed_image_path or page.original_image_path)
+    from app.services.handwriting.image_preprocessor import read_image_safe
+    from app.services.handwriting.ocr_service import recognize_line_image
+    from PIL import Image
+    import cv2
+
+    proc_img = read_image_safe(img_path)
+    bx, by, bw, bh = bbox
+    crop = proc_img[by:by+bh, bx:bx+bw]
+    pil_crop = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+
+    res = recognize_line_image(pil_crop)
+    new_text = res.get("text", "").strip()
+    new_conf = res.get("confidence", 0.0)
+
+    # Update line in metadata
+    target_line["text"] = new_text
+    target_line["confidence"] = new_conf
+    target_line["is_uncertain"] = new_conf < 60.0
+
+    # Reassemble page raw transcription
+    page.raw_transcription = "\n".join([l.get("text", "") for l in lines if l.get("text")])
+    if not page.edited_transcription or page.edited_transcription == page.raw_transcription:
+        page.edited_transcription = page.raw_transcription
+
+    confs = [l.get("confidence", 0.0) for l in lines if l.get("text")]
+    if confs:
+        page.confidence_score = round(sum(confs) / len(confs), 1)
+
+    page.ocr_metadata["lines"] = lines
+    flag_modified(page, "ocr_metadata")
+    db.commit()
+    _update_document_full_text(document, db)
+
+    return {
+        "message": f"Line {line_index} reprocessed successfully.",
+        "line_index": line_index,
+        "text": new_text,
+        "confidence": new_conf,
+        "page_confidence": page.confidence_score,
+        "full_transcription": page.edited_transcription
     }
 
 

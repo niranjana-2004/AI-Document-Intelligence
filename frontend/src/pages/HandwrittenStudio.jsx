@@ -42,6 +42,7 @@ export default function HandwrittenStudio() {
     const [saveSuccess, setSaveSuccess] = useState(false)
     const [copied, setCopied] = useState(false)
     const [isOcrProcessing, setIsOcrProcessing] = useState(false)
+    const [reprocessingLineId, setReprocessingLineId] = useState(null)
     const [showLineBreakdown, setShowLineBreakdown] = useState(false)
 
     // Image & Document Loading states
@@ -174,6 +175,41 @@ export default function HandwrittenStudio() {
             alert(err.message || 'OCR processing failed.')
         } finally {
             setIsOcrProcessing(false)
+        }
+    }
+
+    // Reprocess a single line
+    const handleReprocessLine = async (lineIndex) => {
+        if (!currentPage) return
+        try {
+            setReprocessingLineId(lineIndex)
+            const res = await apiRequest(`/handwritten/${documentId}/pages/${currentPage.page_number}/lines/${lineIndex}/ocr`, {
+                method: 'POST'
+            })
+            if (res && res.text !== undefined) {
+                setPages(prev => prev.map((p, idx) => {
+                    if (idx === currentPageIndex) {
+                        const updatedLines = (p.ocr_metadata?.lines || []).map(l =>
+                            l.line_index === lineIndex
+                                ? { ...l, text: res.text, confidence: res.confidence, is_uncertain: res.confidence < 60 }
+                                : l
+                        )
+                        return {
+                            ...p,
+                            confidence_score: res.page_confidence,
+                            edited_transcription: res.full_transcription,
+                            raw_transcription: res.full_transcription,
+                            ocr_metadata: { ...p.ocr_metadata, lines: updatedLines }
+                        }
+                    }
+                    return p
+                }))
+                setTranscriptionText(res.full_transcription)
+            }
+        } catch (err) {
+            alert(err.message || `Failed to reprocess line ${lineIndex}.`)
+        } finally {
+            setReprocessingLineId(null)
         }
     }
 
@@ -468,17 +504,46 @@ export default function HandwrittenStudio() {
                                                             key={line.line_index}
                                                             className={`line-item-card ${line.is_uncertain ? 'uncertain' : ''}`}
                                                         >
-                                                            <span className="line-number-tag">L{line.line_index}</span>
-                                                            <span className="line-text-display">{line.text || '(empty stroke)'}</span>
-                                                            <span
-                                                                className="line-conf-badge"
-                                                                style={{
-                                                                    background: line.confidence >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                                                                    color: line.confidence >= 80 ? '#34d399' : '#fbbf24'
-                                                                }}
-                                                            >
-                                                                {line.confidence}%
-                                                            </span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '36px' }}>
+                                                                <span className="line-number-tag">L{line.line_index}</span>
+                                                            </div>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <span className="line-text-display">{line.text || '(empty stroke)'}</span>
+                                                                {line.bbox && (
+                                                                    <span style={{ display: 'block', fontSize: '10px', color: '#64748b', marginTop: '2px', fontFamily: 'monospace' }}>
+                                                                        [x:{line.bbox[0]}, y:{line.bbox[1]}, {line.bbox[2]}×{line.bbox[3]}px]
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span
+                                                                    className="line-conf-badge"
+                                                                    style={{
+                                                                        background: line.confidence >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                                                        color: line.confidence >= 80 ? '#34d399' : '#fbbf24'
+                                                                    }}
+                                                                >
+                                                                    {line.confidence}%
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleReprocessLine(line.line_index)}
+                                                                    disabled={reprocessingLineId === line.line_index}
+                                                                    title="Reprocess this line with TrOCR"
+                                                                    style={{
+                                                                        background: 'rgba(255,255,255,0.06)',
+                                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                                        borderRadius: '4px',
+                                                                        color: '#c084fc',
+                                                                        padding: '4px 6px',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center'
+                                                                    }}
+                                                                >
+                                                                    <RefreshCw size={11} className={reprocessingLineId === line.line_index ? 'spin-icon' : ''} />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>

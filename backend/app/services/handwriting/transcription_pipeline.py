@@ -1,26 +1,31 @@
 import logging
 import time
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from PIL import Image
+import cv2
 
 from app.services.handwriting.image_preprocessor import read_image_safe
-from app.services.handwriting.line_segmenter import segment_page_into_lines
+from app.services.handwriting.line_segmenter import segment_page_into_lines, LineCrop
 from app.services.handwriting.ocr_service import recognize_line_image
 
 logger = logging.getLogger(__name__)
 
 
-def transcribe_page_image(image_path: Path) -> Dict[str, Any]:
+def transcribe_page_image(
+    image_path: Path,
+    original_image_path: Optional[Path] = None
+) -> Dict[str, Any]:
     """
-    Execute complete handwriting recognition on a preprocessed document page image.
+    Execute complete handwriting recognition on a document page image.
 
     Pipeline:
-    1. Read page image
-    2. Segment into text line crops in reading order (top-to-bottom)
-    3. Run TrOCR small inference per line
-    4. Compute per-line and page-level confidence scores
-    5. Reconstruct page transcription preserving line breaks
+    1. Read preprocessed image and (if available) original image.
+    2. Segment document into individual text lines using horizontal projection analysis.
+    3. Crop high-contrast line strips from the preprocessed image.
+    4. Run TrOCR beam search inference per line.
+    5. Compute per-line and page-level confidence scores.
+    6. Reconstruct page transcription preserving reading order and line breaks.
 
     Returns:
         {
@@ -34,19 +39,29 @@ def transcribe_page_image(image_path: Path) -> Dict[str, Any]:
                     "line_index": int,
                     "text": str,
                     "confidence": float,
-                    "bbox": [x, y, w, h]
+                    "bbox": [x, y, w, h],
+                    "is_uncertain": bool
                 }, ...
             ]
         }
     """
     start_time = time.time()
-    cv_img = read_image_safe(image_path)
+    proc_img = read_image_safe(image_path)
+    h, w = proc_img.shape[:2]
 
-    # 1. Segment page into line crops
-    line_crops, is_empty = segment_page_into_lines(cv_img)
+    # If original image is provided, use it for projection segmentation to avoid any preprocessor artifacts
+    seg_img = proc_img
+    if original_image_path and Path(original_image_path).exists():
+        try:
+            seg_img = read_image_safe(original_image_path)
+        except Exception as err:
+            logger.warning(f"Could not read original image for segmentation: {err}; using processed image.")
 
-    if is_empty:
-        logger.info(f"Page {image_path.name} is empty; skipping OCR.")
+    # 1. Segment page into text line crops
+    line_crops, is_empty = segment_page_into_lines(seg_img)
+
+    if is_empty or not line_crops:
+        logger.info(f"Page {image_path.name} is empty or blank; skipping OCR.")
         return {
             "full_text": "",
             "confidence_score": 100.0,
@@ -56,13 +71,21 @@ def transcribe_page_image(image_path: Path) -> Dict[str, Any]:
             "lines": []
         }
 
+    # 2. Extract line crops from the preprocessed image (high-contrast, shadow-free)
+    proc_pil = Image.fromarray(cv2.cvtColor(proc_img, cv2.COLOR_BGR2RGB))
     recognized_lines = []
     text_parts = []
     confidences = []
 
-    # 2. Recognize text per line
     for line in line_crops:
-        line_result = recognize_line_image(line.image)
+        bx, by, bw, bh = line.bbox
+        crop_x1 = max(0, bx)
+        crop_y1 = max(0, by)
+        crop_x2 = min(w, bx + bw)
+        crop_y2 = min(h, by + bh)
+
+        line_crop_pil = proc_pil.crop((crop_x1, crop_y1, crop_x2, crop_y2))
+        line_result = recognize_line_image(line_crop_pil)
         line_text = line_result.get("text", "").strip()
         line_conf = line_result.get("confidence", 0.0)
 
@@ -75,7 +98,7 @@ def transcribe_page_image(image_path: Path) -> Dict[str, Any]:
             "line_index": line.line_index,
             "text": line_text,
             "confidence": line_conf,
-            "bbox": list(line.bbox),
+            "bbox": [int(bx), int(by), int(bw), int(bh)],
             "is_uncertain": line_conf < 60.0
         })
 
@@ -97,4 +120,3 @@ def transcribe_page_image(image_path: Path) -> Dict[str, Any]:
         "execution_time_ms": elapsed_ms,
         "lines": recognized_lines
     }
-
