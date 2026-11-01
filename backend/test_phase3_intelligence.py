@@ -79,10 +79,11 @@ def run_tests():
         print(f"Concept 1: '{first_concept['name']}' -> {first_concept['definition'][:60]}...")
 
         # Test toggle bookmark
+        expected_bookmark = not first_concept.get("is_bookmarked", False)
         res = client.patch(f"/handwritten/{doc_id}/concepts/{first_concept['id']}/bookmark", headers=headers)
         assert res.status_code == 200
-        assert res.json()["is_bookmarked"] == True
-        print(f"Bookmark toggled successfully for concept #{first_concept['id']}")
+        assert res.json()["is_bookmarked"] == expected_bookmark
+        print(f"Bookmark toggled successfully for concept #{first_concept['id']} (now {expected_bookmark})")
 
         # 5. Test AI Quiz Generator
         print("\n--- 4. Testing AI Quiz Generator ---")

@@ -24,7 +24,8 @@ from app.services.handwriting.handwritten_concept_service import (
 from app.services.handwriting.handwritten_quiz_service import (
     generate_handwritten_quiz,
     list_handwritten_quizzes,
-    submit_quiz_answers
+    submit_quiz_answers,
+    get_document_topics
 )
 from app.services.handwriting.handwritten_flashcard_service import (
     generate_handwritten_flashcards,
@@ -50,21 +51,25 @@ class GenerateSummaryRequest(BaseModel):
 
 
 class GenerateQuizRequest(BaseModel):
-    difficulty: str = Field(default="medium", description="easy, medium, or hard")
+    difficulty: str = Field(default="medium", description="easy, medium, hard, or mixed")
     question_count: int = Field(default=5, ge=1, le=15)
     question_types: str = Field(default="all", description="all, multiple_choice, true_false, short_answer")
+    topics: Optional[List[str]] = Field(default=None, description="Optional topic filters")
 
 
 class SubmitQuizRequest(BaseModel):
     answers: Dict[str, str] = Field(..., description="Mapping of question_id to selected answer")
+    time_taken_seconds: Optional[int] = Field(default=None, description="Time taken in seconds to complete the quiz")
 
 
 class GenerateFlashcardsRequest(BaseModel):
     card_count: int = Field(default=8, ge=3, le=25)
+    topic: Optional[str] = Field(default=None, description="Optional topic to focus flashcard generation")
 
 
 class UpdateCardStatusRequest(BaseModel):
-    status: str = Field(..., description="known, needs_review, or reset")
+    status: Optional[str] = Field(default=None, description="known, needs_review, or reset")
+    rating: Optional[str] = Field(default=None, description="again, hard, good, easy, or reset")
 
 
 class ChatMessageRequest(BaseModel):
@@ -217,8 +222,22 @@ def toggle_bookmark(
 
 
 # ====================================================================
-# FEATURE 3: AI QUIZ GENERATOR
+# FEATURE 3: AI QUIZ GENERATOR & EXAMINATION
 # ====================================================================
+
+@router.get("/{document_id}/topics")
+def get_topics(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Extract unique academic topics available in the document notes.
+    """
+    _verify_document_ownership(document_id, current_user.id, db)
+    topics = get_document_topics(document_id, current_user.id, db)
+    return {"topics": topics}
+
 
 @router.get("/{document_id}/quizzes")
 def get_quizzes(
@@ -242,7 +261,7 @@ def generate_quiz(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Generate a new quiz set with configurable difficulty and question count.
+    Generate a new quiz set with configurable difficulty, question count, and topic focus.
     """
     _verify_document_ownership(document_id, current_user.id, db)
     try:
@@ -252,7 +271,8 @@ def generate_quiz(
             db=db,
             difficulty=body.difficulty,
             question_count=body.question_count,
-            question_types=body.question_types
+            question_types=body.question_types,
+            topics=body.topics
         )
         return {"message": "Quiz generated successfully.", "quiz": quiz}
     except ValueError as ve:
@@ -273,13 +293,15 @@ def submit_quiz(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Submit user answers to a quiz, calculate score, and return detailed question feedback.
+    Submit user answers to a quiz, calculate score, evaluate performance metrics,
+    and generate weak area recommendations.
     """
     _verify_document_ownership(document_id, current_user.id, db)
     try:
         result = submit_quiz_answers(
             quiz_id=quiz_id,
             answers=body.answers,
+            time_taken_seconds=body.time_taken_seconds,
             user_id=current_user.id,
             db=db
         )
@@ -289,7 +311,7 @@ def submit_quiz(
 
 
 # ====================================================================
-# FEATURE 4: FLASHCARD GENERATOR
+# FEATURE 4: FLASHCARD GENERATOR & REVISION
 # ====================================================================
 
 @router.get("/{document_id}/flashcards")
@@ -314,7 +336,7 @@ def generate_flashcards(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Generate a new flashcard deck from handwritten notes.
+    Generate a new flashcard deck from handwritten notes across 8 card types.
     """
     _verify_document_ownership(document_id, current_user.id, db)
     try:
@@ -322,7 +344,8 @@ def generate_flashcards(
             document_id=document_id,
             user_id=current_user.id,
             db=db,
-            card_count=body.card_count
+            card_count=body.card_count,
+            topic=body.topic
         )
         return {"message": "Flashcards generated successfully.", "deck": deck}
     except ValueError as ve:
@@ -335,6 +358,7 @@ def generate_flashcards(
 
 
 @router.patch("/{document_id}/flashcards/{deck_id}/cards/{card_id}")
+@router.put("/{document_id}/flashcards/{deck_id}/cards/{card_id}")
 def update_card(
     document_id: int,
     deck_id: int,
@@ -344,7 +368,7 @@ def update_card(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Update learning status for an individual card in a deck ('known', 'needs_review', 'reset').
+    Update self-assessment rating and learning status for an individual card.
     """
     _verify_document_ownership(document_id, current_user.id, db)
     try:
@@ -352,6 +376,7 @@ def update_card(
             deck_id=deck_id,
             card_id=card_id,
             status=body.status,
+            rating=body.rating,
             user_id=current_user.id,
             db=db
         )

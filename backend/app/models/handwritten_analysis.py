@@ -97,11 +97,14 @@ class HandwrittenQuizSet(Base):
         index=True
     )
     title = Column(String(255), nullable=False)
-    difficulty = Column(String(20), nullable=False, default="medium")  # 'easy', 'medium', 'hard'
+    difficulty = Column(String(20), nullable=False, default="medium")  # 'easy', 'medium', 'hard', 'mixed'
     question_count = Column(Integer, nullable=False, default=5)
     questions = Column(JSON, nullable=False)  # list of question objects
     user_score = Column(Integer, nullable=True)
     user_answers = Column(JSON, nullable=True)  # dict of {question_id: answer}
+    time_taken_seconds = Column(Integer, nullable=True)
+    weak_topics = Column(JSON, nullable=True)  # list of weak topic dicts
+    recommendations = Column(JSON, nullable=True)  # list of recommendation dicts
     transcription_hash = Column(String(64), nullable=False, index=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -210,4 +213,21 @@ def ensure_handwritten_analysis_schema(engine=None):
                 logger.info(f"Successfully created '{table_name}' table.")
             except Exception as error:
                 logger.error(f"Failed to create '{table_name}' table: {error}")
+        elif table_name == "handwritten_quiz_sets":
+            # Check for new columns in handwritten_quiz_sets
+            existing_cols = {c["name"] for c in inspector.get_columns("handwritten_quiz_sets")}
+            new_cols = [
+                ("time_taken_seconds", "INTEGER"),
+                ("weak_topics", "JSON"),
+                ("recommendations", "JSON"),
+            ]
+            with engine.connect() as conn:
+                for col_name, col_type in new_cols:
+                    if col_name not in existing_cols:
+                        try:
+                            conn.execute(text(f"ALTER TABLE handwritten_quiz_sets ADD COLUMN {col_name} {col_type}"))
+                            conn.commit()
+                            logger.info(f"Added column '{col_name}' to 'handwritten_quiz_sets'.")
+                        except Exception as e:
+                            logger.warning(f"Could not add column '{col_name}': {e}")
 

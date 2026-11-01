@@ -27,7 +27,8 @@ from app.services.handwriting.handwritten_concept_service import (
 from app.services.handwriting.handwritten_quiz_service import (
     generate_handwritten_quiz,
     list_handwritten_quizzes,
-    submit_quiz_answers
+    submit_quiz_answers,
+    get_document_topics
 )
 from app.services.handwriting.handwritten_flashcard_service import (
     generate_handwritten_flashcards,
@@ -65,6 +66,7 @@ __all__ = [
     "generate_handwritten_quiz",
     "list_handwritten_quizzes",
     "submit_quiz_answers",
+    "get_document_topics",
     "generate_handwritten_flashcards",
     "list_handwritten_flashcards",
     "update_card_status",
