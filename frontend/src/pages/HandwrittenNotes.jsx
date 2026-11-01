@@ -13,7 +13,9 @@ import {
     Eye,
     Layers,
     Sparkles,
-    RefreshCw
+    RefreshCw,
+    X,
+    AlertTriangle
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
 import PageTransition from '../components/motion/PageTransition'
@@ -33,6 +35,12 @@ export default function HandwrittenNotes() {
     const [uploadProgress, setUploadProgress] = useState(0)
     const [uploadStage, setUploadStage] = useState('')
 
+    // Delete Confirmation Modal & Toast states
+    const [documentToDelete, setDocumentToDelete] = useState(null)
+    const [deleteLoading, setDeleteLoading] = useState(false)
+    const [deleteError, setDeleteError] = useState('')
+    const [toastMessage, setToastMessage] = useState('')
+
     const fetchDocuments = async () => {
         try {
             setLoading(true)
@@ -49,6 +57,26 @@ export default function HandwrittenNotes() {
     useEffect(() => {
         fetchDocuments()
     }, [])
+
+    // Handle Escape key to close delete confirmation modal
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && documentToDelete && !deleteLoading) {
+                handleCancelDelete()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [documentToDelete, deleteLoading])
+
+    // Auto-dismiss toast notification after 4 seconds
+    useEffect(() => {
+        if (!toastMessage) return
+        const timer = setTimeout(() => {
+            setToastMessage('')
+        }, 4000)
+        return () => clearTimeout(timer)
+    }, [toastMessage])
 
     const handleDrag = (e) => {
         e.preventDefault()
@@ -123,18 +151,39 @@ export default function HandwrittenNotes() {
         }
     }
 
-    const handleDelete = async (docId, e) => {
+    const handleRequestDelete = (doc, e) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!window.confirm('Are you sure you want to delete this handwritten document?')) return
+        setDocumentToDelete(doc)
+        setDeleteError('')
+    }
+
+    const handleCancelDelete = () => {
+        if (deleteLoading) return
+        setDocumentToDelete(null)
+        setDeleteError('')
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!documentToDelete || deleteLoading) return
 
         try {
-            await apiRequest(`/handwritten/${docId}`, {
+            setDeleteLoading(true)
+            setDeleteError('')
+
+            await apiRequest(`/handwritten/${documentToDelete.id}`, {
                 method: 'DELETE'
             })
-            setDocuments(prev => prev.filter(d => d.id !== docId))
+
+            // Immediately remove deleted document from state
+            setDocuments(prev => prev.filter(d => d.id !== documentToDelete.id))
+            setDocumentToDelete(null)
+            setToastMessage('Handwritten document deleted successfully.')
         } catch (err) {
-            alert(err.message || 'Failed to delete document.')
+            console.error('Delete handwritten document error:', err)
+            setDeleteError(err.message || 'Failed to delete handwritten document. Please try again.')
+        } finally {
+            setDeleteLoading(false)
         }
     }
 
@@ -309,8 +358,9 @@ export default function HandwrittenNotes() {
                                     <button
                                         type="button"
                                         className="btn-delete-card"
-                                        title="Delete document"
-                                        onClick={(e) => handleDelete(doc.id, e)}
+                                        title={`Delete ${doc.filename}`}
+                                        aria-label={`Delete ${doc.filename}`}
+                                        onClick={(e) => handleRequestDelete(doc, e)}
                                     >
                                         <Trash2 size={16} />
                                     </button>
@@ -319,6 +369,142 @@ export default function HandwrittenNotes() {
                         ))}
                     </div>
                 )}
+
+                {/* Custom Delete Confirmation Modal */}
+                <AnimatePresence>
+                    {documentToDelete && (
+                        <motion.div
+                            className="hw-delete-modal-overlay"
+                            onClick={!deleteLoading ? handleCancelDelete : undefined}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="delete-hw-modal-title"
+                            aria-describedby="delete-hw-modal-desc"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <motion.div
+                                className="hw-delete-modal-container"
+                                onClick={(e) => e.stopPropagation()}
+                                initial={{ opacity: 0, scale: 0.93, y: 16 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.93, y: 16 }}
+                                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                            >
+                                {/* Top right Close 'X' Button */}
+                                <button
+                                    type="button"
+                                    className="hw-delete-modal-close"
+                                    onClick={handleCancelDelete}
+                                    disabled={deleteLoading}
+                                    aria-label="Close delete modal"
+                                >
+                                    <X size={18} />
+                                </button>
+
+                                <div className="hw-delete-modal-body">
+                                    {/* Prominent Red Trash Icon Badge */}
+                                    <div className="hw-delete-icon-badge" aria-hidden="true">
+                                        <Trash2 size={26} />
+                                    </div>
+
+                                    {/* Heading */}
+                                    <h3 id="delete-hw-modal-title" className="hw-delete-modal-title">
+                                        Delete handwritten document?
+                                    </h3>
+
+                                    {/* Description */}
+                                    <p id="delete-hw-modal-desc" className="hw-delete-modal-desc">
+                                        Are you sure you want to delete this document? This action cannot be undone.
+                                    </p>
+
+                                    {/* Target document details */}
+                                    <div className="hw-delete-target-preview">
+                                        <div className="hw-delete-target-icon">
+                                            <FileText size={16} />
+                                        </div>
+                                        <div className="hw-delete-target-meta">
+                                            <span className="hw-delete-target-filename" title={documentToDelete.filename}>
+                                                {documentToDelete.filename}
+                                            </span>
+                                            <span className="hw-delete-target-pages">
+                                                {documentToDelete.page_count} {documentToDelete.page_count === 1 ? 'page' : 'pages'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Error Banner if deletion failed */}
+                                    {deleteError && (
+                                        <div className="hw-delete-error-banner" role="alert">
+                                            <AlertCircle size={16} className="hw-error-alert-icon" />
+                                            <span>{deleteError}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div className="hw-delete-modal-actions">
+                                        <button
+                                            type="button"
+                                            className="hw-btn-cancel-delete"
+                                            onClick={handleCancelDelete}
+                                            disabled={deleteLoading}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="hw-btn-confirm-delete"
+                                            onClick={handleConfirmDelete}
+                                            disabled={deleteLoading}
+                                        >
+                                            {deleteLoading ? (
+                                                <>
+                                                    <RefreshCw size={14} className="spin-icon" />
+                                                    <span>Deleting...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Trash2 size={14} />
+                                                    <span>Delete Document</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Custom Success Toast */}
+                <AnimatePresence>
+                    {toastMessage && (
+                        <motion.div
+                            className="hw-toast-container"
+                            role="status"
+                            aria-live="polite"
+                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 16, scale: 0.95 }}
+                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                            <div className="hw-toast-icon-wrap">
+                                <CheckCircle2 size={18} />
+                            </div>
+                            <span className="hw-toast-message">{toastMessage}</span>
+                            <button
+                                type="button"
+                                className="hw-toast-dismiss-btn"
+                                onClick={() => setToastMessage('')}
+                                aria-label="Dismiss notification"
+                            >
+                                <X size={14} />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </PageTransition>
     )

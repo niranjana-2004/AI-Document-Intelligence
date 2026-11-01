@@ -998,6 +998,23 @@ def delete_handwritten_document(
         HandwrittenPage.document_id == document.id
     ).delete(synchronize_session=False)
 
+    # 3b. Delete analysis records if any
+    try:
+        from app.models.handwritten_analysis import (
+            HandwrittenSummary,
+            HandwrittenConcept,
+            HandwrittenQuizSet,
+            HandwrittenFlashcardSet,
+            HandwrittenChatSession
+        )
+        db.query(HandwrittenSummary).filter(HandwrittenSummary.document_id == document.id).delete(synchronize_session=False)
+        db.query(HandwrittenConcept).filter(HandwrittenConcept.document_id == document.id).delete(synchronize_session=False)
+        db.query(HandwrittenQuizSet).filter(HandwrittenQuizSet.document_id == document.id).delete(synchronize_session=False)
+        db.query(HandwrittenFlashcardSet).filter(HandwrittenFlashcardSet.document_id == document.id).delete(synchronize_session=False)
+        db.query(HandwrittenChatSession).filter(HandwrittenChatSession.document_id == document.id).delete(synchronize_session=False)
+    except Exception as cleanup_err:
+        logger.warning(f"Could not delete analysis records for doc #{document.id}: {cleanup_err}")
+
     # 4. Delete document record
     db.delete(document)
     db.commit()
