@@ -9,7 +9,8 @@ from sqlalchemy import (
     Boolean,
     Float,
     JSON,
-    inspect
+    inspect,
+    text
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -88,6 +89,11 @@ class HandwrittenPage(Base):
         nullable=True
     )
 
+    ocr_metadata = Column(
+        JSON,
+        nullable=True
+    )
+
     status = Column(
         String(30),
         default="pending",
@@ -118,7 +124,7 @@ class HandwrittenPage(Base):
 
 def ensure_handwritten_pages_schema(engine=None):
     """
-    Ensure that the 'handwritten_pages' table exists in the SQLite database.
+    Ensure that the 'handwritten_pages' table and its columns exist in SQLite.
     """
     if engine is None:
         from app.core.database import engine as default_engine
@@ -132,7 +138,17 @@ def ensure_handwritten_pages_schema(engine=None):
             logger.info("Successfully created 'handwritten_pages' table.")
         except Exception as error:
             logger.error(f"Failed to create 'handwritten_pages' table: {error}")
+    else:
+        # Check if ocr_metadata column exists
+        columns = [c["name"] for c in inspector.get_columns("handwritten_pages")]
+        if "ocr_metadata" not in columns:
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE handwritten_pages ADD COLUMN ocr_metadata JSON"))
+                    conn.commit()
+                logger.info("Successfully added 'ocr_metadata' column to 'handwritten_pages'.")
+            except Exception as error:
+                logger.warning(f"Could not add 'ocr_metadata' to 'handwritten_pages': {error}")
 
 
 ensure_handwritten_pages_schema()
-

@@ -11,10 +11,16 @@ import {
     Sparkles,
     FileText,
     BrainCircuit,
-    HelpCircle,
     CheckCircle2,
     Layers,
-    PenTool
+    PenTool,
+    Save,
+    Copy,
+    Check,
+    RefreshCw,
+    AlertTriangle,
+    Eye,
+    ListFilter
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
 import PageTransition from '../components/motion/PageTransition'
@@ -28,40 +34,58 @@ export default function HandwrittenStudio() {
     const [currentPageIndex, setCurrentPageIndex] = useState(0)
     const [viewMode, setViewMode] = useState('processed') // 'processed' | 'original'
     const [zoomLevel, setZoomLevel] = useState(1.0)
-    const [activeTab, setActiveTab] = useState('enhancement') // 'enhancement' | 'transcription' | 'summary' | 'quiz'
+    const [activeTab, setActiveTab] = useState('transcription') // 'transcription' | 'enhancement' | 'summary' | 'quiz'
 
+    // Transcription editor states
+    const [transcriptionText, setTranscriptionText] = useState('')
+    const [isSaving, setIsSaving] = useState(false)
+    const [saveSuccess, setSaveSuccess] = useState(false)
+    const [copied, setCopied] = useState(false)
+    const [isOcrProcessing, setIsOcrProcessing] = useState(false)
+    const [showLineBreakdown, setShowLineBreakdown] = useState(false)
+
+    // Image & Document Loading states
     const [imageBlobUrl, setImageBlobUrl] = useState(null)
     const [loadingImage, setLoadingImage] = useState(true)
     const [loadingDoc, setLoadingDoc] = useState(true)
     const [error, setError] = useState(null)
 
     // 1. Fetch document and page metadata
-    useEffect(() => {
-        let isMounted = true
+    const fetchDetails = async () => {
+        try {
+            setLoadingDoc(true)
+            const docData = await apiRequest(`/handwritten/${documentId}`)
+            setDocument(docData)
+            const docPages = docData?.pages || []
+            setPages(docPages)
 
-        const fetchDetails = async () => {
-            try {
-                setLoadingDoc(true)
-                const docData = await apiRequest(`/handwritten/${documentId}`)
-                if (!isMounted) return
-
-                setDocument(docData)
-                setPages(docData?.pages || [])
-                setError(null)
-            } catch (err) {
-                if (isMounted) setError(err.message || 'Failed to load document details.')
-            } finally {
-                if (isMounted) setLoadingDoc(false)
+            if (docPages.length > 0 && docPages[currentPageIndex]) {
+                const current = docPages[currentPageIndex]
+                setTranscriptionText(current.edited_transcription || current.raw_transcription || '')
             }
+            setError(null)
+        } catch (err) {
+            setError(err.message || 'Failed to load document details.')
+        } finally {
+            setLoadingDoc(false)
         }
+    }
 
+    useEffect(() => {
         fetchDetails()
-        return () => { isMounted = false }
     }, [documentId])
 
-    // 2. Load page image securely as Blob with JWT token
+    // 2. Synchronize transcription text when active page changes
     const currentPage = pages[currentPageIndex] || null
 
+    useEffect(() => {
+        if (currentPage) {
+            setTranscriptionText(currentPage.edited_transcription || currentPage.raw_transcription || '')
+            setSaveSuccess(false)
+        }
+    }, [currentPageIndex, pages])
+
+    // 3. Load page image securely as Blob with JWT token
     useEffect(() => {
         if (!currentPage) return
         let objectUrl = null
@@ -71,7 +95,7 @@ export default function HandwrittenStudio() {
                 setLoadingImage(true)
                 const token = localStorage.getItem('access_token')
                 const imgEndpoint = `/handwritten/${documentId}/pages/${currentPage.page_number}/image?version=${viewMode}`
-                
+
                 const res = await fetch(`${API_BASE_URL}${imgEndpoint}`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
                 })
@@ -93,8 +117,9 @@ export default function HandwrittenStudio() {
         return () => {
             if (objectUrl) URL.revokeObjectURL(objectUrl)
         }
-    }, [documentId, currentPageIndex, viewMode, currentPage])
+    }, [documentId, currentPageIndex, viewMode, currentPage?.page_number])
 
+    // Navigation handlers
     const handlePrevPage = () => {
         if (currentPageIndex > 0) setCurrentPageIndex(prev => prev - 1)
     }
@@ -106,6 +131,66 @@ export default function HandwrittenStudio() {
     const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 2.5))
     const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.5))
     const handleResetZoom = () => setZoomLevel(1.0)
+
+    // Save transcription correction
+    const handleSaveTranscription = async () => {
+        if (!currentPage) return
+        try {
+            setIsSaving(true)
+            const res = await apiRequest(`/handwritten/${documentId}/pages/${currentPage.page_number}/transcription`, {
+                method: 'PUT',
+                body: JSON.stringify({ transcription: transcriptionText })
+            })
+
+            // Update local page state
+            setPages(prev => prev.map((p, idx) => {
+                if (idx === currentPageIndex) {
+                    return { ...p, edited_transcription: transcriptionText }
+                }
+                return p
+            }))
+
+            setSaveSuccess(true)
+            setTimeout(() => setSaveSuccess(false), 2500)
+        } catch (err) {
+            alert(err.message || 'Failed to save transcription.')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // Run OCR for current page or all pages
+    const handleRunOcr = async (allPages = false) => {
+        if (!currentPage) return
+        try {
+            setIsOcrProcessing(true)
+            if (allPages) {
+                await apiRequest(`/handwritten/${documentId}/ocr`, { method: 'POST' })
+            } else {
+                await apiRequest(`/handwritten/${documentId}/pages/${currentPage.page_number}/ocr`, { method: 'POST' })
+            }
+            await fetchDetails()
+        } catch (err) {
+            alert(err.message || 'OCR processing failed.')
+        } finally {
+            setIsOcrProcessing(false)
+        }
+    }
+
+    // Copy to clipboard
+    const handleCopy = () => {
+        if (!transcriptionText) return
+        navigator.clipboard.writeText(transcriptionText)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
+
+    // Metrics
+    const wordCount = transcriptionText.trim() ? transcriptionText.trim().split(/\s+/).length : 0
+    const charCount = transcriptionText.length
+    const confidence = currentPage?.confidence_score ?? null
+    const confidenceRating = confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'
+    const ocrLines = currentPage?.ocr_metadata?.lines || []
 
     if (loadingDoc) {
         return (
@@ -246,19 +331,19 @@ export default function HandwrittenStudio() {
                         <div className="workspace-tabs-header">
                             <button
                                 type="button"
+                                className={`workspace-tab-btn ${activeTab === 'transcription' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('transcription')}
+                            >
+                                <PenTool size={16} />
+                                <span>Digital Transcription</span>
+                            </button>
+                            <button
+                                type="button"
                                 className={`workspace-tab-btn ${activeTab === 'enhancement' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('enhancement')}
                             >
                                 <Sliders size={16} />
                                 <span>Image Preprocessing</span>
-                            </button>
-                            <button
-                                type="button"
-                                className={`workspace-tab-btn ${activeTab === 'transcription' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('transcription')}
-                            >
-                                <PenTool size={16} />
-                                <span>Transcription (Phase 2)</span>
                             </button>
                             <button
                                 type="button"
@@ -279,6 +364,131 @@ export default function HandwrittenStudio() {
                         </div>
 
                         <div className="workspace-tab-content">
+                            {/* TAB 1: DIGITAL TRANSCRIPTION (PHASE 2) */}
+                            {activeTab === 'transcription' && (
+                                <div className="transcription-editor-box">
+                                    <div className="transcription-toolbar">
+                                        <div className="transcription-meta-group">
+                                            {confidence !== null ? (
+                                                <span className={`confidence-indicator-pill ${confidenceRating}`}>
+                                                    <CheckCircle2 size={12} />
+                                                    <span>{confidence}% Confidence</span>
+                                                </span>
+                                            ) : (
+                                                <span className="confidence-indicator-pill medium">
+                                                    <AlertTriangle size={12} />
+                                                    <span>Pending OCR</span>
+                                                </span>
+                                            )}
+                                            <span className="transcription-stat-pill">
+                                                {wordCount} {wordCount === 1 ? 'word' : 'words'}
+                                            </span>
+                                            <span className="transcription-stat-pill">
+                                                {charCount} chars
+                                            </span>
+                                        </div>
+
+                                        <div className="transcription-actions-group">
+                                            <button
+                                                type="button"
+                                                className="btn-studio-action"
+                                                onClick={() => handleRunOcr(false)}
+                                                disabled={isOcrProcessing}
+                                                title="Re-run TrOCR on this page"
+                                            >
+                                                <RefreshCw size={13} className={isOcrProcessing ? 'spin-icon' : ''} />
+                                                <span>{isOcrProcessing ? 'Extracting...' : 'Run OCR'}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="btn-studio-action"
+                                                onClick={handleCopy}
+                                                disabled={!transcriptionText}
+                                                title="Copy transcription text"
+                                            >
+                                                {copied ? <Check size={13} style={{ color: '#34d399' }} /> : <Copy size={13} />}
+                                                <span>{copied ? 'Copied!' : 'Copy'}</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className={`btn-studio-action btn-studio-primary ${saveSuccess ? 'btn-studio-saved' : ''}`}
+                                                onClick={handleSaveTranscription}
+                                                disabled={isSaving}
+                                            >
+                                                {saveSuccess ? (
+                                                    <>
+                                                        <Check size={14} />
+                                                        <span>Saved!</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Save size={14} />
+                                                        <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Editable Text Area */}
+                                    <textarea
+                                        className="transcription-textarea"
+                                        value={transcriptionText}
+                                        onChange={(e) => setTranscriptionText(e.target.value)}
+                                        placeholder={
+                                            isOcrProcessing
+                                                ? "Analyzing handwriting lines with TrOCR small... Please wait a moment."
+                                                : "Recognized transcription will appear here. Click 'Run OCR' above to extract handwriting, or type directly to edit."
+                                        }
+                                        rows={12}
+                                    />
+
+                                    {/* Line Breakdown Toggle */}
+                                    {ocrLines.length > 0 && (
+                                        <div className="transcription-lines-panel">
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                                    Detected Lines ({ocrLines.length})
+                                                </h4>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowLineBreakdown(!showLineBreakdown)}
+                                                    style={{ background: 'transparent', border: 'none', color: '#c084fc', fontSize: '12px', cursor: 'pointer' }}
+                                                >
+                                                    {showLineBreakdown ? 'Hide Details' : 'Show Line Confidences'}
+                                                </button>
+                                            </div>
+
+                                            {showLineBreakdown && (
+                                                <div>
+                                                    {ocrLines.map((line) => (
+                                                        <div
+                                                            key={line.line_index}
+                                                            className={`line-item-card ${line.is_uncertain ? 'uncertain' : ''}`}
+                                                        >
+                                                            <span className="line-number-tag">L{line.line_index}</span>
+                                                            <span className="line-text-display">{line.text || '(empty stroke)'}</span>
+                                                            <span
+                                                                className="line-conf-badge"
+                                                                style={{
+                                                                    background: line.confidence >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                                                    color: line.confidence >= 80 ? '#34d399' : '#fbbf24'
+                                                                }}
+                                                            >
+                                                                {line.confidence}%
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* TAB 2: IMAGE PREPROCESSING */}
                             {activeTab === 'enhancement' && (
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
@@ -320,31 +530,10 @@ export default function HandwrittenStudio() {
                                             <p>Background illumination division neutralized mobile camera shadows, and bilateral filtering smoothed paper textures while preserving stroke edges.</p>
                                         </div>
                                     </div>
-
-                                    <div style={{ marginTop: '24px', padding: '16px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#c084fc', fontWeight: 600, fontSize: '13px' }}>
-                                            <Sparkles size={16} />
-                                            <span>Ready for Phase 2: OCR Recognition</span>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                            The preprocessed page is ready for line-level handwriting extraction with TrOCR-small and mathematical LaTeX conversion.
-                                        </p>
-                                    </div>
                                 </div>
                             )}
 
-                            {activeTab === 'transcription' && (
-                                <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-secondary)' }}>
-                                    <PenTool size={36} style={{ color: '#8b5cf6', margin: '0 auto 16px' }} />
-                                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '16px' }}>
-                                        Transcription Studio (Phase 2)
-                                    </h4>
-                                    <p style={{ fontSize: '13px', maxWidth: '380px', margin: '0 auto' }}>
-                                        In Phase 2, this workspace will display side-by-side editable transcription text with confidence scores and mathematical formula previews.
-                                    </p>
-                                </div>
-                            )}
-
+                            {/* TAB 3: STUDY SUMMARY (PHASE 3) */}
                             {activeTab === 'summary' && (
                                 <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-secondary)' }}>
                                     <FileText size={36} style={{ color: '#38bdf8', margin: '0 auto 16px' }} />
@@ -357,6 +546,7 @@ export default function HandwrittenStudio() {
                                 </div>
                             )}
 
+                            {/* TAB 4: QUIZ & FLASHCARDS (PHASE 7) */}
                             {activeTab === 'quiz' && (
                                 <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-secondary)' }}>
                                     <BrainCircuit size={36} style={{ color: '#a855f7', margin: '0 auto 16px' }} />
@@ -375,4 +565,3 @@ export default function HandwrittenStudio() {
         </PageTransition>
     )
 }
-

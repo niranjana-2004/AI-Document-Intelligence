@@ -110,12 +110,20 @@ def remove_shadows_and_normalize(gray_image: np.ndarray) -> np.ndarray:
     """
     Remove uneven lighting and shadows by morphological background division.
     """
+    # Guard against completely uniform / blank pages
+    if float(np.std(gray_image)) < 3.0:
+        return gray_image
+
     # Estimate background illumination using large morphological dilation and blur
     dilated = cv2.dilate(gray_image, np.ones((7, 7), np.uint8))
     bg = cv2.medianBlur(dilated, 21)
 
     # Calculate difference between original and background
     diff = 255 - cv2.absdiff(gray_image, bg)
+
+    min_val, max_val, _, _ = cv2.minMaxLoc(diff)
+    if max_val - min_val < 5:
+        return gray_image
 
     # Normalize to full 8-bit dynamic range [0, 255]
     norm = cv2.normalize(
