@@ -1,0 +1,18 @@
+Impact:
+- Denial of Service: Long-lived connections (BGP routing sessions, database connections, SSH tunnels, VPNs, financial feeds) are most affected.
+- Censorship / Interference: Forged resets have also been used by middleboxes to cut specific connections.
+- Low cost for attackers: One small packet can end a session.
+Mitigation:
+- Stricter RST validation (RFC 5961): Modern TCP stacks accept a reset only if the sequence number exactly matches the next expected sequence number; otherwise, sends a challenge ACK.
+- Cryptographic protection: IPSec, TCP MD5 (RFC 2385), or TCP-AO (RFC 5925) prevent forged segments from being accepted.
+- Monitoring: IDS/IPS rules to flag unexpected bursts of RST packets, especially with non-matching sequence numbers.
+
+4. TCP ACK Flood
+A TCP ACK Flood is a volumetric DDoS attack in which the attacker sends an overwhelming number of TCP packets with the ACK flag set to the target.
+Under normal operation, ACK packets only make sense as part of an existing connection.
+Because the packets are unsolicited, the target has to inspect each one, search its connection state tables, find no match, and then drop it or answer with an RST.
+Doing this millions of times per second consumes processing power and bandwidth.
+How the attack works:
+1. The attacker, typically using a botnet, sends a continuous stream of TCP ACK packets, usually with random or spoofed source addresses and ports.
+2. The packets arrive at the server or a device in front of it, such as a stateful firewall or load balancer.
+3. The device checks its state table for a matching connection. None exists,

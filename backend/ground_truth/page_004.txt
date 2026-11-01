@@ -1,0 +1,13 @@
+Mitigation:
+- End-to-end encryption: TLS/SSL, SSH, and IPSec encrypt the payload and authenticate segments, making sequence guessing useless.
+- Random initial sequence numbers (ISN): Modern OS implementations use cryptographically secure random ISNs (RFC 6528) to prevent sequence prediction.
+- Network security: Dynamic ARP inspection, DHCP snooping, and 802.1X prevent ARP spoofing and in-path positioning on the local network.
+
+3. TCP RST Attack
+A TCP RST attack is an attack where an attacker abruptly terminates an active TCP connection by injecting a forged TCP packet with the RST (Reset) flag set.
+In normal TCP operation, the RST flag is used to cleanly abort an abnormal connection (e.g. port closed or host rebooted). In an attack, it is abused to disconnect legitimate sessions.
+How the attack works:
+1. Sniffing or Guessing: The attacker identifies the 4-tuple (source IP, source port, destination IP, destination port) of an active connection.
+2. Sequence Number Matching: The attacker crafts a TCP packet with the RST flag set. The sequence number in the RST packet must fall within the receiver's valid receive window.
+3. Injection: The forged RST packet is transmitted to either endpoint (client or server).
+4. Immediate Termination: Upon receiving a valid RST, the endpoint immediately tears down the connection and deletes its TCB.

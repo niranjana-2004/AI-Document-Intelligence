@@ -66,7 +66,7 @@ def query_ollama(
     system_prompt: Optional[str] = None,
     format_json: bool = False,
     temperature: float = 0.2,
-    timeout: int = 150
+    timeout: int = 300
 ) -> str:
     """
     Send prompt to local Ollama LLM and return text response.
@@ -76,7 +76,9 @@ def query_ollama(
         "prompt": prompt,
         "stream": False,
         "options": {
-            "temperature": temperature
+            "temperature": temperature,
+            "num_ctx": 8192,
+            "repeat_penalty": 1.1
         }
     }
 
@@ -88,7 +90,9 @@ def query_ollama(
 
     try:
         resp = requests.post(OLLAMA_URL, json=payload, timeout=timeout)
-        resp.raise_for_status()
+        if resp.status_code != 200:
+            logger.error(f"Ollama returned {resp.status_code}: {resp.text}")
+            raise OllamaError(f"Ollama error {resp.status_code}: {resp.text}")
         data = resp.json()
         return data.get("response", "").strip()
     except requests.exceptions.ConnectionError:
@@ -108,7 +112,7 @@ def query_ollama_json(
     prompt: str,
     system_prompt: Optional[str] = None,
     temperature: float = 0.1,
-    timeout: int = 150
+    timeout: int = 300
 ) -> Any:
     """
     Send prompt to local Ollama LLM with format='json' and parse JSON response.

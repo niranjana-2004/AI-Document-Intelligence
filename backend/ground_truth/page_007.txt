@@ -1,0 +1,17 @@
+Summary Comparison of TCP Attacks:
+1. TCP SYN Flood:
+   - Layer / Flag: Transport / SYN
+   - Attack Mechanism: Exploits half-open connections; exhausts backlog queue / TCB memory.
+   - Primary Mitigation: SYN cookies, backlog tuning, ingress filtering (BCP 38).
+2. TCP Session Hijacking:
+   - Layer / Flag: Transport & Application / Data with ACK
+   - Attack Mechanism: Predicts/sniffs sequence numbers; desynchronizes client and injects forged commands.
+   - Primary Mitigation: TLS/SSL encryption, cryptographically random ISN (RFC 6528), 802.1X.
+3. TCP RST Attack:
+   - Layer / Flag: Transport / RST
+   - Attack Mechanism: Injects forged RST packet with sequence number inside valid receive window to tear down connection.
+   - Primary Mitigation: RFC 5961 stricter validation (challenge ACK), TCP-AO / MD5.
+4. TCP ACK Flood:
+   - Layer / Flag: Transport / ACK
+   - Attack Mechanism: Floods target with unsolicited ACK packets, forcing state table lookups and saturating bandwidth.
+   - Primary Mitigation: Stateless filtering, Anycast / scrubbing services, rate limiting.

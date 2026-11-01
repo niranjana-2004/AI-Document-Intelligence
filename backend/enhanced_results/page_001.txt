@@ -1,0 +1,23 @@
+a b c d e f 000 000 000 000 000 000
+Niagara 1 1.68%MLIMSIAD Notes on
+" " " It's Attacks I . TCP SYN Flood M. IN ___
+flood is a denial-of-service (DoS/DDoS)
+attack that exploits the TCP three-way .
+handshake ( 1 Ivy ( SYN-ACK , MKD . The
+is connection - oriented , so a server must
+reserve memory for every connection request it
+receives . The attacker' abuses this by starting
+many handshakes and never finishing them ,
+until the server has no room left for genuine
+users-It is called a half-open attack
+because the connection is left in the
+SYN_RECEIVED state waiting for an ACK
+that never comes . How the attack works I
+. The attacker sends a very large number of
+SYN packets to the target port, usually with
+spoofed (fake) source . It addresses " 2 for
+each ( ) ) ) the server allocates a
+Transmission Control Block (TCB) entry in
+its backlog queue and replies with a UN
+MLK 3 Trial IN-ME goes to the
+spoofed address , so no ACK ever returns

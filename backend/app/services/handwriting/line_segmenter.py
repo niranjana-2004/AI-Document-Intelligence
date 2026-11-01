@@ -111,6 +111,45 @@ def segment_page_into_lines(
 
             box_w = max(10, x2 - x1)
             box_h = y2 - y1
+
+            # Quality Check 1: Reject empty notebook ruling lines or blank margins
+            strip_ink = np.sum(strip_thresh > 0)
+            strip_area = box_w * box_h
+            ink_density = (strip_ink / strip_area) if strip_area > 0 else 0.0
+
+            # Check for printed horizontal notebook ruling lines (thin horizontal line across entire page)
+            strip_row_ink = np.sum(strip_thresh > 0, axis=1)
+            max_row_ink = np.max(strip_row_ink) if len(strip_row_ink) > 0 else 0
+            rows_with_ink = np.sum(strip_row_ink > 15)
+
+            # A ruling line spans nearly the full width (>60% of page width) but has ink concentrated in <= 10 rows
+            is_ruled_line = (max_row_ink > 0.6 * w and rows_with_ink <= 10 and box_h < 70)
+            if is_ruled_line and (y1 < 235 or y2 > h - 140):
+                continue
+
+            # Header margin or bottom margin ruling check
+            if (y1 < 220 and box_h < 65 and ink_density < 0.025) or ((y2 > h - 120) and ink_density < 0.025):
+                continue
+            if ink_density < 0.008 or strip_ink < 50:
+                continue
+
+            # Quality Check 2: Multi-line anomaly sub-segmentation
+            # If a bounding box height is exceptionally tall (> 130px), split it internally
+            if box_h > 130:
+                sub_row_ink = np.sum(strip_thresh > 0, axis=1).astype(np.float32)
+                sub_mid = box_h // 2
+                # Look for minimum ink in the middle 50% region
+                search_start = int(box_h * 0.25)
+                search_end = int(box_h * 0.75)
+                if search_end > search_start:
+                    split_offset = search_start + int(np.argmin(sub_row_ink[search_start:search_end]))
+                    split_y = y1 + split_offset
+                    # Add first sub-strip
+                    strips.append((x1, y1, box_w, split_y - y1))
+                    # Add second sub-strip
+                    strips.append((x1, split_y, box_w, y2 - split_y))
+                    continue
+
             strips.append((x1, y1, box_w, box_h))
 
     # 4. Fallback: If projection profile found 0 peaks (irregular or scattered single words)

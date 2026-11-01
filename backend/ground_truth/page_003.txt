@@ -1,0 +1,13 @@
+afterwards inherits the authenticated state without needing credentials.
+How the attack works:
+1. Tracking: The attacker monitors or predicts the TCP sequence numbers used by the connection.
+2. Desynchronization: The attacker forces the legitimate client out of sync (e.g. by sending an early ACK/RST, introducing clock skew, or DoS on the client) so the client stops communicating on that sequence stream.
+3. Injection: The attacker injects forged TCP packets containing their commands, using the expected sequence and acknowledgement numbers.
+4. Takeover: The server processes the injected data as if it came from the authenticated client.
+Types of Hijacking:
+- Blind Hijacking: The attacker cannot see the packets and must guess or calculate the next sequence number.
+- Non-Blind Hijacking: The attacker is on the same local network or in-path (e.g. ARP spoofing) and can sniff sequence and ACK numbers in real time.
+Impact:
+- Unauthorized access: Bypass authentication entirely.
+- Data manipulation: Inject malicious commands or modify in-flight data.
+- Data theft: Read sensitive information returned by the server.

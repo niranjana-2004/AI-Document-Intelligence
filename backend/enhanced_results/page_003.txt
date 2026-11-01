@@ -1,0 +1,23 @@
+afterwards inherits the legitimate user's
+Queens ( for example a biggest - in Telets
+ITTF or web session ) without needing the
+password . The identifies pockets by U
+addresses , port numbers and
+sequenced acknowledgment numbers for
+. Attacker learns or predicts these values , the
+# fewer cannot tell the attacker's packets
+" From the real client's How the attack works
+" I-half ? track : the attacker monitors the
+session ( even - in the middle position
+" or some network segment ) and records . It is
+ports and current sequence numbers 2
+Responsive the real client is disrupted or
+its pockets are blocked so that its sequence
+I weakens fall out of step with the server 3
+. Lycati the attacker sends a spoof packet
+using the client's hand a valid respected
+__ sequence number . The server accepts it as
+I genuine . It . Take over it he attacker now
+# follows to the server as the client , while the
+real client loses the connection impact #
+# Unauthorized access : attacker can read clay

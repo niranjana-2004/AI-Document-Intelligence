@@ -49,13 +49,9 @@ def transcribe_page_image(
     proc_img = read_image_safe(image_path)
     h, w = proc_img.shape[:2]
 
-    # If original image is provided, use it for projection segmentation to avoid any preprocessor artifacts
+    # Always use the preprocessed, contrast-enhanced image for line segmentation
+    # to avoid raw page lighting gradients and ruling line artifacts merging text lines.
     seg_img = proc_img
-    if original_image_path and Path(original_image_path).exists():
-        try:
-            seg_img = read_image_safe(original_image_path)
-        except Exception as err:
-            logger.warning(f"Could not read original image for segmentation: {err}; using processed image.")
 
     # 1. Segment page into text line crops
     line_crops, is_empty = segment_page_into_lines(seg_img)
@@ -89,18 +85,17 @@ def transcribe_page_image(
         line_text = line_result.get("text", "").strip()
         line_conf = line_result.get("confidence", 0.0)
 
-        # Do not discard uncertain text; store it with its confidence flag
+        # Filter out empty or rejected hallucination strips
         if line_text:
             text_parts.append(line_text)
             confidences.append(line_conf)
-
-        recognized_lines.append({
-            "line_index": line.line_index,
-            "text": line_text,
-            "confidence": line_conf,
-            "bbox": [int(bx), int(by), int(bw), int(bh)],
-            "is_uncertain": line_conf < 60.0
-        })
+            recognized_lines.append({
+                "line_index": len(recognized_lines) + 1,
+                "text": line_text,
+                "confidence": line_conf,
+                "bbox": [int(bx), int(by), int(bw), int(bh)],
+                "is_uncertain": line_conf < 60.0
+            })
 
     # 3. Assemble full page text
     full_text = "\n".join(text_parts).strip()
