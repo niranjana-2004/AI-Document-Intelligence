@@ -2,7 +2,7 @@ import logging
 import math
 import time
 from pathlib import Path
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List, Optional
 import cv2
 import numpy as np
 
@@ -218,4 +218,191 @@ def preprocess_handwritten_image(
         "execution_time_ms": elapsed_ms,
         "processed_image_path": str(output_path)
     }
+
+
+def generate_page_stages(
+    original_path: Path,
+    stages_dir: Path,
+    force: bool = False
+) -> List[Dict[str, Any]]:
+    """
+    Generate and persist intermediate OpenCV preprocessing stage images and thumbnails,
+    returning detailed genuine metadata for each stage.
+    Caches stages and metadata on disk for instantaneous subsequent loads.
+    """
+    import json
+    stages_dir.mkdir(parents=True, exist_ok=True)
+    metadata_file = stages_dir / "stages_metadata.json"
+
+    # Fast path: Return cached stages if already generated
+    if not force and metadata_file.exists():
+        try:
+            with open(metadata_file, "r", encoding="utf-8") as f:
+                cached = json.load(f)
+                if len(cached) == 6:
+                    return cached
+        except Exception as read_err:
+            logger.warning(f"Failed to read cached stages metadata: {read_err}; regenerating.")
+
+    img_bgr = read_image_safe(original_path)
+    h, w = img_bgr.shape[:2]
+
+    def save_stage_image_and_thumb(img_arr: np.ndarray, base_name: str):
+        full_path = stages_dir / f"{base_name}.png"
+        thumb_path = stages_dir / f"{base_name}_thumb.png"
+        write_image_safe(img_arr, full_path)
+
+        thumb_scale = min(280.0 / w, 280.0 / h)
+        tw, th = max(10, int(w * thumb_scale)), max(10, int(h * thumb_scale))
+        thumb_img = cv2.resize(img_arr, (tw, th), interpolation=cv2.INTER_AREA)
+        write_image_safe(thumb_img, thumb_path)
+        return full_path, thumb_path
+
+    stages = []
+
+    # Stage 1: Original
+    t0 = time.time()
+    save_stage_image_and_thumb(img_bgr, "stage_1_original")
+    t1_ms = round((time.time() - t0) * 1000, 1)
+    stages.append({
+        "stage_id": "original",
+        "stage_number": 1,
+        "title": "Original Capture",
+        "subtitle": "Raw input photograph/scan",
+        "description": "The untouched handwritten document image exactly as uploaded, showing natural paper color, lighting variations, and physical imperfections.",
+        "technical_detail": "Direct decoding of input image stream with color profile preservation.",
+        "metrics": {
+            "width": w,
+            "height": h,
+            "execution_time_ms": t1_ms,
+            "mean_brightness": round(float(np.mean(img_bgr)), 1),
+            "contrast_std": round(float(np.std(img_bgr)), 1)
+        }
+    })
+
+    # Stage 2: Deskewed
+    t0 = time.time()
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    angle = calculate_deskew_angle(gray)
+    is_applied = abs(angle) >= 0.3
+    deskewed_color = deskew_image(img_bgr, angle) if is_applied else img_bgr.copy()
+    save_stage_image_and_thumb(deskewed_color, "stage_2_deskewed")
+    t2_ms = round((time.time() - t0) * 1000, 1)
+    stages.append({
+        "stage_id": "deskewed",
+        "stage_number": 2,
+        "title": "Automated Deskewing",
+        "subtitle": "Orientation & angle correction",
+        "description": "Calculates the median tilt of text line bounding boxes using Otsu binarization and minAreaRect contours, then applies affine rotation to straighten text baselines.",
+        "technical_detail": f"cv2.minAreaRect() angle detection followed by cv2.warpAffine() (detected: {angle:.2f}°).",
+        "metrics": {
+            "width": w,
+            "height": h,
+            "detected_angle": round(angle, 2),
+            "applied_correction": round(-angle, 2) if is_applied else 0.0,
+            "is_applied": is_applied,
+            "execution_time_ms": t2_ms,
+            "mean_brightness": round(float(np.mean(deskewed_color)), 1),
+            "contrast_std": round(float(np.std(deskewed_color)), 1)
+        }
+    })
+
+    # Stage 3: Normalized
+    t0 = time.time()
+    dgray = cv2.cvtColor(deskewed_color, cv2.COLOR_BGR2GRAY)
+    shadow_free = remove_shadows_and_normalize(dgray)
+    save_stage_image_and_thumb(shadow_free, "stage_3_normalized")
+    t3_ms = round((time.time() - t0) * 1000, 1)
+    stages.append({
+        "stage_id": "normalized",
+        "stage_number": 3,
+        "title": "Illumination Normalization",
+        "subtitle": "Shadow removal & background leveling",
+        "description": "Estimates uneven background lighting using morphological dilation and large median filtering, then subtracts the illumination field to produce an even, clean background.",
+        "technical_detail": "cv2.dilate(7x7) + cv2.medianBlur(21) background estimation followed by difference normalization.",
+        "metrics": {
+            "width": w,
+            "height": h,
+            "execution_time_ms": t3_ms,
+            "mean_brightness": round(float(np.mean(shadow_free)), 1),
+            "contrast_std": round(float(np.std(shadow_free)), 1)
+        }
+    })
+
+    # Stage 4: CLAHE
+    t0 = time.time()
+    contrast_enhanced = enhance_contrast_clahe(shadow_free, clip_limit=2.0)
+    save_stage_image_and_thumb(contrast_enhanced, "stage_4_clahe")
+    t4_ms = round((time.time() - t0) * 1000, 1)
+    stages.append({
+        "stage_id": "clahe",
+        "stage_number": 4,
+        "title": "CLAHE Contrast Enhancement",
+        "subtitle": "Stroke contrast amplification",
+        "description": "Applies Contrast Limited Adaptive Histogram Equalization in 8x8 localized tiles to bring out faint pencil and light pen strokes without blowing out document highlights.",
+        "technical_detail": "cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).",
+        "metrics": {
+            "width": w,
+            "height": h,
+            "clip_limit": 2.0,
+            "tile_grid": "8x8",
+            "execution_time_ms": t4_ms,
+            "mean_brightness": round(float(np.mean(contrast_enhanced)), 1),
+            "contrast_std": round(float(np.std(contrast_enhanced)), 1)
+        }
+    })
+
+    # Stage 5: Denoised
+    t0 = time.time()
+    clean_gray = denoise_image(contrast_enhanced)
+    save_stage_image_and_thumb(clean_gray, "stage_5_denoised")
+    t5_ms = round((time.time() - t0) * 1000, 1)
+    stages.append({
+        "stage_id": "denoised",
+        "stage_number": 5,
+        "title": "Bilateral Denoising",
+        "subtitle": "Edge-preserving paper smoothing",
+        "description": "Filters out paper texture grain, scanner artifacts, and sensor noise while strictly preserving sharp high-frequency edges of handwriting ink strokes.",
+        "technical_detail": "cv2.bilateralFilter(d=5, sigmaColor=40, sigmaSpace=40).",
+        "metrics": {
+            "width": w,
+            "height": h,
+            "diameter": 5,
+            "sigma_color": 40,
+            "execution_time_ms": t5_ms,
+            "mean_brightness": round(float(np.mean(clean_gray)), 1),
+            "contrast_std": round(float(np.std(clean_gray)), 1)
+        }
+    })
+
+    # Stage 6: Final
+    t0 = time.time()
+    clean_color = cv2.cvtColor(clean_gray, cv2.COLOR_GRAY2BGR)
+    save_stage_image_and_thumb(clean_color, "stage_6_final")
+    t6_ms = round((time.time() - t0) * 1000, 1)
+    stages.append({
+        "stage_id": "final",
+        "stage_number": 6,
+        "title": "Final Enhanced Output",
+        "subtitle": "OCR-ready pipeline image",
+        "description": "The finalized clean, deskewed, high-contrast handwritten page prepared for horizontal projection profile line segmentation and TrOCR recognition.",
+        "technical_detail": "Consolidated 3-channel BGR output matching the exact input supplied to the TrOCR neural pipeline.",
+        "metrics": {
+            "width": w,
+            "height": h,
+            "channels": 3,
+            "execution_time_ms": t6_ms,
+            "mean_brightness": round(float(np.mean(clean_color)), 1),
+            "contrast_std": round(float(np.std(clean_color)), 1)
+        }
+    })
+
+    # Write metadata file for subsequent fast loads
+    try:
+        with open(metadata_file, "w", encoding="utf-8") as f:
+            json.dump(stages, f, indent=2)
+    except Exception as w_err:
+        logger.warning(f"Could not persist stages metadata JSON: {w_err}")
+
+    return stages
 

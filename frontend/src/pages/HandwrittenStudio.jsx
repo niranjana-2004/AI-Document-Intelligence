@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
 import PageTransition from '../components/motion/PageTransition'
+import VisualPreprocessingStudio from '../components/handwritten/VisualPreprocessingStudio'
 import '../styles/handwritten.css'
 
 export default function HandwrittenStudio() {
@@ -553,49 +554,12 @@ export default function HandwrittenStudio() {
                                 </div>
                             )}
 
-                            {/* TAB 2: IMAGE PREPROCESSING */}
+                            {/* TAB 2: IMAGE PREPROCESSING (VISUAL PREPROCESSING STUDIO) */}
                             {activeTab === 'enhancement' && (
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                        <CheckCircle2 size={18} style={{ color: '#10b981' }} />
-                                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                            Computer Vision Preprocessing Applied
-                                        </h3>
-                                    </div>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px' }}>
-                                        This page has undergone automated multi-stage enhancement using OpenCV to optimize contrast and stroke sharpness before feeding into the OCR line detector.
-                                    </p>
-
-                                    <div className="pipeline-step-card">
-                                        <div className="pipeline-step-icon">
-                                            <RotateCcw size={18} />
-                                        </div>
-                                        <div className="pipeline-step-body">
-                                            <h4>Automated Deskewing</h4>
-                                            <p>Text orientation was analyzed via minAreaRect contours, and affine rotation was applied to straighten tilted handwriting lines.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="pipeline-step-card">
-                                        <div className="pipeline-step-icon">
-                                            <Sliders size={18} />
-                                        </div>
-                                        <div className="pipeline-step-body">
-                                            <h4>CLAHE Contrast Enhancement</h4>
-                                            <p>Contrast Limited Adaptive Histogram Equalization amplified faint pencil and pale ink strokes without blowing out document highlights.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="pipeline-step-card">
-                                        <div className="pipeline-step-icon">
-                                            <Layers size={18} />
-                                        </div>
-                                        <div className="pipeline-step-body">
-                                            <h4>Shadow & Denoising Filter</h4>
-                                            <p>Background illumination division neutralized mobile camera shadows, and bilateral filtering smoothed paper textures while preserving stroke edges.</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                <VisualPreprocessingStudio
+                                    documentId={documentId}
+                                    pageNumber={currentPage?.page_number || (currentPageIndex + 1)}
+                                />
                             )}
 
                             {/* TAB 3: STUDY SUMMARY (PHASE 3) */}

@@ -16,7 +16,10 @@ from app.models.document_chunk import DocumentChunk
 from app.models.handwritten_page import HandwrittenPage
 from app.models.activity import ActivityLog
 from app.services.handwriting.pdf_rasterizer import rasterize_document_to_images
-from app.services.handwriting.image_preprocessor import preprocess_handwritten_image
+from app.services.handwriting.image_preprocessor import (
+    preprocess_handwritten_image,
+    generate_page_stages
+)
 from app.services.handwriting.transcription_pipeline import transcribe_page_image
 
 logger = logging.getLogger(__name__)
@@ -777,6 +780,168 @@ def get_handwritten_page_image(
         path=str(image_path),
         media_type="image/png",
         headers={"Cache-Control": "public, max-age=86400"}
+    )
+
+
+STAGE_FILE_MAP = {
+    "original": "stage_1_original",
+    "deskewed": "stage_2_deskewed",
+    "normalized": "stage_3_normalized",
+    "clahe": "stage_4_clahe",
+    "denoised": "stage_5_denoised",
+    "final": "stage_6_final"
+}
+
+
+@router.get("/{document_id}/pages/{page_number}/stages")
+def get_page_preprocessing_stages(
+    document_id: int,
+    page_number: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieve real-time intermediate OpenCV preprocessing stage metadata for a page.
+    Generates and caches stage assets securely on disk.
+    """
+    document = (
+        db.query(Document.id)
+        .filter(
+            Document.id == document_id,
+            Document.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found."
+        )
+
+    page = (
+        db.query(HandwrittenPage)
+        .filter(
+            HandwrittenPage.document_id == document_id,
+            HandwrittenPage.page_number == page_number
+        )
+        .first()
+    )
+
+    if not page or not page.original_image_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Page {page_number} not found."
+        )
+
+    orig_path = Path(page.original_image_path)
+    if not orig_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Original image file not found on disk."
+        )
+
+    doc_dir = HANDWRITTEN_BASE_DIR / str(document_id)
+    stages_dir = doc_dir / "stages" / f"page_{page_number:03d}"
+
+    raw_stages = generate_page_stages(orig_path, stages_dir)
+
+    stages_with_urls = []
+    for s in raw_stages:
+        s_id = s["stage_id"]
+        stages_with_urls.append({
+            **s,
+            "image_url": f"/handwritten/{document_id}/pages/{page_number}/stages/{s_id}/image",
+            "thumb_url": f"/handwritten/{document_id}/pages/{page_number}/stages/{s_id}/image?thumb=true"
+        })
+
+    return {
+        "document_id": document_id,
+        "page_number": page_number,
+        "original_url": f"/handwritten/{document_id}/pages/{page_number}/stages/original/image",
+        "final_url": f"/handwritten/{document_id}/pages/{page_number}/stages/final/image",
+        "stages": stages_with_urls
+    }
+
+
+@router.get("/{document_id}/pages/{page_number}/stages/{stage_id}/image")
+def get_page_stage_image(
+    document_id: int,
+    page_number: int,
+    stage_id: str,
+    thumb: bool = Query(False),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Serve an intermediate preprocessing stage image or thumbnail.
+    Enforces JWT authentication and tenant document ownership.
+    """
+    if stage_id not in STAGE_FILE_MAP:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid stage '{stage_id}'. Must be one of: {list(STAGE_FILE_MAP.keys())}"
+        )
+
+    document = (
+        db.query(Document.id)
+        .filter(
+            Document.id == document_id,
+            Document.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found."
+        )
+
+    page = (
+        db.query(HandwrittenPage)
+        .filter(
+            HandwrittenPage.document_id == document_id,
+            HandwrittenPage.page_number == page_number
+        )
+        .first()
+    )
+
+    if not page:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Page {page_number} not found."
+        )
+
+    doc_dir = HANDWRITTEN_BASE_DIR / str(document_id)
+    stages_dir = doc_dir / "stages" / f"page_{page_number:03d}"
+    base_name = STAGE_FILE_MAP[stage_id]
+    target_filename = f"{base_name}_thumb.png" if thumb else f"{base_name}.png"
+    target_path = stages_dir / target_filename
+
+    if not target_path.exists():
+        orig_path = Path(page.original_image_path)
+        if not orig_path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Original image missing."
+            )
+        generate_page_stages(orig_path, stages_dir)
+
+    if not target_path.exists():
+        fallback = stages_dir / f"{base_name}.png"
+        if fallback.exists():
+            target_path = fallback
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Stage image for '{stage_id}' could not be generated."
+            )
+
+    return FileResponse(
+        path=str(target_path),
+        media_type="image/png",
+        headers={"Cache-Control": "private, max-age=3600"}
     )
 
 

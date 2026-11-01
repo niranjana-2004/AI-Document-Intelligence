@@ -5,7 +5,8 @@ from app.services.handwriting.image_preprocessor import (
     deskew_image,
     remove_shadows_and_normalize,
     enhance_contrast_clahe,
-    denoise_image
+    denoise_image,
+    generate_page_stages
 )
 from app.services.handwriting.line_segmenter import segment_page_into_lines, LineCrop
 from app.services.handwriting.ocr_service import get_ocr_engine, recognize_line_image
@@ -19,6 +20,7 @@ __all__ = [
     "remove_shadows_and_normalize",
     "enhance_contrast_clahe",
     "denoise_image",
+    "generate_page_stages",
     "segment_page_into_lines",
     "LineCrop",
     "get_ocr_engine",
