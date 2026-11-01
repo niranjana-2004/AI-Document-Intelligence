@@ -12,6 +12,7 @@ from app.api.routes.auth import router as auth_router
 from app.models.password_reset_token import PasswordResetToken
 from app.models.conversation import Conversation, ConversationMessage
 from app.api.routes.conversations import router as conversations_router
+from app.api.routes.handwritten import router as handwritten_router
 
 app = FastAPI(
     title="AI Document Intelligence API",
@@ -36,6 +37,8 @@ Base.metadata.create_all(bind=engine)
 app.include_router(documents_router)
 app.include_router(auth_router)
 app.include_router(conversations_router)
+app.include_router(handwritten_router)
+
 
 @app.get("/")
 def root():

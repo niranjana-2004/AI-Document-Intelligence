@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
     LayoutDashboard,
     Files,
+    PenTool,
     Sparkles,
     Search,
     User,
@@ -179,6 +180,19 @@ function AppLayout({ children }) {
                             <Files size={18} />
                         </span>
                         <span>Documents</span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/handwritten"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                        <span className="nav-icon" aria-hidden="true">
+                            <PenTool size={18} />
+                        </span>
+                        <span className="nav-label-with-badge">
+                            <span>Handwritten</span>
+                            <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #8b5cf6, #38bdf8)' }}>OCR</span>
+                        </span>
                     </NavLink>
 
                     <NavLink

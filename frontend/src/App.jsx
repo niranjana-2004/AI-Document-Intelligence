@@ -16,6 +16,8 @@ import PasswordResetSuccess from './pages/auth/PasswordResetSuccess'
 
 import DashboardPage from './pages/DashboardPage'
 import Documents from './pages/Documents'
+import HandwrittenNotes from './pages/HandwrittenNotes'
+import HandwrittenStudio from './pages/HandwrittenStudio'
 import AskAI from './pages/AskAI'
 import Search from './pages/Search'
 import Profile from './pages/Profile'
@@ -59,6 +61,28 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <AppLayout>
                 <Documents />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/handwritten"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <HandwrittenNotes />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/handwritten/:documentId"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <HandwrittenStudio />
               </AppLayout>
             </ProtectedRoute>
           }
