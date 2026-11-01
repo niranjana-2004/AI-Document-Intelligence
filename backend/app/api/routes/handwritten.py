@@ -43,7 +43,8 @@ class TranscriptionUpdateRequest(BaseModel):
 
 def _update_document_full_text(document: Document, db: Session) -> str:
     """
-    Reassemble consolidated document text across all pages in reading order.
+    Reassemble consolidated document text across all pages in reading order,
+    and synchronize semantic DocumentChunk embeddings.
     """
     pages = (
         db.query(HandwrittenPage)
@@ -61,6 +62,14 @@ def _update_document_full_text(document: Document, db: Session) -> str:
     document.extracted_text = full_text
     document.text_length = len(full_text)
     db.commit()
+
+    # Synchronize chunks and embeddings in background or inline
+    try:
+        from app.services.handwriting.handwritten_source_service import sync_handwritten_chunks_and_embeddings
+        sync_handwritten_chunks_and_embeddings(document.id, db)
+    except Exception as e:
+        logger.warning(f"Could not synchronize chunks for doc #{document.id}: {e}")
+
     return full_text
 
 

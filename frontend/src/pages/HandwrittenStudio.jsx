@@ -20,11 +20,17 @@ import {
     RefreshCw,
     AlertTriangle,
     Eye,
-    ListFilter
+    ListFilter,
+    MessageSquare
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
 import PageTransition from '../components/motion/PageTransition'
 import VisualPreprocessingStudio from '../components/handwritten/VisualPreprocessingStudio'
+import HandwrittenSummaryTab from '../components/handwritten/HandwrittenSummaryTab'
+import HandwrittenConceptsTab from '../components/handwritten/HandwrittenConceptsTab'
+import HandwrittenQuizTab from '../components/handwritten/HandwrittenQuizTab'
+import HandwrittenFlashcardsTab from '../components/handwritten/HandwrittenFlashcardsTab'
+import HandwrittenChatTab from '../components/handwritten/HandwrittenChatTab'
 import '../styles/handwritten.css'
 
 export default function HandwrittenStudio() {
@@ -35,7 +41,8 @@ export default function HandwrittenStudio() {
     const [currentPageIndex, setCurrentPageIndex] = useState(0)
     const [viewMode, setViewMode] = useState('processed') // 'processed' | 'original'
     const [zoomLevel, setZoomLevel] = useState(1.0)
-    const [activeTab, setActiveTab] = useState('transcription') // 'transcription' | 'enhancement' | 'summary' | 'quiz'
+    const [activeTab, setActiveTab] = useState('transcription') // 'transcription' | 'enhancement' | 'summary' | 'concepts' | 'quiz' | 'flashcards' | 'chat'
+    const [transcriptionUpdated, setTranscriptionUpdated] = useState(Date.now())
 
     // Transcription editor states
     const [transcriptionText, setTranscriptionText] = useState('')
@@ -153,6 +160,7 @@ export default function HandwrittenStudio() {
             }))
 
             setSaveSuccess(true)
+            setTranscriptionUpdated(Date.now())
             setTimeout(() => setSaveSuccess(false), 2500)
         } catch (err) {
             alert(err.message || 'Failed to save transcription.')
@@ -172,6 +180,7 @@ export default function HandwrittenStudio() {
                 await apiRequest(`/handwritten/${documentId}/pages/${currentPage.page_number}/ocr`, { method: 'POST' })
             }
             await fetchDetails()
+            setTranscriptionUpdated(Date.now())
         } catch (err) {
             alert(err.message || 'OCR processing failed.')
         } finally {
@@ -206,6 +215,7 @@ export default function HandwrittenStudio() {
                     return p
                 }))
                 setTranscriptionText(res.full_transcription)
+                setTranscriptionUpdated(Date.now())
             }
         } catch (err) {
             alert(err.message || `Failed to reprocess line ${lineIndex}.`)
@@ -371,32 +381,56 @@ export default function HandwrittenStudio() {
                                 className={`workspace-tab-btn ${activeTab === 'transcription' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('transcription')}
                             >
-                                <PenTool size={16} />
-                                <span>Digital Transcription</span>
+                                <PenTool size={15} />
+                                <span>Transcription</span>
                             </button>
                             <button
                                 type="button"
                                 className={`workspace-tab-btn ${activeTab === 'enhancement' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('enhancement')}
                             >
-                                <Sliders size={16} />
-                                <span>Image Preprocessing</span>
+                                <Sliders size={15} />
+                                <span>Preprocessing</span>
                             </button>
                             <button
                                 type="button"
                                 className={`workspace-tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('summary')}
                             >
-                                <FileText size={16} />
-                                <span>Study Summary (Phase 3)</span>
+                                <FileText size={15} />
+                                <span>Study Summary</span>
+                            </button>
+                            <button
+                                type="button"
+                                className={`workspace-tab-btn ${activeTab === 'concepts' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('concepts')}
+                            >
+                                <Sparkles size={15} />
+                                <span>Concepts</span>
                             </button>
                             <button
                                 type="button"
                                 className={`workspace-tab-btn ${activeTab === 'quiz' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('quiz')}
                             >
-                                <BrainCircuit size={16} />
-                                <span>Quiz & Flashcards (Phase 7)</span>
+                                <BrainCircuit size={15} />
+                                <span>AI Quiz</span>
+                            </button>
+                            <button
+                                type="button"
+                                className={`workspace-tab-btn ${activeTab === 'flashcards' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('flashcards')}
+                            >
+                                <Layers size={15} />
+                                <span>Flashcards</span>
+                            </button>
+                            <button
+                                type="button"
+                                className={`workspace-tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('chat')}
+                            >
+                                <MessageSquare size={15} />
+                                <span>Chat Notes</span>
                             </button>
                         </div>
 
@@ -564,28 +598,42 @@ export default function HandwrittenStudio() {
 
                             {/* TAB 3: STUDY SUMMARY (PHASE 3) */}
                             {activeTab === 'summary' && (
-                                <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-secondary)' }}>
-                                    <FileText size={36} style={{ color: '#38bdf8', margin: '0 auto 16px' }} />
-                                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '16px' }}>
-                                        Study Summaries (Phase 3)
-                                    </h4>
-                                    <p style={{ fontSize: '13px', maxWidth: '380px', margin: '0 auto' }}>
-                                        Extract key concepts, bulleted takeaways, and lecture overviews powered by local Llama 3.2.
-                                    </p>
-                                </div>
+                                <HandwrittenSummaryTab
+                                    documentId={documentId}
+                                    transcriptionUpdated={transcriptionUpdated}
+                                />
                             )}
 
-                            {/* TAB 4: QUIZ & FLASHCARDS (PHASE 7) */}
+                            {/* TAB 4: KEY CONCEPTS (PHASE 3) */}
+                            {activeTab === 'concepts' && (
+                                <HandwrittenConceptsTab
+                                    documentId={documentId}
+                                    transcriptionUpdated={transcriptionUpdated}
+                                />
+                            )}
+
+                            {/* TAB 5: AI QUIZ GENERATOR (PHASE 3) */}
                             {activeTab === 'quiz' && (
-                                <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-secondary)' }}>
-                                    <BrainCircuit size={36} style={{ color: '#a855f7', margin: '0 auto 16px' }} />
-                                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '16px' }}>
-                                        Interactive Study Suite (Phase 7)
-                                    </h4>
-                                    <p style={{ fontSize: '13px', maxWidth: '380px', margin: '0 auto' }}>
-                                        Generate interactive multiple-choice quizzes and 3D flip flashcards directly derived from these handwritten lecture notes.
-                                    </p>
-                                </div>
+                                <HandwrittenQuizTab
+                                    documentId={documentId}
+                                    transcriptionUpdated={transcriptionUpdated}
+                                />
+                            )}
+
+                            {/* TAB 6: 3D FLASHCARDS (PHASE 3) */}
+                            {activeTab === 'flashcards' && (
+                                <HandwrittenFlashcardsTab
+                                    documentId={documentId}
+                                    transcriptionUpdated={transcriptionUpdated}
+                                />
+                            )}
+
+                            {/* TAB 7: CHAT WITH NOTES (PHASE 3) */}
+                            {activeTab === 'chat' && (
+                                <HandwrittenChatTab
+                                    documentId={documentId}
+                                    transcriptionUpdated={transcriptionUpdated}
+                                />
                             )}
                         </div>
                     </div>

@@ -34,3 +34,14 @@ from app.models.conversation import Conversation, ConversationMessage
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.handwritten_page import HandwrittenPage
+from app.models.handwritten_analysis import (
+    HandwrittenSummary,
+    HandwrittenConcept,
+    HandwrittenQuizSet,
+    HandwrittenFlashcardSet,
+    HandwrittenChatSession,
+    HandwrittenChatMessage,
+    ensure_handwritten_analysis_schema
+)
+
+ensure_handwritten_analysis_schema(engine)
