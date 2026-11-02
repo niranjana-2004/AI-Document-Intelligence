@@ -1,16 +1,27 @@
 import json
 import logging
 import re
-from typing import Any, Dict, Optional
+import time
+from typing import Any, Dict, List, Optional
 import requests
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "llama3.2"
+# Maintain backward-compatible module aliases
+OLLAMA_URL = settings.ollama_generate_url
+DEFAULT_MODEL = settings.OLLAMA_MODEL
+
+# In-memory health check cache
+_health_cache: Dict[str, Any] = {
+    "data": None,
+    "expires_at": 0.0
+}
 
 
 class OllamaError(RuntimeError):
+    """Custom exception for Ollama LLM errors."""
     pass
 
 
@@ -61,18 +72,132 @@ def extract_json_from_text(raw_text: str) -> Any:
     raise ValueError(f"Could not parse valid JSON from LLM output: {raw_text[:200]}...")
 
 
+def check_ollama_health(force_refresh: bool = False) -> Dict[str, Any]:
+    """
+    Check Ollama server reachability and configured model availability.
+    Results are cached according to OLLAMA_HEALTH_CACHE_TTL unless force_refresh is True.
+    """
+    now = time.time()
+    if not force_refresh and _health_cache["data"] is not None and now < _health_cache["expires_at"]:
+        cached_result = dict(_health_cache["data"])
+        cached_result["cached"] = True
+        return cached_result
+
+    target_model = settings.OLLAMA_MODEL.strip()
+    target_base = target_model.split(":")[0].lower()
+    base_url = settings.normalized_ollama_base_url
+
+    start_time = time.perf_counter()
+    try:
+        resp = requests.get(settings.ollama_tags_url, timeout=3.5)
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 1)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            models_list = data.get("models", [])
+            installed_names: List[str] = [m.get("name", "") for m in models_list if isinstance(m, dict)]
+
+            # Check if required model is installed (matches exact name or base name without :tag)
+            model_found = any(
+                name.lower() == target_model.lower() or
+                name.split(":")[0].lower() == target_base
+                for name in installed_names
+            )
+
+            if model_found:
+                result = {
+                    "status": "connected",
+                    "message": f"Ollama is running and model '{target_model}' is ready.",
+                    "base_url": base_url,
+                    "required_model": target_model,
+                    "available_models": installed_names,
+                    "response_time_ms": elapsed_ms,
+                    "cached": False,
+                    "timestamp": now
+                }
+            else:
+                result = {
+                    "status": "model_missing",
+                    "message": f"Ollama is running at {base_url}, but required model '{target_model}' is not installed. Run 'ollama pull {target_model}'.",
+                    "base_url": base_url,
+                    "required_model": target_model,
+                    "available_models": installed_names,
+                    "response_time_ms": elapsed_ms,
+                    "cached": False,
+                    "timestamp": now
+                }
+        else:
+            result = {
+                "status": "unavailable",
+                "message": f"Ollama returned HTTP {resp.status_code} at {base_url}.",
+                "base_url": base_url,
+                "required_model": target_model,
+                "available_models": [],
+                "response_time_ms": elapsed_ms,
+                "cached": False,
+                "timestamp": now
+            }
+
+    except requests.exceptions.ConnectionError:
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 1)
+        result = {
+            "status": "unavailable",
+            "message": f"Ollama is not running or unreachable at {base_url}. Please ensure Ollama service is active (`ollama serve`).",
+            "base_url": base_url,
+            "required_model": target_model,
+            "available_models": [],
+            "response_time_ms": elapsed_ms,
+            "cached": False,
+            "timestamp": now
+        }
+    except requests.exceptions.Timeout:
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 1)
+        result = {
+            "status": "unavailable",
+            "message": f"Connection to Ollama at {base_url} timed out.",
+            "base_url": base_url,
+            "required_model": target_model,
+            "available_models": [],
+            "response_time_ms": elapsed_ms,
+            "cached": False,
+            "timestamp": now
+        }
+    except Exception as e:
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 1)
+        result = {
+            "status": "unavailable",
+            "message": f"Failed to connect to Ollama: {str(e)}",
+            "base_url": base_url,
+            "required_model": target_model,
+            "available_models": [],
+            "response_time_ms": elapsed_ms,
+            "cached": False,
+            "timestamp": now
+        }
+
+    # Cache result
+    _health_cache["data"] = result
+    _health_cache["expires_at"] = now + settings.OLLAMA_HEALTH_CACHE_TTL
+    return result
+
+
 def query_ollama(
     prompt: str,
     system_prompt: Optional[str] = None,
     format_json: bool = False,
     temperature: float = 0.2,
-    timeout: int = 300
+    timeout: Optional[int] = None,
+    model: Optional[str] = None
 ) -> str:
     """
     Send prompt to local Ollama LLM and return text response.
     """
+    active_model = model or settings.OLLAMA_MODEL
+    active_timeout = timeout or settings.OLLAMA_REQUEST_TIMEOUT
+    endpoint = settings.ollama_generate_url
+
     payload = {
-        "model": DEFAULT_MODEL,
+        "model": active_model,
         "prompt": prompt,
         "stream": False,
         "options": {
@@ -89,7 +214,13 @@ def query_ollama(
         payload["format"] = "json"
 
     try:
-        resp = requests.post(OLLAMA_URL, json=payload, timeout=timeout)
+        resp = requests.post(endpoint, json=payload, timeout=active_timeout)
+        if resp.status_code == 404:
+            logger.error(f"Ollama model '{active_model}' not found at {endpoint}")
+            raise OllamaError(
+                f"Configured model '{active_model}' was not found on Ollama server ({settings.normalized_ollama_base_url}). "
+                f"Please run 'ollama pull {active_model}' to download it."
+            )
         if resp.status_code != 200:
             logger.error(f"Ollama returned {resp.status_code}: {resp.text}")
             raise OllamaError(f"Ollama error {resp.status_code}: {resp.text}")
@@ -97,13 +228,16 @@ def query_ollama(
         return data.get("response", "").strip()
     except requests.exceptions.ConnectionError:
         raise OllamaError(
-            "Ollama is not running or unreachable at http://localhost:11434. "
+            f"Ollama is not running or unreachable at {settings.normalized_ollama_base_url}. "
             "Please ensure the Ollama service is active."
         )
     except requests.exceptions.Timeout:
         raise OllamaError(
-            f"Ollama request timed out after {timeout} seconds. Please try again with shorter content."
+            f"Ollama request timed out after {active_timeout} seconds at {settings.normalized_ollama_base_url}. "
+            "Please try again with shorter content or check system load."
         )
+    except OllamaError:
+        raise
     except Exception as e:
         raise OllamaError(f"Ollama request failed: {str(e)}")
 
@@ -112,7 +246,8 @@ def query_ollama_json(
     prompt: str,
     system_prompt: Optional[str] = None,
     temperature: float = 0.1,
-    timeout: int = 300
+    timeout: Optional[int] = None,
+    model: Optional[str] = None
 ) -> Any:
     """
     Send prompt to local Ollama LLM with format='json' and parse JSON response.
@@ -122,7 +257,7 @@ def query_ollama_json(
         system_prompt=system_prompt,
         format_json=True,
         temperature=temperature,
-        timeout=timeout
+        timeout=timeout,
+        model=model
     )
     return extract_json_from_text(raw_response)
-

@@ -186,8 +186,19 @@ export default function HandwrittenConceptsTab({ documentId, transcriptionUpdate
             {/* Error */}
             {error && (
                 <div className="intel-error-banner">
-                    <AlertTriangle size={16} />
-                    <span>{error}</span>
+                    <div className="intel-error-content">
+                        <AlertTriangle size={16} />
+                        <span>{error}</span>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn-intel-retry"
+                        onClick={handleExtract}
+                        disabled={extracting}
+                    >
+                        <RefreshCw size={12} className={extracting ? 'spin-icon' : ''} />
+                        <span>Retry</span>
+                    </button>
                 </div>
             )}
 

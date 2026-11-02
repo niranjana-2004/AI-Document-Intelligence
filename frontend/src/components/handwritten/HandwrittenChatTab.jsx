@@ -138,8 +138,21 @@ export default function HandwrittenChatTab({ documentId, transcriptionUpdated })
             {/* Error Banner */}
             {error && (
                 <div className="intel-error-banner">
-                    <AlertTriangle size={16} />
-                    <span>{error}</span>
+                    <div className="intel-error-content">
+                        <AlertTriangle size={16} />
+                        <span>{error}</span>
+                    </div>
+                    {messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+                        <button
+                            type="button"
+                            className="btn-intel-retry"
+                            onClick={() => handleSend(messages[messages.length - 1].content)}
+                            disabled={sending}
+                        >
+                            <RefreshCw size={12} className={sending ? 'spin-icon' : ''} />
+                            <span>Retry</span>
+                        </button>
+                    )}
                 </div>
             )}
 

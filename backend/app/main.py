@@ -33,7 +33,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.services.handwriting.ollama_client import check_ollama_health
+from fastapi import Query
+
 Base.metadata.create_all(bind=engine)
+from app.models.handwritten_analysis import ensure_handwritten_analysis_schema
+ensure_handwritten_analysis_schema(engine)
 
 app.include_router(documents_router)
 app.include_router(auth_router)
@@ -55,3 +60,9 @@ def health_check():
     return {
         "status": "healthy"
     }
+
+
+@app.get("/ai/health")
+def ai_health(force_refresh: bool = Query(default=False)):
+    """General AI service health check endpoint."""
+    return check_ollama_health(force_refresh=force_refresh)

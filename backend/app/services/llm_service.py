@@ -1,9 +1,9 @@
 import re
 import requests
+from app.core.config import settings
 
-
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "llama3.2"
+OLLAMA_URL = settings.ollama_generate_url
+MODEL_NAME = settings.OLLAMA_MODEL
 
 FALLBACK_ANSWER = (
     "The provided documents do not contain sufficient information to answer this question."

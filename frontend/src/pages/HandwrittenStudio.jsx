@@ -31,6 +31,7 @@ import HandwrittenConceptsTab from '../components/handwritten/HandwrittenConcept
 import HandwrittenQuizTab from '../components/handwritten/HandwrittenQuizTab'
 import HandwrittenFlashcardsTab from '../components/handwritten/HandwrittenFlashcardsTab'
 import HandwrittenChatTab from '../components/handwritten/HandwrittenChatTab'
+import AIHealthIndicator from '../components/handwritten/AIHealthIndicator'
 import '../styles/handwritten.css'
 
 export default function HandwrittenStudio() {
@@ -301,22 +302,27 @@ export default function HandwrittenStudio() {
                         </div>
                     )}
 
-                    {/* Switcher: Enhanced vs Original */}
-                    <div className="view-switcher">
-                        <button
-                            type="button"
-                            className={`view-switch-btn ${viewMode === 'processed' ? 'active' : ''}`}
-                            onClick={() => setViewMode('processed')}
-                        >
-                            Enhanced
-                        </button>
-                        <button
-                            type="button"
-                            className={`view-switch-btn ${viewMode === 'original' ? 'active' : ''}`}
-                            onClick={() => setViewMode('original')}
-                        >
-                            Original Scan
-                        </button>
+                    {/* Topbar Right Actions */}
+                    <div className="studio-topbar-right">
+                        <AIHealthIndicator />
+
+                        {/* Switcher: Enhanced vs Original */}
+                        <div className="view-switcher">
+                            <button
+                                type="button"
+                                className={`view-switch-btn ${viewMode === 'processed' ? 'active' : ''}`}
+                                onClick={() => setViewMode('processed')}
+                            >
+                                Enhanced
+                            </button>
+                            <button
+                                type="button"
+                                className={`view-switch-btn ${viewMode === 'original' ? 'active' : ''}`}
+                                onClick={() => setViewMode('original')}
+                            >
+                                Original Scan
+                            </button>
+                        </div>
                     </div>
                 </header>
 

@@ -38,11 +38,24 @@ from app.services.handwriting.handwritten_chat_service import (
     get_chat_history,
     clear_chat_history
 )
-from app.services.handwriting.ollama_client import OllamaError
+from app.services.handwriting.ollama_client import OllamaError, check_ollama_health
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/handwritten", tags=["Handwritten Intelligence (Phase 3)"])
+
+
+@router.get("/ai/health")
+def get_ai_health(
+    force_refresh: bool = Query(default=False),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Centralized health-check for local Ollama service.
+    Returns status ('connected', 'model_missing', 'unavailable'), installed models,
+    latency, and diagnostic suggestions. Cached using OLLAMA_HEALTH_CACHE_TTL.
+    """
+    return check_ollama_health(force_refresh=force_refresh)
 
 
 # Request models

@@ -190,8 +190,19 @@ export default function HandwrittenSummaryTab({ documentId, transcriptionUpdated
             {/* Error Message */}
             {error && (
                 <div className="intel-error-banner">
-                    <AlertTriangle size={16} />
-                    <span>{error}</span>
+                    <div className="intel-error-content">
+                        <AlertTriangle size={16} />
+                        <span>{error}</span>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn-intel-retry"
+                        onClick={() => handleGenerate(summaryType)}
+                        disabled={generating}
+                    >
+                        <RefreshCw size={12} className={generating ? 'spin-icon' : ''} />
+                        <span>Retry</span>
+                    </button>
                 </div>
             )}
 
