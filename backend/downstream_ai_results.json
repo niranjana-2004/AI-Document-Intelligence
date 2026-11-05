@@ -1,0 +1,483 @@
+{
+  "subject": "Computer Science & Networking",
+  "summary": {
+    "id": 2,
+    "document_id": 12,
+    "summary_type": "detailed",
+    "title": "Understanding Common Network Attacks and Defense Strategies",
+    "overview": "This document provides an exhaustive study guide on common network attacks, including ICCP attacks, session hijacking, password cracking, and denial-of-service attacks. It also covers defense strategies to mitigate these threats.",
+    "detailed_content": "## ICCP Attacks\n--- Page 1 ---\n### Definition\nHood is a denial-of-Service (DollARD attack that exploits the TV three-way handshake (SYN, SYN-ACK, HCED.\n### Impact\nThe attacker' abuses this by starting I am any handshakes and never finishing them, Until the same has no room left for genuine Insecs it is called a half-open attack. Because the connection is left in the STATENED states waiting for an RCK What never comes.\n### How the Attack Works\n1. The attackers ends away large number of I'll packets to the target ' party' usually write supposed (fate) source. It addresses \\\n2. for each fifty the server allocates a Transmission Control Work (TBD entry in its backlog queue and replies with a UN MACK 3 TrueSYN-MORE goes to the \\\n# spoofed address, so not the ever returns\n### Page Citations\n(Page 1)\n",
+    "takeaways": [
+      "Key takeaway 1: ICCP attacks can lead to half-open attacks, where connections are left in the STATENED state waiting for an RCK.",
+      "Key takeaway 2: Session hijacking allows attackers to take control of established sessions without needing the password.",
+      "Key takeaway 3: Denial-of-service attacks can be mitigated by implementing stricter validation and monitoring of incoming packets."
+    ],
+    "key_terms": [
+      {
+        "term": "ICCP",
+        "definition": "A type of denial-of-Service attack that exploits the TV three-way handshake (SYN, SYN-ACK, HCED.",
+        "page_number": 1
+      },
+      {
+        "term": "Session Hijacking",
+        "definition": "An attack where an attacker takes control of an already established session between a client and a server without needing the password.",
+        "page_number": 2
+      },
+      {
+        "term": "Denial-of-Service",
+        "definition": "A type of attack that aims to make a network resource unavailable by overwhelming it with traffic.",
+        "page_number": 3
+      }
+    ],
+    "transcription_hash": "d86f0f12346e11278302824c4cde99bc2243fce204329e1718254abdc7badfa6",
+    "is_outdated": false,
+    "created_at": "2026-11-01T14:38:22",
+    "updated_at": "2026-11-05T15:27:28"
+  },
+  "concepts": [
+    {
+      "id": 22,
+      "document_id": 12,
+      "name": "Half-Open Attack",
+      "definition": "A type of denial-of-service attack where the attacker starts a connection but never finishes it, leaving the server with no room for genuine connections.",
+      "excerpt": "The attackers ends away large number of I'll packets to the target ' party' usually write supposed (fate) source. It addresses \" 2 for each fifty the server allocates a Transmission Control Work (TBD entry in its backlog queue and replies with a UN MACK",
+      "page_number": 1,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 23,
+      "document_id": 12,
+      "name": "Session Hijacking",
+      "definition": "An attack where the attacker takes control of an already established session between a client and a server, often by predicting or learning the values used by the legitimate user.",
+      "excerpt": "The attacker monitors the session ( even - in the middle position or some network segment ) and records. It is ports and current sequence numbers Responsive the real client is disrupted or its packets are blocked so that its sequence I weakens fall out of step with the server",
+      "page_number": 3,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 24,
+      "document_id": 12,
+      "name": "MIT Attack",
+      "definition": "A targeted form of denial-of-service attack where the attacker forges on the MIT segment to terminate a healthy connection.",
+      "excerpt": "The attacker crafts on U.T pocket with the source II of one endpoint and a sequence number that Polls inside the receiver's acceptable windows 3. Thereafter solidates the segments believes # the fear wants to reset, and immediately closes the connection",
+      "page_number": 4,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 25,
+      "document_id": 12,
+      "name": "SYN Flood Attack",
+      "definition": "A type of denial-of-service attack where the attacker sends a large number of SYN packets to a target server, consuming its resources and causing it to become unresponsive.",
+      "excerpt": "The attacker ( often a Gotnet, sends a continuous stream of 11th facelessly usually with random or spoofed # source addresses and ports. A black pocket families at the server or advice in front of Ity such as a stateful firewalls or local balancer",
+      "page_number": 6,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 26,
+      "document_id": 12,
+      "name": "Connection Exhaustion",
+      "definition": "A condition where the server's resources are exhausted due to a large number of connections, causing it to become unresponsive or drop legitimate traffic.",
+      "excerpt": "Network congestion bandwidth is saturated key junk traffic \" Device overload stateful Firewalls, All and load balances are hit hardest because they perform per-packet state checks",
+      "page_number": 7,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 27,
+      "document_id": 12,
+      "name": "Stateful Firewall",
+      "definition": "A type of firewall that tracks the state of each connection, allowing it to detect and block malicious traffic more effectively.",
+      "excerpt": "Device overload stateful Firewalls, All and load balances are hit hardest because they perform per-packet state checks",
+      "page_number": 7,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 28,
+      "document_id": 12,
+      "name": "SYN-ACK Flood",
+      "definition": "A type of denial-of-service attack where the attacker sends a large number of SYN-ACK packets to a target server, consuming its resources and causing it to become unresponsive.",
+      "excerpt": "The attackers ends away large number of I'll packets to the target ' party' usually write supposed (fate) source. It addresses \" 2 for each fifty the server allocates a Transmission Control Work (TBD entry in its backlog queue and replies with a UN MACK",
+      "page_number": 1,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 29,
+      "document_id": 12,
+      "name": "SYN Flood",
+      "definition": "A type of denial-of-service attack where the attacker sends a large number of SYN packets to a target server, consuming its resources and causing it to become unresponsive.",
+      "excerpt": "The attacker ( often a Gotnet, sends a continuous stream of 11th facelessly usually with random or spoofed # source addresses and ports. A black pocket families at the server or advice in front of Ity such as a stateful firewalls or local balancer",
+      "page_number": 6,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 30,
+      "document_id": 12,
+      "name": "Half-Open Connection",
+      "definition": "A connection that is started by the attacker but never finished, leaving the server with no room for genuine connections.",
+      "excerpt": "The attackers ends away large number of I'll packets to the target ' party' usually write supposed (fate) source. It addresses \" 2 for each fifty the server allocates a Transmission Control Work (TBD entry in its backlog queue and replies with a UN MACK",
+      "page_number": 1,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 31,
+      "document_id": 12,
+      "name": "Connection Reset",
+      "definition": "A response sent by the server to terminate an invalid or malicious connection.",
+      "excerpt": "The attacker crafts on U.T pocket with the source II of one endpoint and a sequence number that Polls inside the receiver's acceptable windows 3. Thereafter solidates the segments believes # the fear wants to reset, and immediately closes the connection",
+      "page_number": 4,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 32,
+      "document_id": 12,
+      "name": "ACK Flood",
+      "definition": "A type of denial-of-service attack where the attacker sends a large number of ACK packets to a target server, consuming its resources and causing it to become unresponsive.",
+      "excerpt": "The attacker ( often a Gotnet, sends a continuous stream of 11th facelessly usually with random or spoofed # source addresses and ports. A black pocket families at the server or advice in front of Ity such as a stateful firewalls or local balancer",
+      "page_number": 6,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 33,
+      "document_id": 12,
+      "name": "SYN Flood",
+      "definition": "A type of denial-of-service attack where the attacker sends a large number of SYN packets to a target server, consuming its resources and causing it to become unresponsive.",
+      "excerpt": "The attackers ends away large number of I'll packets to the target ' party' usually write supposed (fate) source. It addresses \" 2 for each fifty the server allocates a Transmission Control Work (TBD entry in its backlog queue and replies with a UN MACK",
+      "page_number": 1,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    },
+    {
+      "id": 34,
+      "document_id": 12,
+      "name": "SYN-ACK Flood",
+      "definition": "A type of denial-of-service attack where the attacker sends a large number of SYN-ACK packets to a target server, consuming its resources and causing it to become unresponsive.",
+      "excerpt": "The attackers ends away large number of I'll packets to the target ' party' usually write supposed (fate) source. It addresses \" 2 for each fifty the server allocates a Transmission Control Work (TBD entry in its backlog queue and replies with a UN MACK",
+      "page_number": 1,
+      "related_concepts": [
+        "ICCP Attacks",
+        "Denial-of-Service Attack"
+      ],
+      "is_bookmarked": false,
+      "created_at": "2026-11-05T15:30:09"
+    }
+  ],
+  "quiz": {
+    "id": 25,
+    "document_id": 12,
+    "title": "Computer Science & Networking Examination",
+    "difficulty": "mixed",
+    "question_count": 4,
+    "questions": [
+      {
+        "id": "q1",
+        "type": "multiple_choice",
+        "category": "conceptual",
+        "difficulty": "easy",
+        "topic": "ICCP Attacks",
+        "question": "What is the term for a connection that is left in the ESTABLISHED state waiting for an ACK, but never receives it?",
+        "options": [
+          "Half-open attack",
+          "Half-closed attack",
+          "Connection leak",
+          "Session hijacking"
+        ],
+        "page_number": 1
+      },
+      {
+        "id": "q2",
+        "type": "true_false",
+        "category": "analytical",
+        "difficulty": "medium",
+        "topic": "ICCP Attacks",
+        "question": "What is the impact of a half-open attack on the server's resources?",
+        "options": [
+          "True",
+          "False"
+        ],
+        "page_number": 1
+      },
+      {
+        "id": "q3",
+        "type": "short_answer",
+        "category": "problem_solving",
+        "difficulty": "hard",
+        "topic": "ICCP Attacks",
+        "question": "Describe the steps involved in a session hijacking attack.",
+        "options": [],
+        "page_number": 1
+      },
+      {
+        "id": "q4",
+        "type": "multiple_choice",
+        "category": "comparison",
+        "difficulty": "hard",
+        "topic": "ICCP Attacks",
+        "question": "Which of the following attacks is a targeted form of denial-of-service?",
+        "options": [
+          "Half-open attack",
+          "Session hijacking",
+          "MIT attack",
+          "Flood attack"
+        ],
+        "page_number": 1
+      }
+    ],
+    "is_submitted": false,
+    "user_score": null,
+    "user_answers": null,
+    "time_taken_seconds": null,
+    "weak_topics": null,
+    "recommendations": null,
+    "transcription_hash": "d86f0f12346e11278302824c4cde99bc2243fce204329e1718254abdc7badfa6",
+    "is_outdated": false,
+    "created_at": "2026-11-05T15:31:17"
+  },
+  "flashcards": {
+    "id": 19,
+    "document_id": 12,
+    "title": "ICCP Attacks and Defense",
+    "cards": [
+      {
+        "id": "card_1",
+        "card_type": "term_definition",
+        "topic": "Half-Open Attack",
+        "difficulty": "medium",
+        "front": "What is a half-open attack?",
+        "back": "A type of denial-of-service (DoS) attack where an attacker sends multiple packets to a target, but never finishes the handshake, leaving the connection in a pending state.",
+        "page_number": 1,
+        "excerpt": "'The attackers ends away large number of I'll packets to the target ' party'",
+        "rating": null,
+        "known": false,
+        "needs_review": false,
+        "review_count": 0,
+        "last_reviewed_at": null
+      },
+      {
+        "id": "card_2",
+        "card_type": "concept_explanation",
+        "topic": "ICCP Attacks and Defense",
+        "difficulty": "easy",
+        "front": "What is TCI Session Hijacking?",
+        "back": "An attack where an attacker takes control of an already established session between a client and a server, often by predicting or learning the attacker's packets.",
+        "page_number": 3,
+        "excerpt": "'The attacker monitors the session ( even - in the middle position or some network segment )'",
+        "rating": null,
+        "known": false,
+        "needs_review": false,
+        "review_count": 0,
+        "last_reviewed_at": null
+      },
+      {
+        "id": "card_3",
+        "card_type": "concept_explanation",
+        "topic": "MIT Attack",
+        "difficulty": "hard",
+        "front": "How does the MIT attack work?",
+        "back": "The attacker forges a connection reset packet (RST) in the TCP header, which causes the server to immediately close the connection without going through the normal closing procedure.",
+        "page_number": 4,
+        "excerpt": "'It is meant for error conditions, such as data arriving for a port just no listener.'",
+        "rating": null,
+        "known": false,
+        "needs_review": false,
+        "review_count": 0,
+        "last_reviewed_at": null
+      },
+      {
+        "id": "card_4",
+        "card_type": "formula_application",
+        "topic": "SYN Flood Attack",
+        "difficulty": "hard",
+        "front": "What is the formula for a SYN flood attack?",
+        "back": "The attacker sends an overwhelming number of TCP SYN packets to the target, with the ACK flag set to 0. The server responds with multiple SYN-ACK packets, which are then lost in transit or dropped by the router.",
+        "page_number": 6,
+        "excerpt": "'Because the packets are unsolicited, the target has to inspect each one search.'",
+        "rating": null,
+        "known": false,
+        "needs_review": false,
+        "review_count": 0,
+        "last_reviewed_at": null
+      },
+      {
+        "id": "card_5",
+        "card_type": "important_facts",
+        "topic": "ICCP Attacks and Defense",
+        "difficulty": "easy",
+        "front": "What is the impact of a SYN flood attack?",
+        "back": "The attack can cause network congestion, bandwidth saturation, and device overload, leading to delayed or dropped legitimate traffic.",
+        "page_number": 7,
+        "excerpt": "'Network congestion bandwidth is saturated key junk traffic'",
+        "rating": null,
+        "known": false,
+        "needs_review": false,
+        "review_count": 0,
+        "last_reviewed_at": null
+      }
+    ],
+    "topics": [
+      "Half-Open Attack",
+      "ICCP Attacks and Defense",
+      "MIT Attack",
+      "SYN Flood Attack"
+    ],
+    "total_cards": 5,
+    "card_count": 5,
+    "known_count": 0,
+    "needs_review_count": 0,
+    "unreviewed_count": 5,
+    "transcription_hash": "d86f0f12346e11278302824c4cde99bc2243fce204329e1718254abdc7badfa6",
+    "is_outdated": false,
+    "created_at": "2026-11-05T15:32:28"
+  },
+  "chat_evaluations": [
+    {
+      "query": "What is a TCP SYN Flood attack and how does it exploit the handshake?",
+      "answer": "According to [Source 1 | Page 1], a TCP SYN flood attack exploits the three-way handshake (SYN, SYN-ACK, FIN) of connection-oriented protocols like TCP. The attacker sends a large number of SYN packets to the target party, usually with spoofed source addresses and ports. \n\nThe server allocates Transmission Control Block (TCB) entries in its backlog queue for each received SYN packet. However, if the attacker continues sending these unsolicited SYN packets, the server's connection state tables will eventually become full, leading to a denial-of-service condition.\n\nIn this scenario, the server is forced to either drop or respond with an RST (Reset) packet to the attacker's spoofed address, thereby terminating the connection. This results in significant processing power and bandwidth consumption by the target server.",
+      "sources": [
+        {
+          "source_index": 1,
+          "page_number": 1,
+          "excerpt": "# Nicaragua A S KHENIANCA45142 Notes on\n\n## ICCP.Attacks 1. TOPINGLOOD A MIN\n\nHood is a denial-of-Service (DollARD attack that exploits the TV three-way handshake (SYN, SYN-ACK, HCED. TOP is connectio..."
+        },
+        {
+          "source_index": 2,
+          "page_number": 1,
+          "excerpt": "IIT jackets, random sequence numbers. It\nMuch Hood. Mr. Milk flood is a\nsolusmetric block attack in which the attacker\nsends an overwhelming number of TI\njackets with the ACK flag set to the target.\nl..."
+        },
+        {
+          "source_index": 3,
+          "page_number": 1,
+          "excerpt": "... ' the entry until it times out. 4. The backlog queue Pills up. News (IN packets from illegitimate clients are dropped or ignored.\n\n## Impact \" Venice vocabulary; web servers, in\n\njob-seekers and M..."
+        },
+        {
+          "source_index": 4,
+          "page_number": 1,
+          "excerpt": "Password cracking is needed. \" MK stroni\nthe out-of-sync client and server keep\nexchanging MKI causing extra nettsock\n. User-safe suffering and rejection ineffective\nIlondomised initial sequence numbe..."
+        }
+      ]
+    },
+    {
+      "query": "What is a TCP RST attack?",
+      "answer": "According to [Source 1 | Page 1], a server responds with an RST (Reset) packet to an attacker's spoofed address when it detects unsolicited SYN packets. This results in terminating the connection and consuming significant processing power and bandwidth by the target server.\n\nIn this scenario, the server is forced to either drop or respond with an RST packet to the attacker's spoofed address, thereby terminating the connection.",
+      "sources": [
+        {
+          "source_index": 1,
+          "page_number": 1,
+          "excerpt": "IIT jackets, random sequence numbers. It\nMuch Hood. Mr. Milk flood is a\nsolusmetric block attack in which the attacker\nsends an overwhelming number of TI\njackets with the ACK flag set to the target.\nl..."
+        },
+        {
+          "source_index": 2,
+          "page_number": 1,
+          "excerpt": "# Nicaragua A S KHENIANCA45142 Notes on\n\n## ICCP.Attacks 1. TOPINGLOOD A MIN\n\nHood is a denial-of-Service (DollARD attack that exploits the TV three-way handshake (SYN, SYN-ACK, HCED. TOP is connectio..."
+        },
+        {
+          "source_index": 3,
+          "page_number": 1,
+          "excerpt": "... ' the entry until it times out. 4. The backlog queue Pills up. News (IN packets from illegitimate clients are dropped or ignored.\n\n## Impact \" Venice vocabulary; web servers, in\n\njob-seekers and M..."
+        },
+        {
+          "source_index": 4,
+          "page_number": 1,
+          "excerpt": "afterwards inherits the legitimate user's\nQueens ( for example a biggest - in Telets\nITTF or web session ) without needing the\npassword. The identifies pockets by U\naddresses, port numbers and\nsequenc..."
+        }
+      ]
+    },
+    {
+      "query": "Explain how quantum teleportation works.",
+      "answer": "I could not find information about that in these handwritten notes. Please ask a question related to the transcribed content or review the notes in the Transcription tab.",
+      "sources": [
+        {
+          "source_index": 1,
+          "page_number": 1,
+          "excerpt": "# Nicaragua A S KHENIANCA45142 Notes on\n\n## ICCP.Attacks 1. TOPINGLOOD A MIN\n\nHood is a denial-of-Service (DollARD attack that exploits the TV three-way handshake (SYN, SYN-ACK, HCED. TOP is connectio"
+        },
+        {
+          "source_index": 2,
+          "page_number": 2,
+          "excerpt": "... ' the entry until it times out. 4. The backlog queue Pills up. News (IN packets from illegitimate clients are dropped or ignored.\n\n## Impact \" Venice vocabulary; web servers, in\n\njob-seekers and M"
+        },
+        {
+          "source_index": 3,
+          "page_number": 3,
+          "excerpt": "afterwards inherits the legitimate user's\nQueens ( for example a biggest - in Telets\nITTF or web session ) without needing the\npassword. The identifies pockets by U\naddresses, port numbers and\nsequenc"
+        },
+        {
+          "source_index": 4,
+          "page_number": 4,
+          "excerpt": "Password cracking is needed. \" MK stroni\nthe out-of-sync client and server keep\nexchanging MKI causing extra nettsock\n. User-safe suffering and rejection ineffective\nIlondomised initial sequence numbe"
+        },
+        {
+          "source_index": 5,
+          "page_number": 5,
+          "excerpt": "losses the connection ( or presses it ) and\nI determines the U addresses and port\nMembers of both endpoints. A The attacker\ncrafts on U.T pocket with the source II of\none endpoint and a sequence numbe"
+        },
+        {
+          "source_index": 6,
+          "page_number": 6,
+          "excerpt": "IIT jackets, random sequence numbers. It\nMuch Hood. Mr. Milk flood is a\nsolusmetric block attack in which the attacker\nsends an overwhelming number of TI\njackets with the ACK flag set to the target.\nl"
+        },
+        {
+          "source_index": 7,
+          "page_number": 7,
+          "excerpt": "returned -\n4. The heavy look, lead and traffic volume.\nexhaust off and link on party, so legitimate\ntraffic is delayed or dropped. Impact #\nNetwork congestion bandwidth is saturated\nkey junk traffic \""
+        }
+      ]
+    }
+  ]
+}
