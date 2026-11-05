@@ -24,6 +24,9 @@ import {
     MessageSquare,
     GraduationCap,
     ChevronDown,
+    ChevronUp,
+    CheckCheck,
+    X,
     Layout,
     Edit3
 } from 'lucide-react'
@@ -62,6 +65,10 @@ export default function HandwrittenStudio() {
     // Subject states
     const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false)
     const [isDetectingSubject, setIsDetectingSubject] = useState(false)
+
+    // Technical OCR Review states
+    const [reviewOpen, setReviewOpen] = useState(false)
+    const [reviewingCorrId, setReviewingCorrId] = useState(null)
 
     // Image & Document Loading states
     const [imageBlobUrl, setImageBlobUrl] = useState(null)
@@ -279,6 +286,38 @@ export default function HandwrittenStudio() {
     const confidence = currentPage?.confidence_score ?? null
     const confidenceRating = confidence >= 80 ? 'high' : confidence >= 60 ? 'medium' : 'low'
     const ocrLines = currentPage?.ocr_metadata?.lines || []
+    const technicalCorrections = currentPage?.ocr_metadata?.technical_corrections || []
+    const acceptedCount = technicalCorrections.filter(c => c.status === 'accepted').length
+    const suggestedCount = technicalCorrections.filter(c => c.status === 'suggested').length
+
+    const handleCorrectionAction = async (correctionId, action) => {
+        if (!currentPage) return
+        try {
+            setReviewingCorrId(correctionId)
+            const res = await apiRequest(`/handwritten/${documentId}/pages/${currentPage.page_number}/corrections/${correctionId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ action })
+            })
+            if (res && res.edited_transcription) {
+                setTranscriptionText(res.edited_transcription)
+                setPages(prev => prev.map((p, idx) => {
+                    if (idx === currentPageIndex) {
+                        const meta = { ...(p.ocr_metadata || {}) }
+                        meta.technical_corrections = (meta.technical_corrections || []).map(c => 
+                            c.id === correctionId ? { ...c, status: action === 'accept' ? 'accepted' : 'rejected' } : c
+                        )
+                        return { ...p, edited_transcription: res.edited_transcription, ocr_metadata: meta }
+                    }
+                    return p
+                }))
+                setTranscriptionUpdated(Date.now())
+            }
+        } catch (err) {
+            console.error('Failed to update correction:', err)
+        } finally {
+            setReviewingCorrId(null)
+        }
+    }
 
     if (loadingDoc) {
         return (
@@ -622,6 +661,92 @@ export default function HandwrittenStudio() {
                                             </button>
                                         </div>
                                     </div>
+
+                                    {/* Technical OCR Recovery & Review Section */}
+                                    {technicalCorrections.length > 0 && (
+                                        <div className="technical-recovery-panel">
+                                            <div 
+                                                className="technical-recovery-header"
+                                                onClick={() => setReviewOpen(prev => !prev)}
+                                                title="Click to toggle Technical Terminology Review"
+                                            >
+                                                <div className="technical-recovery-title">
+                                                    <Sparkles size={14} style={{ color: '#c084fc' }} />
+                                                    <span>Technical Terminology Recovery</span>
+                                                    <span className="recovery-badge-count">
+                                                        {technicalCorrections.length} {technicalCorrections.length === 1 ? 'term' : 'terms'}
+                                                        {acceptedCount > 0 ? ` (${acceptedCount} recovered)` : ''}
+                                                    </span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                                        {reviewOpen ? 'Hide' : 'Review Terms'}
+                                                    </span>
+                                                    {reviewOpen ? <ChevronUp size={14} color="#94a3b8" /> : <ChevronDown size={14} color="#94a3b8" />}
+                                                </div>
+                                            </div>
+
+                                            {reviewOpen && (
+                                                <div className="technical-recovery-body">
+                                                    {technicalCorrections.map((corr) => (
+                                                        <div key={corr.id} className="recovery-item-card">
+                                                            <div className="recovery-item-left">
+                                                                <div className="recovery-terms-comparison">
+                                                                    <span className="recovery-raw-term" title="Raw OCR output">
+                                                                        {corr.original_text}
+                                                                    </span>
+                                                                    <span style={{ color: '#64748b' }}>→</span>
+                                                                    <span className="recovery-suggested-term" title="Domain-recovered term">
+                                                                        {corr.suggested_text}
+                                                                    </span>
+                                                                    <span className={`recovery-status-pill ${corr.status}`}>
+                                                                        {corr.status}
+                                                                    </span>
+                                                                    <span className="recovery-evidence-pill">
+                                                                        {Math.round(corr.confidence * 100)}% evidence
+                                                                    </span>
+                                                                </div>
+                                                                <div className="recovery-evidence-row">
+                                                                    {(corr.evidence || []).map((ev, evIdx) => (
+                                                                        <span key={evIdx} className="recovery-evidence-pill" title={ev}>
+                                                                            {ev}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="recovery-actions">
+                                                                {corr.status !== 'accepted' && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn-recovery-action btn-recovery-accept"
+                                                                        onClick={() => handleCorrectionAction(corr.id, 'accept')}
+                                                                        disabled={reviewingCorrId === corr.id}
+                                                                        title="Accept this technical term recovery"
+                                                                    >
+                                                                        <Check size={11} />
+                                                                        <span>Accept</span>
+                                                                    </button>
+                                                                )}
+                                                                {corr.status !== 'rejected' && (
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn-recovery-action btn-recovery-reject"
+                                                                        onClick={() => handleCorrectionAction(corr.id, 'reject')}
+                                                                        disabled={reviewingCorrId === corr.id}
+                                                                        title="Reject or revert this suggestion"
+                                                                    >
+                                                                        <X size={11} />
+                                                                        <span>{corr.status === 'accepted' ? 'Revert' : 'Reject'}</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* Content View: Formatted Layout View vs Raw Editor View */}
                                     {transcriptionDisplayMode === 'formatted' && currentPage?.ocr_metadata?.structured_layout?.blocks?.length > 0 ? (

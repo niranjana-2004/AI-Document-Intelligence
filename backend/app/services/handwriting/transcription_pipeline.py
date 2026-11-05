@@ -12,13 +12,16 @@ from app.services.handwriting.document_structure_service import (
     analyze_document_structure,
     reconstruct_structured_markdown
 )
+from app.services.handwriting.terminology_service import extract_document_terminology
+from app.services.handwriting.technical_recovery_service import recover_technical_line
 
 logger = logging.getLogger(__name__)
 
 
 def transcribe_page_image(
     image_path: Path,
-    original_image_path: Optional[Path] = None
+    original_image_path: Optional[Path] = None,
+    subject: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Execute complete handwriting recognition on a document page image.
@@ -116,28 +119,60 @@ def transcribe_page_image(
                 "is_uncertain": line_conf < 65.0
             })
 
-    # 3. Analyze document structure (semantic hierarchy, headings, lists, paragraphs)
-    structure = analyze_document_structure(recognized_lines, page_width=w, page_height=h)
+    # 3. Technical OCR Recovery Layer
+    vocab_index = extract_document_terminology(text_parts, subject=subject)
+    recovered_lines_data = []
+    technical_corrections = []
+
+    for l_item in recognized_lines:
+        l_idx = l_item["line_index"]
+        l_text = l_item["text"]
+        l_conf = l_item["confidence"]
+        bx, by, bw, bh = l_item["bbox"]
+        crop_bgr = proc_img[max(0, by):min(h, by+bh), max(0, bx):min(w, bx+bw)] if (bh > 0 and bw > 0) else None
+
+        rec_text, corrs = recover_technical_line(
+            raw_line_text=l_text,
+            line_idx=l_idx,
+            page_num=1,
+            vocab_index=vocab_index,
+            line_crop_bgr=crop_bgr,
+            line_conf=l_conf
+        )
+        l_item["recovered_text"] = rec_text
+        technical_corrections.extend(corrs)
+        recovered_lines_data.append({
+            "line_index": l_idx,
+            "text": rec_text,
+            "confidence": l_conf,
+            "bbox": l_item["bbox"],
+            "is_uncertain": l_item["is_uncertain"]
+        })
+
+    # 4. Analyze document structure (using recovered technical text for clean semantic hierarchy)
+    structure = analyze_document_structure(recovered_lines_data, page_width=w, page_height=h)
     structured_markdown = reconstruct_structured_markdown(structure["blocks"])
 
-    # Full text uses structured markdown with clean paragraph boundaries
     raw_text = "\n".join(text_parts).strip()
-    full_text = structured_markdown if structured_markdown else raw_text
+    recovered_text = "\n".join(l["text"] for l in recovered_lines_data).strip()
+    full_text = structured_markdown if structured_markdown else recovered_text
     page_confidence = round(sum(confidences) / len(confidences), 1) if confidences else 0.0
 
     elapsed_ms = round((time.time() - start_time) * 1000, 2)
     logger.info(
         f"Transcribed {len(recognized_lines)} lines on {image_path.name} in {elapsed_ms}ms "
-        f"(confidence: {page_confidence}%, blocks: {structure['total_blocks']})"
+        f"(confidence: {page_confidence}%, blocks: {structure['total_blocks']}, corrections: {len(technical_corrections)})"
     )
 
     return {
         "raw_text": raw_text,
+        "recovered_text": recovered_text,
         "full_text": full_text,
         "confidence_score": page_confidence,
         "total_lines": len(recognized_lines),
         "is_empty": False,
         "execution_time_ms": elapsed_ms,
         "lines": recognized_lines,
-        "structured_layout": structure
+        "structured_layout": structure,
+        "technical_corrections": technical_corrections
     }

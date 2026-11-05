@@ -266,7 +266,7 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
         img_to_ocr = Path(page.processed_image_path or page.original_image_path)
         orig_img = Path(page.original_image_path) if page.original_image_path else None
         try:
-            ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img)
+            ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img, subject=document.subject)
             page.raw_transcription = ocr_res.get("raw_text") or ocr_res["full_text"]
             page.edited_transcription = ocr_res["full_text"]
             page.confidence_score = ocr_res["confidence_score"]
@@ -274,7 +274,8 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
                 "lines": ocr_res["lines"],
                 "is_empty": ocr_res["is_empty"],
                 "execution_time_ms": ocr_res["execution_time_ms"],
-                "structured_layout": ocr_res.get("structured_layout", {})
+                "structured_layout": ocr_res.get("structured_layout", {}),
+                "technical_corrections": ocr_res.get("technical_corrections", [])
             }
             page.status = "transcribed"
             page.error_message = None
@@ -388,7 +389,7 @@ def process_single_page_ocr(
     img_to_ocr = Path(page.processed_image_path or page.original_image_path)
     orig_img = Path(page.original_image_path) if page.original_image_path else None
     try:
-        ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img)
+        ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img, subject=document.subject)
         page.raw_transcription = ocr_res.get("raw_text") or ocr_res["full_text"]
         page.edited_transcription = ocr_res["full_text"]
         page.confidence_score = ocr_res["confidence_score"]
@@ -396,7 +397,8 @@ def process_single_page_ocr(
             "lines": ocr_res["lines"],
             "is_empty": ocr_res["is_empty"],
             "execution_time_ms": ocr_res["execution_time_ms"],
-            "structured_layout": ocr_res.get("structured_layout", {})
+            "structured_layout": ocr_res.get("structured_layout", {}),
+            "technical_corrections": ocr_res.get("technical_corrections", [])
         }
         page.status = "transcribed"
         page.error_message = None
@@ -1078,6 +1080,71 @@ def update_document_subject_endpoint(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+class CorrectionReviewRequest(BaseModel):
+    action: str  # "accept" | "reject"
+
+
+@router.patch("/{document_id}/pages/{page_number}/corrections/{correction_id}")
+def update_page_correction_status(
+    document_id: int,
+    page_number: int,
+    correction_id: str,
+    req: CorrectionReviewRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Accept or reject an individual technical OCR recovery suggestion.
+    Auditable and reversible: updates edited_transcription while strictly preserving raw_transcription.
+    """
+    doc = db.query(Document).filter(Document.id == document_id, Document.user_id == current_user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    page = db.query(HandwrittenPage).filter(
+        HandwrittenPage.document_id == document_id,
+        HandwrittenPage.page_number == page_number
+    ).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found.")
+
+    meta = dict(page.ocr_metadata or {})
+    corrs = list(meta.get("technical_corrections", []))
+    target_corr = next((c for c in corrs if c.get("id") == correction_id), None)
+    if not target_corr:
+        raise HTTPException(status_code=404, detail=f"Correction '{correction_id}' not found.")
+
+    orig_text = target_corr.get("original_text", "")
+    sugg_text = target_corr.get("suggested_text", "")
+    current_status = target_corr.get("status", "suggested")
+    action = req.action.lower()
+
+    if action == "accept":
+        target_corr["status"] = "accepted"
+        if page.edited_transcription and orig_text in page.edited_transcription:
+            page.edited_transcription = page.edited_transcription.replace(orig_text, sugg_text)
+    elif action == "reject":
+        target_corr["status"] = "rejected"
+        if current_status == "accepted" and page.edited_transcription and sugg_text in page.edited_transcription:
+            page.edited_transcription = page.edited_transcription.replace(sugg_text, orig_text)
+    else:
+        raise HTTPException(status_code=400, detail="Action must be 'accept' or 'reject'.")
+
+    meta["technical_corrections"] = corrs
+    page.ocr_metadata = meta
+    db.commit()
+    db.refresh(page)
+    _update_document_full_text(doc, db)
+
+    return {
+        "message": f"Correction '{correction_id}' set to {action}ed.",
+        "correction": target_corr,
+        "page_number": page.page_number,
+        "edited_transcription": page.edited_transcription
+    }
+
+
+
 @router.post("/{document_id}/subject/detect")
 def auto_detect_subject_endpoint(
     document_id: int,
@@ -1094,4 +1161,69 @@ def auto_detect_subject_endpoint(
         }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+class CorrectionReviewRequest(BaseModel):
+    action: str  # "accept" | "reject"
+
+
+@router.patch("/{document_id}/pages/{page_number}/corrections/{correction_id}")
+def update_page_correction_status(
+    document_id: int,
+    page_number: int,
+    correction_id: str,
+    req: CorrectionReviewRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Accept or reject an individual technical OCR recovery suggestion.
+    Auditable and reversible: updates edited_transcription while strictly preserving raw_transcription.
+    """
+    doc = db.query(Document).filter(Document.id == document_id, Document.user_id == current_user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    page = db.query(HandwrittenPage).filter(
+        HandwrittenPage.document_id == document_id,
+        HandwrittenPage.page_number == page_number
+    ).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found.")
+
+    meta = dict(page.ocr_metadata or {})
+    corrs = list(meta.get("technical_corrections", []))
+    target_corr = next((c for c in corrs if c.get("id") == correction_id), None)
+    if not target_corr:
+        raise HTTPException(status_code=404, detail=f"Correction '{correction_id}' not found.")
+
+    orig_text = target_corr.get("original_text", "")
+    sugg_text = target_corr.get("suggested_text", "")
+    current_status = target_corr.get("status", "suggested")
+    action = req.action.lower()
+
+    if action == "accept":
+        target_corr["status"] = "accepted"
+        if page.edited_transcription and orig_text in page.edited_transcription:
+            page.edited_transcription = page.edited_transcription.replace(orig_text, sugg_text)
+    elif action == "reject":
+        target_corr["status"] = "rejected"
+        if current_status == "accepted" and page.edited_transcription and sugg_text in page.edited_transcription:
+            page.edited_transcription = page.edited_transcription.replace(sugg_text, orig_text)
+    else:
+        raise HTTPException(status_code=400, detail="Action must be 'accept' or 'reject'.")
+
+    meta["technical_corrections"] = corrs
+    page.ocr_metadata = meta
+    db.commit()
+    db.refresh(page)
+    _update_document_full_text(doc, db)
+
+    return {
+        "message": f"Correction '{correction_id}' set to {action}ed.",
+        "correction": target_corr,
+        "page_number": page.page_number,
+        "edited_transcription": page.edited_transcription
+    }
+
 

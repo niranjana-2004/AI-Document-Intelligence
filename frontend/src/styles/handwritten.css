@@ -5120,3 +5120,177 @@
     margin-left: 8px;
 }
 
+/* Technical OCR Recovery & Review Panel */
+.technical-recovery-panel {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 9px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+}
+
+.technical-recovery-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(139, 92, 246, 0.1);
+    cursor: pointer;
+    user-select: none;
+}
+
+.technical-recovery-header:hover {
+    background: rgba(139, 92, 246, 0.15);
+}
+
+.technical-recovery-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.recovery-badge-count {
+    padding: 1px 7px;
+    font-size: 11px;
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.3);
+    color: #c084fc;
+    font-weight: 700;
+}
+
+.technical-recovery-body {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.recovery-item-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.recovery-item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+
+.recovery-terms-comparison {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.recovery-raw-term {
+    color: #ef4444;
+    text-decoration: line-through;
+    opacity: 0.85;
+}
+
+.recovery-suggested-term {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.recovery-evidence-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.recovery-evidence-pill {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 10px;
+}
+
+.recovery-status-pill {
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.recovery-status-pill.accepted {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.recovery-status-pill.suggested {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.recovery-status-pill.rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.recovery-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-recovery-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid transparent;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-recovery-accept {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.btn-recovery-accept:hover {
+    background: rgba(16, 185, 129, 0.35);
+}
+
+.btn-recovery-reject {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.btn-recovery-reject:hover {
+    background: rgba(239, 68, 68, 0.35);
+}
+
+

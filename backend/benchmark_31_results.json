@@ -1,0 +1,613 @@
+{
+  "overall": {
+    "raw_cer": 0.2191,
+    "raw_wer": 0.4667,
+    "edited_cer": 0.213,
+    "edited_wer": 0.4779,
+    "raw_tech_accuracy": 0.2,
+    "recovered_tech_accuracy": 0.4,
+    "total_corrections": 25,
+    "accepted_corrections": 14,
+    "suggested_corrections": 11,
+    "total_lines": 158
+  },
+  "technical_terms": {
+    "TCP": {
+      "raw": false,
+      "recovered": true
+    },
+    "SYN": {
+      "raw": true,
+      "recovered": true
+    },
+    "ACK": {
+      "raw": true,
+      "recovered": true
+    },
+    "RST": {
+      "raw": false,
+      "recovered": false
+    },
+    "TCB": {
+      "raw": false,
+      "recovered": false
+    },
+    "DoS": {
+      "raw": false,
+      "recovered": false
+    },
+    "DDoS": {
+      "raw": false,
+      "recovered": false
+    },
+    "SYN flood": {
+      "raw": false,
+      "recovered": false
+    },
+    "TCP session hijacking": {
+      "raw": false,
+      "recovered": true
+    },
+    "TCP RST attack": {
+      "raw": false,
+      "recovered": false
+    },
+    "TCP ACK flood": {
+      "raw": false,
+      "recovered": false
+    },
+    "Transmission Control Block": {
+      "raw": false,
+      "recovered": true
+    },
+    "backlog queue": {
+      "raw": true,
+      "recovered": true
+    },
+    "SYN cookies": {
+      "raw": false,
+      "recovered": false
+    },
+    "RFC 5961": {
+      "raw": false,
+      "recovered": false
+    }
+  },
+  "pages": [
+    {
+      "page_number": 1,
+      "lines_count": 23,
+      "confidence": 70.0,
+      "raw_cer": 0.1884,
+      "raw_wer": 0.3974,
+      "edited_cer": 0.1702,
+      "edited_wer": 0.3846,
+      "corrections": [
+        {
+          "id": "corr_p1_l2_phrase_1",
+          "type": "phrase",
+          "original_text": "ICCP.Attacks",
+          "suggested_text": "TCP Attacks",
+          "status": "accepted",
+          "confidence": 0.76,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'TCP Attacks' (optical similarity: 81.8%)"
+          ],
+          "char_span": [
+            0,
+            12
+          ],
+          "line_index": 2,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l2_tok_2",
+          "type": "token",
+          "original_text": "ICCP",
+          "suggested_text": "ICMP",
+          "status": "suggested",
+          "confidence": 0.7,
+          "evidence": [
+            "Optical character similarity to 'ICMP': 75.0%",
+            "Contextual colocation match: 'attacks' strongly colocates with 'ICMP'",
+            "Low line confidence (39.9%) indicates visual ambiguity"
+          ],
+          "char_span": [
+            0,
+            4
+          ],
+          "line_index": 2,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l4_phrase_1",
+          "type": "phrase",
+          "original_text": "TV three-way",
+          "suggested_text": "TCP three-way",
+          "status": "accepted",
+          "confidence": 0.76,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'TCP three-way' (optical similarity: 81.8%)"
+          ],
+          "char_span": [
+            25,
+            37
+          ],
+          "line_index": 4,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l5_tok_1",
+          "type": "token",
+          "original_text": "TOP",
+          "suggested_text": "TCP",
+          "status": "suggested",
+          "confidence": 0.64,
+          "evidence": [
+            "Optical character similarity to 'TCP': 71.7%",
+            "Visual re-evaluation (ruling_line_suppression) produced 'TCP'",
+            "Low line confidence (50.3%) indicates visual ambiguity"
+          ],
+          "char_span": [
+            31,
+            34
+          ],
+          "line_index": 5,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l19_phrase_1",
+          "type": "phrase",
+          "original_text": "Transmission Control Work",
+          "suggested_text": "Transmission Control Block",
+          "status": "accepted",
+          "confidence": 0.79,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'Transmission Control Block' (optical similarity: 87.5%)"
+          ],
+          "char_span": [
+            0,
+            25
+          ],
+          "line_index": 19,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l21_tok_1",
+          "type": "token",
+          "original_text": "MACK",
+          "suggested_text": "ACK",
+          "status": "accepted",
+          "confidence": 0.99,
+          "evidence": [
+            "Optical character similarity to 'ACK': 88.0%",
+            "Contextual colocation match: 'syn' strongly colocates with 'ACK'",
+            "Visual re-evaluation (ruling_line_suppression) produced 'ACK'",
+            "Document consistency: 'ACK' verified elsewhere in notes",
+            "Low line confidence (50.7%) indicates visual ambiguity"
+          ],
+          "char_span": [
+            0,
+            4
+          ],
+          "line_index": 21,
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "page_number": 2,
+      "lines_count": 23,
+      "confidence": 70.2,
+      "raw_cer": 0.1859,
+      "raw_wer": 0.4694,
+      "edited_cer": 0.1838,
+      "edited_wer": 0.483,
+      "corrections": [
+        {
+          "id": "corr_p1_l10_phrase_1",
+          "type": "phrase",
+          "original_text": "ll cookies",
+          "suggested_text": "SYN cookies",
+          "status": "suggested",
+          "confidence": 0.7,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'SYN cookies' (optical similarity: 70.0%)"
+          ],
+          "char_span": [
+            24,
+            34
+          ],
+          "line_index": 10,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l12_phrase_1",
+          "type": "phrase",
+          "original_text": "sequence number",
+          "suggested_text": "sequence numbers",
+          "status": "accepted",
+          "confidence": 0.82,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'sequence numbers' (optical similarity: 93.3%)"
+          ],
+          "char_span": [
+            0,
+            15
+          ],
+          "line_index": 12,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l17_phrase_1",
+          "type": "phrase",
+          "original_text": "spoofed ills",
+          "suggested_text": "spoofed IP",
+          "status": "suggested",
+          "confidence": 0.71,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'spoofed IP' (optical similarity: 72.7%)"
+          ],
+          "char_span": [
+            28,
+            40
+          ],
+          "line_index": 17,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l18_phrase_1",
+          "type": "phrase",
+          "original_text": "TCI Session Hijacking",
+          "suggested_text": "TCP Session Hijacking",
+          "status": "accepted",
+          "confidence": 0.83,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'TCP Session Hijacking' (optical similarity: 95.5%)"
+          ],
+          "char_span": [
+            4,
+            25
+          ],
+          "line_index": 18,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l18_tok_2",
+          "type": "token",
+          "original_text": "TCI",
+          "suggested_text": "TCP",
+          "status": "suggested",
+          "confidence": 0.69,
+          "evidence": [
+            "Optical character similarity to 'TCP': 71.7%",
+            "Contextual colocation match: 'hijacking' strongly colocates with 'TCP'",
+            "Low line confidence (61.4%) indicates visual ambiguity"
+          ],
+          "char_span": [
+            4,
+            7
+          ],
+          "line_index": 18,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l18_tok_3",
+          "type": "token",
+          "original_text": "TCI",
+          "suggested_text": "TCP",
+          "status": "suggested",
+          "confidence": 0.69,
+          "evidence": [
+            "Optical character similarity to 'TCP': 71.7%",
+            "Contextual colocation match: 'hijacking' strongly colocates with 'TCP'",
+            "Low line confidence (61.4%) indicates visual ambiguity"
+          ],
+          "char_span": [
+            4,
+            7
+          ],
+          "line_index": 18,
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "page_number": 3,
+      "lines_count": 25,
+      "confidence": 71.2,
+      "raw_cer": 0.238,
+      "raw_wer": 0.5,
+      "edited_cer": 0.2266,
+      "edited_wer": 0.5066,
+      "corrections": [
+        {
+          "id": "corr_p1_l6_phrase_1",
+          "type": "phrase",
+          "original_text": "acknowledgment numbers",
+          "suggested_text": "acknowledgement numbers",
+          "status": "accepted",
+          "confidence": 0.83,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'acknowledgement numbers' (optical similarity: 95.5%)"
+          ],
+          "char_span": [
+            10,
+            32
+          ],
+          "line_index": 6,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l13_phrase_1",
+          "type": "phrase",
+          "original_text": "sequence numbers",
+          "suggested_text": "sequence number",
+          "status": "accepted",
+          "confidence": 0.79,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'sequence number' (optical similarity: 88.0%)"
+          ],
+          "char_span": [
+            18,
+            34
+          ],
+          "line_index": 13,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l13_phrase_2",
+          "type": "phrase",
+          "original_text": "current sequence numbers",
+          "suggested_text": "initial sequence numbers",
+          "status": "suggested",
+          "confidence": 0.7,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'initial sequence numbers' (optical similarity: 69.5%)"
+          ],
+          "char_span": [
+            10,
+            34
+          ],
+          "line_index": 13,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l19_phrase_1",
+          "type": "phrase",
+          "original_text": "sequence number",
+          "suggested_text": "sequence numbers",
+          "status": "accepted",
+          "confidence": 0.82,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'sequence numbers' (optical similarity: 93.3%)"
+          ],
+          "char_span": [
+            3,
+            18
+          ],
+          "line_index": 19,
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "page_number": 4,
+      "lines_count": 22,
+      "confidence": 69.8,
+      "raw_cer": 0.2957,
+      "raw_wer": 0.5232,
+      "edited_cer": 0.2887,
+      "edited_wer": 0.5364,
+      "corrections": [
+        {
+          "id": "corr_p1_l5_phrase_1",
+          "type": "phrase",
+          "original_text": "sequence numbers",
+          "suggested_text": "sequence number",
+          "status": "accepted",
+          "confidence": 0.79,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'sequence number' (optical similarity: 88.0%)"
+          ],
+          "char_span": [
+            20,
+            36
+          ],
+          "line_index": 5,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l9_tok_1",
+          "type": "token",
+          "original_text": "TC",
+          "suggested_text": "TCP",
+          "status": "suggested",
+          "confidence": 0.62,
+          "evidence": [
+            "Optical character similarity to 'TCP': 66.7%",
+            "Visual re-evaluation (enhanced_contrast_sharpness) produced 'TCP'",
+            "Low line confidence (47.7%) indicates visual ambiguity"
+          ],
+          "char_span": [
+            37,
+            39
+          ],
+          "line_index": 9,
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "page_number": 5,
+      "lines_count": 25,
+      "confidence": 68.0,
+      "raw_cer": 0.2355,
+      "raw_wer": 0.5083,
+      "edited_cer": 0.2381,
+      "edited_wer": 0.5359,
+      "corrections": [
+        {
+          "id": "corr_p1_l5_phrase_1",
+          "type": "phrase",
+          "original_text": "sequence number",
+          "suggested_text": "sequence numbers",
+          "status": "accepted",
+          "confidence": 0.82,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'sequence numbers' (optical similarity: 93.3%)"
+          ],
+          "char_span": [
+            22,
+            37
+          ],
+          "line_index": 5,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l20_phrase_1",
+          "type": "phrase",
+          "original_text": "sequence number",
+          "suggested_text": "sequence numbers",
+          "status": "accepted",
+          "confidence": 0.82,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'sequence numbers' (optical similarity: 93.3%)"
+          ],
+          "char_span": [
+            4,
+            19
+          ],
+          "line_index": 20,
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "page_number": 6,
+      "lines_count": 22,
+      "confidence": 69.4,
+      "raw_cer": 0.1836,
+      "raw_wer": 0.378,
+      "edited_cer": 0.1901,
+      "edited_wer": 0.4024,
+      "corrections": [
+        {
+          "id": "corr_p1_l1_phrase_1",
+          "type": "phrase",
+          "original_text": "sequence numbers",
+          "suggested_text": "sequence number",
+          "status": "accepted",
+          "confidence": 0.98,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'sequence number' (optical similarity: 88.0%)",
+            "Visual re-evaluation directly corroborated domain phrase"
+          ],
+          "char_span": [
+            21,
+            37
+          ],
+          "line_index": 1,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l1_phrase_2",
+          "type": "phrase",
+          "original_text": "random sequence numbers",
+          "suggested_text": "initial sequence numbers",
+          "status": "suggested",
+          "confidence": 0.69,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'initial sequence numbers' (optical similarity: 68.2%)"
+          ],
+          "char_span": [
+            14,
+            37
+          ],
+          "line_index": 1,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l2_phrase_1",
+          "type": "phrase",
+          "original_text": "HnMCK flood",
+          "suggested_text": "ACK flood",
+          "status": "suggested",
+          "confidence": 0.7,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'ACK flood' (optical similarity: 70.0%)"
+          ],
+          "char_span": [
+            13,
+            24
+          ],
+          "line_index": 2,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l19_phrase_1",
+          "type": "phrase",
+          "original_text": "stateful firewall",
+          "suggested_text": "stateful firewalls",
+          "status": "accepted",
+          "confidence": 0.82,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'stateful firewalls' (optical similarity: 94.1%)"
+          ],
+          "char_span": [
+            14,
+            31
+          ],
+          "line_index": 19,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l22_phrase_1",
+          "type": "phrase",
+          "original_text": "the packet",
+          "suggested_text": "RST packet",
+          "status": "suggested",
+          "confidence": 0.68,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'RST packet' (optical similarity: 66.7%)"
+          ],
+          "char_span": [
+            3,
+            13
+          ],
+          "line_index": 22,
+          "page_number": 1
+        }
+      ]
+    },
+    {
+      "page_number": 7,
+      "lines_count": 18,
+      "confidence": 70.5,
+      "raw_cer": 0.1912,
+      "raw_wer": 0.5,
+      "edited_cer": 0.1738,
+      "edited_wer": 0.5,
+      "corrections": []
+    }
+  ]
+}
