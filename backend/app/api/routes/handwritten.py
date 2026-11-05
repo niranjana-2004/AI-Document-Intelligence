@@ -21,6 +21,11 @@ from app.services.handwriting.image_preprocessor import (
     generate_page_stages
 )
 from app.services.handwriting.transcription_pipeline import transcribe_page_image
+from app.services.handwriting.subject_service import (
+    ACADEMIC_SUBJECTS,
+    auto_detect_and_set_subject,
+    set_document_subject
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +44,10 @@ ALLOWED_EXTENSIONS = {
 
 class TranscriptionUpdateRequest(BaseModel):
     transcription: str
+
+
+class SubjectUpdateRequest(BaseModel):
+    subject: str
 
 
 def _update_document_full_text(document: Document, db: Session) -> str:
@@ -258,13 +267,14 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
         orig_img = Path(page.original_image_path) if page.original_image_path else None
         try:
             ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img)
-            page.raw_transcription = ocr_res["full_text"]
+            page.raw_transcription = ocr_res.get("raw_text") or ocr_res["full_text"]
             page.edited_transcription = ocr_res["full_text"]
             page.confidence_score = ocr_res["confidence_score"]
             page.ocr_metadata = {
                 "lines": ocr_res["lines"],
                 "is_empty": ocr_res["is_empty"],
-                "execution_time_ms": ocr_res["execution_time_ms"]
+                "execution_time_ms": ocr_res["execution_time_ms"],
+                "structured_layout": ocr_res.get("structured_layout", {})
             }
             page.status = "transcribed"
             page.error_message = None
@@ -379,13 +389,14 @@ def process_single_page_ocr(
     orig_img = Path(page.original_image_path) if page.original_image_path else None
     try:
         ocr_res = transcribe_page_image(img_to_ocr, original_image_path=orig_img)
-        page.raw_transcription = ocr_res["full_text"]
+        page.raw_transcription = ocr_res.get("raw_text") or ocr_res["full_text"]
         page.edited_transcription = ocr_res["full_text"]
         page.confidence_score = ocr_res["confidence_score"]
         page.ocr_metadata = {
             "lines": ocr_res["lines"],
             "is_empty": ocr_res["is_empty"],
-            "execution_time_ms": ocr_res["execution_time_ms"]
+            "execution_time_ms": ocr_res["execution_time_ms"],
+            "structured_layout": ocr_res.get("structured_layout", {})
         }
         page.status = "transcribed"
         page.error_message = None
@@ -600,6 +611,7 @@ def get_handwritten_documents(
             "id": doc.id,
             "filename": doc.filename,
             "document_type": doc.document_type,
+            "subject": doc.subject or "Humanities & General",
             "processing_status": doc.processing_status,
             "processing_progress": doc.processing_progress,
             "page_count": page_count,
@@ -650,6 +662,8 @@ def get_handwritten_document_details(
         "id": document.id,
         "filename": document.filename,
         "document_type": document.document_type,
+        "subject": document.subject or "Humanities & General",
+        "available_subjects": ACADEMIC_SUBJECTS,
         "processing_status": document.processing_status,
         "processing_progress": document.processing_progress,
         "total_pages": len(pages),
@@ -1023,3 +1037,61 @@ def delete_handwritten_document(
         "message": "Handwritten document deleted successfully.",
         "document_id": document_id
     }
+
+
+@router.get("/{document_id}/subject")
+def get_document_subject_endpoint(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get the current academic subject and available subjects for a document."""
+    doc = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == current_user.id
+    ).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+    return {
+        "document_id": doc.id,
+        "subject": doc.subject or "Humanities & General",
+        "available_subjects": ACADEMIC_SUBJECTS
+    }
+
+
+@router.patch("/{document_id}/subject")
+def update_document_subject_endpoint(
+    document_id: int,
+    req: SubjectUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Manually update the academic subject for a document."""
+    try:
+        updated_subject = set_document_subject(document_id, current_user.id, req.subject, db)
+        return {
+            "document_id": document_id,
+            "subject": updated_subject,
+            "message": "Subject updated successfully."
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/{document_id}/subject/detect")
+def auto_detect_subject_endpoint(
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Automatically detect and assign the academic subject for a document."""
+    try:
+        detected_subject = auto_detect_and_set_subject(document_id, current_user.id, db)
+        return {
+            "document_id": document_id,
+            "subject": detected_subject,
+            "message": f"Subject auto-detected as '{detected_subject}'."
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+

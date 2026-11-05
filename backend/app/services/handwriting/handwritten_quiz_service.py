@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.handwritten_analysis import HandwrittenQuizSet, HandwrittenConcept
+from app.models.document import Document
 from app.services.handwriting.handwritten_source_service import get_document_transcription_source
 from app.services.handwriting.ollama_client import query_ollama_json, OllamaError
 
@@ -93,6 +94,9 @@ def generate_handwritten_quiz(
     full_notes = source_data["full_text"]
     current_hash = source_data["hash"]
 
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    subject = (doc.subject if doc and doc.subject else None) or "General Academic"
+
     # Build topic guidance if specified
     topic_clause = ""
     if topics and len(topics) > 0:
@@ -127,15 +131,16 @@ def generate_handwritten_quiz(
         diff_prompt = "All questions should challenge deep analytical synthesis, subtle distinctions, and critical reasoning."
 
     system_prompt = (
-        "You are an elite academic examination board creating an interactive test based on handwritten student notes. "
+        f"You are an elite academic examination board creating an interactive test in {subject} based on handwritten student notes. "
         f"CRITICAL REQUIREMENT: You MUST generate EXACTLY {question_count} distinct questions in the 'questions' array. Do not stop early or generate only 1 question.\n"
         "STRICT PEDAGOGICAL CRITERIA:\n"
         "1. Every question must be directly grounded in the provided notes. Never invent claims or hallucinate.\n"
-        "2. Avoid repetitive questions: each question MUST test a DIFFERENT concept or detail.\n"
-        "3. Incorporate diverse question categories: conceptual, definition, application, scenario, analytical, comparison, problem_solving.\n"
-        "4. For Multiple Choice Questions, provide 4 distinctly different, plausible options. The correct answer must be unambiguous.\n"
-        "5. Provide the exact source page number (from --- Page X ---) and a direct quote excerpt supporting the answer.\n"
-        "6. Output MUST strictly adhere to the requested JSON schema."
+        f"2. Incorporate rigorous discipline-specific principles and terminology appropriate for {subject}.\n"
+        "3. Avoid repetitive questions: each question MUST test a DIFFERENT concept or detail.\n"
+        "4. Incorporate diverse question categories: conceptual, definition, application, scenario, analytical, comparison, problem_solving.\n"
+        "5. For Multiple Choice Questions, provide 4 distinctly different, plausible options. The correct answer must be unambiguous.\n"
+        "6. Provide the exact source page number (from --- Page X ---) and a direct quote excerpt supporting the answer.\n"
+        "7. Output MUST strictly adhere to the requested JSON schema."
     )
 
     prompt = f"""Generate an advanced examination quiz containing EXACTLY {question_count} distinct questions based on these notes.

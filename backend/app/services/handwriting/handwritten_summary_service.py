@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 
 from app.models.handwritten_analysis import HandwrittenSummary
+from app.models.document import Document
 from app.services.handwriting.handwritten_source_service import get_document_transcription_source
 from app.services.handwriting.ollama_client import query_ollama_json, OllamaError
 
@@ -32,6 +33,9 @@ def generate_handwritten_summary(
     full_notes = source_data["full_text"]
     current_hash = source_data["hash"]
 
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    subject = (doc.subject if doc and doc.subject else None) or "General Academic"
+
     # Prompt customization based on summary_type
     type_instructions = {
         "quick": (
@@ -52,12 +56,13 @@ def generate_handwritten_summary(
     instruction = type_instructions.get(summary_type, type_instructions["detailed"])
 
     system_prompt = (
-        "You are an expert academic tutor and document intelligence assistant for Cognidocs. "
+        f"You are an expert academic tutor in {subject} and document intelligence assistant for Cognidocs. "
         "Your task is to analyze transcribed handwritten student or lecture notes and synthesize a structured study guide. "
         "CRITICAL RULES:\n"
         "1. Strictly ground all content in the provided notes. Do NOT fabricate, speculate, or introduce external facts.\n"
-        "2. Note the page numbers provided in the notes headers (--- Page X ---) and cite them accurately.\n"
-        "3. Output MUST be valid JSON adhering strictly to the requested schema."
+        f"2. Maintain technical rigor, formulas, terminology, and definitions appropriate for {subject}.\n"
+        "3. Note the page numbers provided in the notes headers (--- Page X ---) and cite them accurately.\n"
+        "4. Output MUST be valid JSON adhering strictly to the requested schema."
     )
 
     prompt = f"""Analyze the following handwritten notes transcription and produce a {summary_type.upper()} study summary.

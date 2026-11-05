@@ -21,7 +21,11 @@ import {
     AlertTriangle,
     Eye,
     ListFilter,
-    MessageSquare
+    MessageSquare,
+    GraduationCap,
+    ChevronDown,
+    Layout,
+    Edit3
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
 import PageTransition from '../components/motion/PageTransition'
@@ -53,6 +57,11 @@ export default function HandwrittenStudio() {
     const [isOcrProcessing, setIsOcrProcessing] = useState(false)
     const [reprocessingLineId, setReprocessingLineId] = useState(null)
     const [showLineBreakdown, setShowLineBreakdown] = useState(false)
+    const [transcriptionDisplayMode, setTranscriptionDisplayMode] = useState('formatted') // 'formatted' | 'editor'
+
+    // Subject states
+    const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false)
+    const [isDetectingSubject, setIsDetectingSubject] = useState(false)
 
     // Image & Document Loading states
     const [imageBlobUrl, setImageBlobUrl] = useState(null)
@@ -233,6 +242,37 @@ export default function HandwrittenStudio() {
         setTimeout(() => setCopied(false), 2000)
     }
 
+    // Subject management handlers
+    const handleSelectSubject = async (newSubject) => {
+        try {
+            setSubjectDropdownOpen(false)
+            setDocument(prev => prev ? { ...prev, subject: newSubject } : prev)
+            await apiRequest(`/handwritten/${documentId}/subject`, {
+                method: 'PATCH',
+                body: JSON.stringify({ subject: newSubject })
+            })
+        } catch (err) {
+            console.error('Failed to update subject:', err)
+        }
+    }
+
+    const handleDetectSubject = async () => {
+        try {
+            setIsDetectingSubject(true)
+            const res = await apiRequest(`/handwritten/${documentId}/subject/detect`, {
+                method: 'POST'
+            })
+            if (res?.subject) {
+                setDocument(prev => prev ? { ...prev, subject: res.subject } : prev)
+            }
+        } catch (err) {
+            console.error('Failed to detect subject:', err)
+        } finally {
+            setIsDetectingSubject(false)
+            setSubjectDropdownOpen(false)
+        }
+    }
+
     // Metrics
     const wordCount = transcriptionText.trim() ? transcriptionText.trim().split(/\s+/).length : 0
     const charCount = transcriptionText.length
@@ -273,6 +313,58 @@ export default function HandwrittenStudio() {
                         <h2 className="studio-doc-title" title={document.filename}>
                             {document.filename}
                         </h2>
+
+                        {/* Interactive Subject Badge / Selector */}
+                        <div className="studio-subject-wrapper">
+                            <button
+                                type="button"
+                                className="studio-subject-btn"
+                                onClick={() => setSubjectDropdownOpen(!subjectDropdownOpen)}
+                                title="Click to view or change academic discipline"
+                            >
+                                <GraduationCap size={14} style={{ color: '#c084fc' }} />
+                                <span>{document.subject || 'Humanities & General'}</span>
+                                <ChevronDown size={13} style={{ opacity: 0.7 }} />
+                            </button>
+
+                            {subjectDropdownOpen && (
+                                <div className="studio-subject-dropdown">
+                                    <div className="studio-subject-dropdown-header">
+                                        <span>Academic Discipline</span>
+                                        <button
+                                            type="button"
+                                            onClick={handleDetectSubject}
+                                            disabled={isDetectingSubject}
+                                            style={{ background: 'transparent', border: 'none', color: '#c084fc', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}
+                                            title="Auto-detect subject with AI"
+                                        >
+                                            <Sparkles size={11} className={isDetectingSubject ? 'spin-icon' : ''} />
+                                            <span>{isDetectingSubject ? 'Detecting...' : 'Auto-Detect'}</span>
+                                        </button>
+                                    </div>
+                                    {(document.available_subjects || [
+                                        'Computer Science & Networking',
+                                        'Artificial Intelligence & Data Science',
+                                        'Mathematics & Statistics',
+                                        'Physics & Engineering',
+                                        'Chemistry & Materials',
+                                        'Biology & Life Sciences',
+                                        'Economics & Business',
+                                        'Humanities & General'
+                                    ]).map((subj) => (
+                                        <button
+                                            key={subj}
+                                            type="button"
+                                            className={`studio-subject-item ${document.subject === subj ? 'active' : ''}`}
+                                            onClick={() => handleSelectSubject(subj)}
+                                        >
+                                            <span>{subj}</span>
+                                            {document.subject === subj && <Check size={13} style={{ color: '#c084fc' }} />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Pagination */}
@@ -466,6 +558,28 @@ export default function HandwrittenStudio() {
                                         </div>
 
                                         <div className="transcription-actions-group">
+                                            {/* Formatted vs Editor Mode Toggle */}
+                                            <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.7)', padding: '2px', borderRadius: '7px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                                                <button
+                                                    type="button"
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 9px', fontSize: '11px', fontWeight: 600, background: transcriptionDisplayMode === 'formatted' ? 'rgba(168, 85, 247, 0.25)' : 'transparent', color: transcriptionDisplayMode === 'formatted' ? '#d8b4fe' : '#94a3b8', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                                                    onClick={() => setTranscriptionDisplayMode('formatted')}
+                                                    title="View formatted academic layout"
+                                                >
+                                                    <Layout size={12} />
+                                                    <span>Formatted</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 9px', fontSize: '11px', fontWeight: 600, background: transcriptionDisplayMode === 'editor' ? 'rgba(168, 85, 247, 0.25)' : 'transparent', color: transcriptionDisplayMode === 'editor' ? '#d8b4fe' : '#94a3b8', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                                                    onClick={() => setTranscriptionDisplayMode('editor')}
+                                                    title="Edit transcription text"
+                                                >
+                                                    <Edit3 size={12} />
+                                                    <span>Editor</span>
+                                                </button>
+                                            </div>
+
                                             <button
                                                 type="button"
                                                 className="btn-studio-action"
@@ -509,18 +623,69 @@ export default function HandwrittenStudio() {
                                         </div>
                                     </div>
 
-                                    {/* Editable Text Area */}
-                                    <textarea
-                                        className="transcription-textarea"
-                                        value={transcriptionText}
-                                        onChange={(e) => setTranscriptionText(e.target.value)}
-                                        placeholder={
-                                            isOcrProcessing
-                                                ? "Analyzing handwriting lines with TrOCR small... Please wait a moment."
-                                                : "Recognized transcription will appear here. Click 'Run OCR' above to extract handwriting, or type directly to edit."
-                                        }
-                                        rows={12}
-                                    />
+                                    {/* Content View: Formatted Layout View vs Raw Editor View */}
+                                    {transcriptionDisplayMode === 'formatted' && currentPage?.ocr_metadata?.structured_layout?.blocks?.length > 0 ? (
+                                        <div className="structured-doc-view">
+                                            {currentPage.ocr_metadata.structured_layout.blocks.map((block) => (
+                                                <div key={block.id} className="structured-block">
+                                                    {block.type === 'title' && (
+                                                        <h3 className="structured-block-title">
+                                                            {block.text}
+                                                            {block.confidence && (
+                                                                <span className="uncertainty-pill" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', borderColor: 'rgba(168, 85, 247, 0.3)' }}>
+                                                                    {block.confidence}%
+                                                                </span>
+                                                            )}
+                                                        </h3>
+                                                    )}
+                                                    {block.type === 'heading' && (
+                                                        <h4 className="structured-block-heading">
+                                                            {block.text}
+                                                            {block.confidence && (
+                                                                <span className="uncertainty-pill" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
+                                                                    {block.confidence}%
+                                                                </span>
+                                                            )}
+                                                        </h4>
+                                                    )}
+                                                    {block.type === 'list' && (
+                                                        <ul className="structured-block-list">
+                                                            {(block.items || []).map((item, itemIdx) => (
+                                                                <li key={itemIdx}>{item}</li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                    {block.type === 'math' && (
+                                                        <div className="structured-block-math">
+                                                            {block.text}
+                                                        </div>
+                                                    )}
+                                                    {block.type === 'paragraph' && (
+                                                        <p className="structured-block-paragraph">
+                                                            {block.text}
+                                                            {block.confidence < 65 && (
+                                                                <span className="uncertainty-pill" title="Low OCR confidence on this line">
+                                                                    Uncertain ({block.confidence}%)
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <textarea
+                                            className="transcription-textarea"
+                                            value={transcriptionText}
+                                            onChange={(e) => setTranscriptionText(e.target.value)}
+                                            placeholder={
+                                                isOcrProcessing
+                                                    ? "Analyzing handwriting lines with TrOCR small... Please wait a moment."
+                                                    : "Recognized transcription will appear here. Click 'Run OCR' above to extract handwriting, or type directly to edit."
+                                            }
+                                            rows={12}
+                                        />
+                                    )}
 
                                     {/* Line Breakdown Toggle */}
                                     {ocrLines.length > 0 && (

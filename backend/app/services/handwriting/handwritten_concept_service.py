@@ -3,6 +3,7 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 
 from app.models.handwritten_analysis import HandwrittenConcept
+from app.models.document import Document
 from app.services.handwriting.handwritten_source_service import get_document_transcription_source
 from app.services.handwriting.ollama_client import query_ollama_json, OllamaError
 
@@ -33,10 +34,13 @@ def generate_handwritten_concepts(
     )
     bookmarked_names = {c.name.strip().lower() for c in existing_records if c.is_bookmarked}
 
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    subject = (doc.subject if doc and doc.subject else None) or "General Academic"
+
     system_prompt = (
-        "You are an academic concept extraction engine. "
+        f"You are an academic concept extraction engine specializing in {subject}. "
         "Your task is to identify and extract key concepts, terms, themes, or formulas "
-        "from the provided transcribed handwritten notes. "
+        f"from the provided transcribed handwritten notes relevant to {subject}. "
         "For each concept, provide a concise definition, an exact supporting quote excerpt from the text, "
         "the source page number (from --- Page X ---), and related concepts mentioned. "
         "Return valid JSON adhering strictly to the requested schema."

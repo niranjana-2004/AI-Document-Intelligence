@@ -15,7 +15,8 @@ import {
     Sparkles,
     RefreshCw,
     X,
-    AlertTriangle
+    AlertTriangle,
+    GraduationCap
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
 import PageTransition from '../components/motion/PageTransition'
@@ -326,7 +327,7 @@ export default function HandwrittenNotes() {
                                         <h3 className="handwritten-card-title" title={doc.filename}>
                                             {doc.filename}
                                         </h3>
-                                        <div className="handwritten-meta-row">
+                                        <div className="handwritten-meta-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                             <span>{doc.page_count} {doc.page_count === 1 ? 'page' : 'pages'}</span>
                                             <span>•</span>
                                             <span className={`handwritten-status-pill ${doc.processing_status}`}>
@@ -342,6 +343,12 @@ export default function HandwrittenNotes() {
                                                     </>
                                                 )}
                                             </span>
+                                            {doc.subject && (
+                                                <span className="handwritten-subject-pill" title={`Academic Discipline: ${doc.subject}`}>
+                                                    <GraduationCap size={11} />
+                                                    <span>{doc.subject}</span>
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

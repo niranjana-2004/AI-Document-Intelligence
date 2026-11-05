@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.handwritten_analysis import HandwrittenFlashcardSet
+from app.models.document import Document
 from app.services.handwriting.handwritten_source_service import get_document_transcription_source
 from app.services.handwriting.ollama_client import query_ollama_json, OllamaError
 
@@ -43,13 +44,16 @@ def generate_handwritten_flashcards(
     full_notes = source_data["full_text"]
     current_hash = source_data["hash"]
 
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    subject = (doc.subject if doc and doc.subject else None) or "General Academic"
+
     topic_prompt = ""
     if topic and topic.strip():
         topic_prompt = f"Focus the flashcards specifically around the theme/topic: '{topic.strip()}'."
 
     system_prompt = (
-        "You are an active-recall flashcard creator for Cognidocs. "
-        "Create concise, high-yield study flashcards that encourage real memory retrieval. "
+        f"You are an active-recall flashcard creator in {subject} for Cognidocs. "
+        f"Create concise, high-yield study flashcards that encourage real memory retrieval of {subject} concepts and technical terminology. "
         "DIVERSITY REQUIREMENTS:\n"
         "Generate a diverse set spanning the following card types where applicable:\n"
         "1. question_answer: Active question on front, concise answer on back.\n"

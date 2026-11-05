@@ -4,6 +4,7 @@ from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 
 from app.models.handwritten_analysis import HandwrittenChatSession, HandwrittenChatMessage
+from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.services.handwriting.handwritten_source_service import (
     get_document_transcription_source,
@@ -135,14 +136,18 @@ def ask_handwritten_notes(
             formatted_history.append(f"{speaker}: {m.content}")
         history_str = "PREVIOUS CONVERSATION:\n" + "\n".join(formatted_history) + "\n\n"
 
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    subject = (doc.subject if doc and doc.subject else None) or "General Academic"
+
     system_prompt = (
-        "You are Cognidocs AI, a specialized tutor answering questions about a student's handwritten notes. "
+        f"You are Cognidocs AI, a specialized academic tutor in {subject} answering questions about a student's handwritten notes. "
         "Strict rules:\n"
         "1. Ground your answer EXCLUSIVELY in the provided NOTES CONTEXT below.\n"
-        "2. When stating facts, cite the page number like [Page X] or (Page X).\n"
-        "3. Do not make up facts or use outside knowledge not supported by the notes.\n"
-        f"4. If the notes do not mention or provide enough information, say: '{FALLBACK_NOTE_ANSWER}'\n"
-        "5. Keep responses concise, clear, and easy to study."
+        f"2. Maintain technical rigor, formulas, terminology, and definitions appropriate for {subject}.\n"
+        "3. When stating facts, cite the page number like [Page X] or (Page X).\n"
+        "4. Do not make up facts or use outside knowledge not supported by the notes.\n"
+        f"5. If the notes do not mention or provide enough information, say: '{FALLBACK_NOTE_ANSWER}'\n"
+        "6. Keep responses concise, clear, and easy to study."
     )
 
     prompt = f"""{history_str}NOTES CONTEXT:

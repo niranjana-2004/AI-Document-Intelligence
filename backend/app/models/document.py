@@ -34,6 +34,7 @@ class Document(Base):
     text_length = Column(Integer, nullable=True)
     summary = Column(Text, nullable=True)
     is_handwritten = Column(Boolean, default=False, nullable=True)
+    subject = Column(String(100), nullable=True)
     processing_status = Column(String(50), default="completed", nullable=True)
     processing_progress = Column(Integer, default=100, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -56,6 +57,8 @@ def ensure_documents_schema(engine=None):
             with engine.connect() as conn:
                 if "is_handwritten" not in columns:
                     conn.execute(text("ALTER TABLE documents ADD COLUMN is_handwritten BOOLEAN DEFAULT 0"))
+                if "subject" not in columns:
+                    conn.execute(text("ALTER TABLE documents ADD COLUMN subject VARCHAR(100)"))
                 if "processing_status" not in columns:
                     conn.execute(text("ALTER TABLE documents ADD COLUMN processing_status VARCHAR(50) DEFAULT 'completed'"))
                 if "processing_progress" not in columns:
