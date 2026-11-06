@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 def transcribe_page_image(
     image_path: Path,
     original_image_path: Optional[Path] = None,
-    subject: Optional[str] = None
+    subject: Optional[str] = None,
+    page_num: int = 1
 ) -> Dict[str, Any]:
     """
     Execute complete handwriting recognition on a document page image.
@@ -123,6 +124,7 @@ def transcribe_page_image(
     vocab_index = extract_document_terminology(text_parts, subject=subject)
     recovered_lines_data = []
     technical_corrections = []
+    page_tokens = []
 
     for l_item in recognized_lines:
         l_idx = l_item["line_index"]
@@ -131,15 +133,19 @@ def transcribe_page_image(
         bx, by, bw, bh = l_item["bbox"]
         crop_bgr = proc_img[max(0, by):min(h, by+bh), max(0, bx):min(w, bx+bw)] if (bh > 0 and bw > 0) else None
 
-        rec_text, corrs = recover_technical_line(
+        rec_text, corrs, l_tokens = recover_technical_line(
             raw_line_text=l_text,
             line_idx=l_idx,
-            page_num=1,
+            page_num=page_num,
             vocab_index=vocab_index,
             line_crop_bgr=crop_bgr,
-            line_conf=l_conf
+            line_conf=l_conf,
+            line_bbox=[int(bx), int(by), int(bw), int(bh)],
+            return_tokens=True
         )
         l_item["recovered_text"] = rec_text
+        l_item["tokens"] = l_tokens
+        page_tokens.extend(l_tokens)
         technical_corrections.extend(corrs)
         recovered_lines_data.append({
             "line_index": l_idx,
@@ -174,5 +180,6 @@ def transcribe_page_image(
         "execution_time_ms": elapsed_ms,
         "lines": recognized_lines,
         "structured_layout": structure,
-        "technical_corrections": technical_corrections
+        "technical_corrections": technical_corrections,
+        "tokens": page_tokens
     }

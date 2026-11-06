@@ -44,7 +44,20 @@ DOMAIN_VOCABULARIES: Dict[str, Dict[str, Any]] = {
             "block": ["Transmission Control", "TCB"],
             "syn-ack": ["ACK"],
             "syn": ["SYN-ACK", "ACK"],
-            "filtering": ["ingress", "firewall", "BCP 38"]
+            "filtering": ["ingress", "firewall", "BCP 38"],
+            "validation": ["RST", "TCP RST", "RFC 5961"],
+            "stricter": ["RST"],
+            "challenge": ["ACK"],
+            "entry": ["TCB"],
+            "backlog": ["queue", "TCB"],
+            "rfc": ["5961", "RFC 5961"],
+            "compliance": ["RFC 5961"],
+            "bcp": ["38", "BCP 38"],
+            "denial-of-service": ["DoS", "DDoS"],
+            "flag": ["ACK", "SYN", "RST", "FIN"],
+            "replies": ["RST", "ACK", "SYN-ACK"],
+            "stream": ["ACK", "SYN", "packets"],
+            "unsolicited": ["ACK", "packets"]
         }
     },
     "Artificial Intelligence & Data Science": {

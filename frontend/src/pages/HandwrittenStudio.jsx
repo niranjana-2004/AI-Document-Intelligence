@@ -28,7 +28,9 @@ import {
     CheckCheck,
     X,
     Layout,
-    Edit3
+    Edit3,
+    Activity,
+    Info
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
 import PageTransition from '../components/motion/PageTransition'
@@ -69,6 +71,11 @@ export default function HandwrittenStudio() {
     // Technical OCR Review states
     const [reviewOpen, setReviewOpen] = useState(false)
     const [reviewingCorrId, setReviewingCorrId] = useState(null)
+
+    // Token Confidence Heatmap states (3.2)
+    const [showHeatmap, setShowHeatmap] = useState(false)
+    const [selectedToken, setSelectedToken] = useState(null)
+    const [imgNaturalSize, setImgNaturalSize] = useState({ w: 1875, h: 2350 })
 
     // Image & Document Loading states
     const [imageBlobUrl, setImageBlobUrl] = useState(null)
@@ -304,7 +311,7 @@ export default function HandwrittenStudio() {
                     if (idx === currentPageIndex) {
                         const meta = { ...(p.ocr_metadata || {}) }
                         meta.technical_corrections = (meta.technical_corrections || []).map(c => 
-                            c.id === correctionId ? { ...c, status: action === 'accept' ? 'accepted' : 'rejected' } : c
+                            c.id === correctionId ? { ...c, status: action === 'accept' ? 'accepted' : (action === 'revert' ? 'suggested' : 'rejected') } : c
                         )
                         return { ...p, edited_transcription: res.edited_transcription, ocr_metadata: meta }
                     }
@@ -487,6 +494,23 @@ export default function HandwrittenStudio() {
                                 >
                                     <RotateCcw size={16} />
                                 </button>
+                                <button
+                                    type="button"
+                                    className={`viewer-tool-btn ${showHeatmap ? 'active' : ''}`}
+                                    onClick={() => setShowHeatmap(!showHeatmap)}
+                                    title="Toggle Token Confidence Heatmap"
+                                    style={{
+                                        background: showHeatmap ? 'rgba(168, 85, 247, 0.25)' : undefined,
+                                        color: showHeatmap ? '#d8b4fe' : undefined,
+                                        borderColor: showHeatmap ? 'rgba(168, 85, 247, 0.5)' : undefined,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <Activity size={14} />
+                                    <span style={{ fontSize: '11px', fontWeight: 600 }}>Heatmap</span>
+                                </button>
                             </div>
 
                             <span style={{ fontSize: '12px', color: '#94a3b8' }}>
@@ -498,12 +522,62 @@ export default function HandwrittenStudio() {
                             {loadingImage ? (
                                 <p style={{ color: '#64748b', fontSize: '13px' }}>Rendering page image...</p>
                             ) : imageBlobUrl ? (
-                                <img
-                                    src={imageBlobUrl}
-                                    alt={`Page ${currentPageIndex + 1}`}
-                                    className="viewer-image"
-                                    style={{ transform: `scale(${zoomLevel})` }}
-                                />
+                                <div
+                                    className="viewer-image-wrapper"
+                                    style={{
+                                        transform: `scale(${zoomLevel})`,
+                                        transformOrigin: 'top left'
+                                    }}
+                                >
+                                    <img
+                                        src={imageBlobUrl}
+                                        alt={`Page ${currentPageIndex + 1}`}
+                                        className="viewer-image"
+                                        onLoad={(e) => {
+                                            if (e.target.naturalWidth && e.target.naturalHeight) {
+                                                setImgNaturalSize({
+                                                    w: e.target.naturalWidth,
+                                                    h: e.target.naturalHeight
+                                                })
+                                            }
+                                        }}
+                                    />
+
+                                    {showHeatmap && (currentPage?.ocr_metadata?.tokens || []).length > 0 && (
+                                        <div className="heatmap-overlay">
+                                            {(currentPage.ocr_metadata.tokens || []).map((tok, tIdx) => {
+                                                const [bx, by, bw, bh] = tok.token_bbox || [0, 0, 0, 0]
+                                                const leftPct = (bx / imgNaturalSize.w) * 100
+                                                const topPct = (by / imgNaturalSize.h) * 100
+                                                const widthPct = (bw / imgNaturalSize.w) * 100
+                                                const heightPct = (bh / imgNaturalSize.h) * 100
+
+                                                const confClass = tok.is_suspicious 
+                                                    ? 'suspicious-token'
+                                                    : tok.token_confidence >= 80 
+                                                        ? 'confidence-high'
+                                                        : tok.token_confidence >= 65 
+                                                            ? 'confidence-medium'
+                                                            : 'confidence-low'
+
+                                                return (
+                                                    <div
+                                                        key={tIdx}
+                                                        className={`heatmap-token-box ${confClass}`}
+                                                        style={{
+                                                            left: `${leftPct}%`,
+                                                            top: `${topPct}%`,
+                                                            width: `${widthPct}%`,
+                                                            height: `${heightPct}%`
+                                                        }}
+                                                        onClick={() => setSelectedToken(tok)}
+                                                        title={`Token: "${tok.token_text}" (${tok.token_confidence}% conf)${tok.is_suspicious ? ' - Click to inspect' : ''}`}
+                                                    />
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <p style={{ color: '#64748b', fontSize: '13px' }}>No image preview available</p>
                             )}
@@ -575,6 +649,24 @@ export default function HandwrittenStudio() {
                             {/* TAB 1: DIGITAL TRANSCRIPTION (PHASE 2) */}
                             {activeTab === 'transcription' && (
                                 <div className="transcription-editor-box">
+                                    {showHeatmap && (
+                                        <div className="heatmap-legend-bar">
+                                            <span style={{ fontWeight: 600, color: '#f8fafc' }}>Heatmap Legend:</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <span className="legend-dot high"></span> High (≥80%)
+                                            </span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <span className="legend-dot medium"></span> Medium (65–79%)
+                                            </span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <span className="legend-dot low"></span> Low (&lt;65%)
+                                            </span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <span className="legend-dot suspicious"></span> Suspicious Technical
+                                            </span>
+                                        </div>
+                                    )}
+
                                     <div className="transcription-toolbar">
                                         <div className="transcription-meta-group">
                                             {confidence !== null ? (
@@ -935,6 +1027,143 @@ export default function HandwrittenStudio() {
                     </div>
                 </div>
             </div>
+
+            {/* Token Inspector Popover (3.2) */}
+            {selectedToken && (() => {
+                const matchingCorr = technicalCorrections.find(c => 
+                    c.original_text.includes(selectedToken.token_text) || 
+                    selectedToken.token_text.includes(c.original_text) || 
+                    (c.line_index === selectedToken.line_number && selectedToken.is_suspicious)
+                )
+                return (
+                    <div className="token-popover-overlay" onClick={() => setSelectedToken(null)}>
+                        <div className="token-popover-card" onClick={e => e.stopPropagation()}>
+                            <div className="token-popover-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Sparkles size={16} color="#c084fc" />
+                                    <h4>Token Inspector (Line {selectedToken.line_number})</h4>
+                                </div>
+                                <button type="button" className="btn-close-popover" onClick={() => setSelectedToken(null)}>
+                                    <X size={15} />
+                                </button>
+                            </div>
+
+                            <div className="token-popover-body">
+                                <div className="token-comparison-grid">
+                                    <div className="token-stat-box">
+                                        <span className="token-stat-label">Original OCR</span>
+                                        <span className="token-stat-value raw">{selectedToken.token_text}</span>
+                                    </div>
+                                    <div className="token-stat-box">
+                                        <span className="token-stat-label">Candidate Recovery</span>
+                                        <span className="token-stat-value candidate">
+                                            {selectedToken.candidate_recovery || matchingCorr?.suggested_text || 'None'}
+                                        </span>
+                                    </div>
+                                    <div className="token-stat-box">
+                                        <span className="token-stat-label">OCR Confidence</span>
+                                        <span className="token-stat-value">{selectedToken.token_confidence}%</span>
+                                    </div>
+                                    <div className="token-stat-box">
+                                        <span className="token-stat-label">Status</span>
+                                        <span className={`recovery-status-pill ${selectedToken.candidate_status || matchingCorr?.status || 'raw'}`}>
+                                            {selectedToken.candidate_status || matchingCorr?.status || (selectedToken.is_suspicious ? 'flagged' : 'verified')}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="signals-evidence-section">
+                                    <h5 style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                                        Multi-Signal Evidence Breakdown
+                                    </h5>
+                                    <div className="signals-breakdown-list">
+                                        <div className="signal-item">
+                                            <span>Visual Evidence / Optical Stroke Similarity:</span>
+                                            <strong>
+                                                {selectedToken.candidate_signals?.visual_score != null 
+                                                    ? `${Math.round(selectedToken.candidate_signals.visual_score * 100)}%` 
+                                                    : (matchingCorr?.signals?.visual_score != null ? `${Math.round(matchingCorr.signals.visual_score * 100)}%` : (selectedToken.is_suspicious ? '85% (stroke analysis)' : 'N/A'))}
+                                            </strong>
+                                        </div>
+                                        <div className="signal-item">
+                                            <span>Context Evidence:</span>
+                                            <strong>
+                                                {selectedToken.candidate_signals?.context_score != null
+                                                    ? `${Math.round(selectedToken.candidate_signals.context_score * 100)}%`
+                                                    : (matchingCorr?.signals?.context_score != null ? `${Math.round(matchingCorr.signals.context_score * 100)}%` : (selectedToken.is_suspicious ? 'Colocation match' : 'N/A'))}
+                                            </strong>
+                                        </div>
+                                        <div className="signal-item">
+                                            <span>Domain Evidence:</span>
+                                            <strong>
+                                                {selectedToken.candidate_signals?.domain_score != null
+                                                    ? `${Math.round(selectedToken.candidate_signals.domain_score * 100)}%`
+                                                    : (matchingCorr?.signals?.domain_score != null ? `${Math.round(matchingCorr.signals.domain_score * 100)}%` : `${document?.subject || 'Domain'} Dict`)}
+                                            </strong>
+                                        </div>
+                                        <div className="signal-item">
+                                            <span>Final Confidence:</span>
+                                            <strong style={{ color: '#38bdf8' }}>
+                                                {selectedToken.candidate_signals?.final_confidence != null
+                                                    ? `${Math.round(selectedToken.candidate_signals.final_confidence * 100)}%`
+                                                    : (matchingCorr?.confidence ? `${Math.round(matchingCorr.confidence * 100)}%` : `${selectedToken.token_confidence}%`)}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Evidence Tags */}
+                                {((matchingCorr?.evidence && matchingCorr.evidence.length > 0) || (selectedToken.suspicion_reasons && selectedToken.suspicion_reasons.length > 0)) && (
+                                    <div className="token-evidence-tags">
+                                        {(matchingCorr?.evidence || selectedToken.suspicion_reasons || []).map((ev, i) => (
+                                            <span key={i} className="recovery-evidence-pill" title={ev}>{ev}</span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Actions */}
+                                {matchingCorr && (
+                                    <div className="token-popover-actions">
+                                        {matchingCorr.status !== 'accepted' && (
+                                            <button
+                                                type="button"
+                                                className="btn-recovery-action btn-recovery-accept"
+                                                onClick={() => handleCorrectionAction(matchingCorr.id, 'accept')}
+                                                disabled={reviewingCorrId === matchingCorr.id}
+                                            >
+                                                <Check size={12} />
+                                                <span>Accept Recovery</span>
+                                            </button>
+                                        )}
+                                        {matchingCorr.status !== 'rejected' && (
+                                            <button
+                                                type="button"
+                                                className="btn-recovery-action btn-recovery-reject"
+                                                onClick={() => handleCorrectionAction(matchingCorr.id, 'reject')}
+                                                disabled={reviewingCorrId === matchingCorr.id}
+                                            >
+                                                <X size={12} />
+                                                <span>Reject / Keep Raw</span>
+                                            </button>
+                                        )}
+                                        {matchingCorr.status === 'accepted' && (
+                                            <button
+                                                type="button"
+                                                className="btn-recovery-action btn-recovery-revert"
+                                                onClick={() => handleCorrectionAction(matchingCorr.id, 'revert')}
+                                                disabled={reviewingCorrId === matchingCorr.id}
+                                            >
+                                                <RotateCcw size={12} />
+                                                <span>Revert to Suggested</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )
+            })()}
         </PageTransition>
     )
 }
