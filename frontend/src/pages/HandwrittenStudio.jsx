@@ -72,9 +72,10 @@ export default function HandwrittenStudio() {
     const [reviewOpen, setReviewOpen] = useState(false)
     const [reviewingCorrId, setReviewingCorrId] = useState(null)
 
-    // Token Confidence Heatmap states (3.2)
+    // Token Confidence Heatmap states (3.2 & 3.3)
     const [showHeatmap, setShowHeatmap] = useState(false)
     const [selectedToken, setSelectedToken] = useState(null)
+    const [showDetailedEvidence, setShowDetailedEvidence] = useState(false)
     const [imgNaturalSize, setImgNaturalSize] = useState({ w: 1875, h: 2350 })
 
     // Image & Document Loading states
@@ -1028,13 +1029,18 @@ export default function HandwrittenStudio() {
                 </div>
             </div>
 
-            {/* Token Inspector Popover (3.2) */}
+            {/* Token Inspector Popover (3.2 & 3.3) */}
             {selectedToken && (() => {
                 const matchingCorr = technicalCorrections.find(c => 
                     c.original_text.includes(selectedToken.token_text) || 
                     selectedToken.token_text.includes(c.original_text) || 
                     (c.line_index === selectedToken.line_number && selectedToken.is_suspicious)
                 )
+                const groundedCand = selectedToken.candidate_recovery || matchingCorr?.suggested_text || 'None'
+                const decisionState = selectedToken.candidate_status || matchingCorr?.status || (selectedToken.is_suspicious ? 'flagged' : 'verified')
+                const prepVariant = selectedToken.preprocessing_variant || matchingCorr?.preprocessing_variant || 'Adaptive contrast crop'
+                const charAmbiguity = selectedToken.character_ambiguity || matchingCorr?.character_ambiguity
+
                 return (
                     <div className="token-popover-overlay" onClick={() => setSelectedToken(null)}>
                         <div className="token-popover-card" onClick={e => e.stopPropagation()}>
@@ -1055,61 +1061,86 @@ export default function HandwrittenStudio() {
                                         <span className="token-stat-value raw">{selectedToken.token_text}</span>
                                     </div>
                                     <div className="token-stat-box">
-                                        <span className="token-stat-label">Candidate Recovery</span>
-                                        <span className="token-stat-value candidate">
-                                            {selectedToken.candidate_recovery || matchingCorr?.suggested_text || 'None'}
-                                        </span>
+                                        <span className="token-stat-label">Grounded Candidate</span>
+                                        <span className="token-stat-value candidate">{groundedCand}</span>
                                     </div>
                                     <div className="token-stat-box">
                                         <span className="token-stat-label">OCR Confidence</span>
                                         <span className="token-stat-value">{selectedToken.token_confidence}%</span>
                                     </div>
                                     <div className="token-stat-box">
-                                        <span className="token-stat-label">Status</span>
-                                        <span className={`recovery-status-pill ${selectedToken.candidate_status || matchingCorr?.status || 'raw'}`}>
-                                            {selectedToken.candidate_status || matchingCorr?.status || (selectedToken.is_suspicious ? 'flagged' : 'verified')}
+                                        <span className="token-stat-label">Decision State</span>
+                                        <span className={`recovery-status-pill ${decisionState}`}>
+                                            {decisionState.toUpperCase()}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="signals-evidence-section">
-                                    <h5 style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>
-                                        Multi-Signal Evidence Breakdown
-                                    </h5>
-                                    <div className="signals-breakdown-list">
-                                        <div className="signal-item">
-                                            <span>Visual Evidence / Optical Stroke Similarity:</span>
-                                            <strong>
-                                                {selectedToken.candidate_signals?.visual_score != null 
-                                                    ? `${Math.round(selectedToken.candidate_signals.visual_score * 100)}%` 
-                                                    : (matchingCorr?.signals?.visual_score != null ? `${Math.round(matchingCorr.signals.visual_score * 100)}%` : (selectedToken.is_suspicious ? '85% (stroke analysis)' : 'N/A'))}
-                                            </strong>
-                                        </div>
-                                        <div className="signal-item">
-                                            <span>Context Evidence:</span>
-                                            <strong>
-                                                {selectedToken.candidate_signals?.context_score != null
-                                                    ? `${Math.round(selectedToken.candidate_signals.context_score * 100)}%`
-                                                    : (matchingCorr?.signals?.context_score != null ? `${Math.round(matchingCorr.signals.context_score * 100)}%` : (selectedToken.is_suspicious ? 'Colocation match' : 'N/A'))}
-                                            </strong>
-                                        </div>
-                                        <div className="signal-item">
-                                            <span>Domain Evidence:</span>
-                                            <strong>
-                                                {selectedToken.candidate_signals?.domain_score != null
-                                                    ? `${Math.round(selectedToken.candidate_signals.domain_score * 100)}%`
-                                                    : (matchingCorr?.signals?.domain_score != null ? `${Math.round(matchingCorr.signals.domain_score * 100)}%` : `${document?.subject || 'Domain'} Dict`)}
-                                            </strong>
-                                        </div>
-                                        <div className="signal-item">
-                                            <span>Final Confidence:</span>
-                                            <strong style={{ color: '#38bdf8' }}>
-                                                {selectedToken.candidate_signals?.final_confidence != null
-                                                    ? `${Math.round(selectedToken.candidate_signals.final_confidence * 100)}%`
-                                                    : (matchingCorr?.confidence ? `${Math.round(matchingCorr.confidence * 100)}%` : `${selectedToken.token_confidence}%`)}
-                                            </strong>
-                                        </div>
+                                {/* Preprocessing Variant & Character Ambiguity (3.3) */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(30, 41, 59, 0.4)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
+                                        <span>Preprocessing Variant:</span>
+                                        <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{prepVariant}</span>
                                     </div>
+                                    {charAmbiguity && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
+                                            <span>Character Ambiguity:</span>
+                                            <span style={{ color: '#fbbf24', fontWeight: 500 }}>{charAmbiguity}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Expandable Detailed Evidence Section (3.3) */}
+                                <div className="signals-evidence-section">
+                                    <div 
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '8px' }}
+                                        onClick={() => setShowDetailedEvidence(prev => !prev)}
+                                    >
+                                        <h5 style={{ margin: 0, fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            Multi-Signal Evidence Breakdown
+                                        </h5>
+                                        <span style={{ fontSize: '11px', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            {showDetailedEvidence ? 'Collapse' : 'Expand Details'}
+                                            {showDetailedEvidence ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                        </span>
+                                    </div>
+
+                                    {showDetailedEvidence && (
+                                        <div className="signals-breakdown-list" style={{ marginTop: '8px' }}>
+                                            <div className="signal-item">
+                                                <span>Visual Stroke Similarity:</span>
+                                                <strong>
+                                                    {selectedToken.candidate_signals?.visual_score != null 
+                                                        ? `${Math.round(selectedToken.candidate_signals.visual_score * 100)}%` 
+                                                        : (matchingCorr?.signals?.visual_score != null ? `${Math.round(matchingCorr.signals.visual_score * 100)}%` : (selectedToken.is_suspicious ? '85% (stroke analysis)' : 'N/A'))}
+                                                </strong>
+                                            </div>
+                                            <div className="signal-item">
+                                                <span>Context Evidence:</span>
+                                                <strong>
+                                                    {selectedToken.candidate_signals?.context_score != null
+                                                        ? `${Math.round(selectedToken.candidate_signals.context_score * 100)}%`
+                                                        : (matchingCorr?.signals?.context_score != null ? `${Math.round(matchingCorr.signals.context_score * 100)}%` : (selectedToken.is_suspicious ? 'Colocation match' : 'N/A'))}
+                                                </strong>
+                                            </div>
+                                            <div className="signal-item">
+                                                <span>Domain / Lexical Evidence:</span>
+                                                <strong>
+                                                    {selectedToken.candidate_signals?.domain_score != null
+                                                        ? `${Math.round(selectedToken.candidate_signals.domain_score * 100)}%`
+                                                        : (matchingCorr?.signals?.domain_score != null ? `${Math.round(matchingCorr.signals.domain_score * 100)}%` : `${document?.subject || 'Domain'} Dict`)}
+                                                </strong>
+                                            </div>
+                                            <div className="signal-item">
+                                                <span>Final Corroboration Confidence:</span>
+                                                <strong style={{ color: '#38bdf8' }}>
+                                                    {selectedToken.candidate_signals?.final_confidence != null
+                                                        ? `${Math.round(selectedToken.candidate_signals.final_confidence * 100)}%`
+                                                        : (matchingCorr?.confidence ? `${Math.round(matchingCorr.confidence * 100)}%` : `${selectedToken.token_confidence}%`)}
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Evidence Tags */}

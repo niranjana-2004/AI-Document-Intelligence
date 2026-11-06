@@ -19,6 +19,10 @@ from app.services.handwriting.token_ocr_service import (
     rank_token_candidates,
     CURSIVE_CHAR_CONFUSIONS
 )
+from app.services.handwriting.word_recovery_service import (
+    recover_ambiguous_characters,
+    recover_punctuation_and_symbols
+)
 
 logger = logging.getLogger(__name__)
 
@@ -375,12 +379,45 @@ def recover_technical_line(
                     })
                     tok["candidate_recovery"] = sug_tok
                     tok["candidate_status"] = c_status
+                    tok["candidate_signals"] = c_sigs
+                    tok["grounded_candidate"] = sug_tok
+                    tok["decision_state"] = c_status.upper()
+                    tok["character_ambiguity"] = f"Optical stroke similarity {c_sigs.get('visual_score', 0.9)*100:.0f}%"
+
+            # D. Ordinary Word & Character Ambiguity Recovery (3.3)
+            if not tok.get("candidate_recovery"):
+                c_res = recover_ambiguous_characters(tok, recovered_line)
+                if c_res:
+                    corr_id = f"corr_p{page_num}_l{line_idx}_char_{len(corrections)+1}"
+                    corrections.append({
+                        "id": corr_id,
+                        "type": "character",
+                        "original_text": c_res["original_token"],
+                        "suggested_text": c_res["suggested_token"],
+                        "status": c_res["status"],
+                        "confidence": c_res["confidence"],
+                        "evidence": c_res["evidence"],
+                        "signals": c_res["signals"],
+                        "char_span": [recovered_line.find(c_res["original_token"]), recovered_line.find(c_res["original_token"]) + len(c_res["original_token"])],
+                        "line_index": line_idx,
+                        "page_number": page_num
+                    })
+                    tok["candidate_recovery"] = c_res["suggested_token"]
+                    tok["candidate_status"] = c_res["status"]
+                    tok["candidate_signals"] = c_res["signals"]
+                    tok["grounded_candidate"] = c_res["suggested_token"]
+                    tok["decision_state"] = c_res["status"].upper()
+                    tok["character_ambiguity"] = c_res["evidence"][0] if c_res["evidence"] else "Cursive stroke ambiguity"
 
     # Apply ONLY accepted corrections to produce recovered text
     final_recovered_line = cleaned_line
     for c in sorted(corrections, key=lambda x: -len(x["original_text"])):
         if c["status"] == "accepted":
             final_recovered_line = final_recovered_line.replace(c["original_text"], c["suggested_text"])
+
+    # E. Punctuation & Delimiter Recovery (3.3)
+    final_recovered_line, punct_corrs = recover_punctuation_and_symbols(final_recovered_line, line_tokens)
+    corrections.extend(punct_corrs)
 
     if return_tokens:
         return final_recovered_line, corrections, line_tokens

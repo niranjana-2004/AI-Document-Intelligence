@@ -272,8 +272,16 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
                 subject=document.subject,
                 page_num=page.page_number
             )
+            existing_meta = page.ocr_metadata or {}
+            is_manual = existing_meta.get("is_manually_edited", False)
+            user_manual_text = existing_meta.get("user_manual_transcription")
+
             page.raw_transcription = ocr_res.get("raw_text") or ocr_res["full_text"]
-            page.edited_transcription = ocr_res["full_text"]
+            if is_manual and user_manual_text:
+                page.edited_transcription = user_manual_text
+            else:
+                page.edited_transcription = ocr_res["full_text"]
+
             page.confidence_score = ocr_res["confidence_score"]
             page.ocr_metadata = {
                 "lines": ocr_res["lines"],
@@ -281,7 +289,10 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
                 "execution_time_ms": ocr_res["execution_time_ms"],
                 "structured_layout": ocr_res.get("structured_layout", {}),
                 "technical_corrections": ocr_res.get("technical_corrections", []),
-                "tokens": ocr_res.get("tokens", [])
+                "tokens": ocr_res.get("tokens", []),
+                "is_manually_edited": is_manual,
+                "user_manual_transcription": user_manual_text,
+                "ai_recovered_transcription": ocr_res["full_text"]
             }
             page.status = "transcribed"
             page.error_message = None
@@ -402,8 +413,16 @@ def process_single_page_ocr(
             subject=document.subject,
             page_num=page_number
         )
+        existing_meta = page.ocr_metadata or {}
+        is_manual = existing_meta.get("is_manually_edited", False)
+        user_manual_text = existing_meta.get("user_manual_transcription")
+
         page.raw_transcription = ocr_res.get("raw_text") or ocr_res["full_text"]
-        page.edited_transcription = ocr_res["full_text"]
+        if is_manual and user_manual_text:
+            page.edited_transcription = user_manual_text
+        else:
+            page.edited_transcription = ocr_res["full_text"]
+
         page.confidence_score = ocr_res["confidence_score"]
         page.ocr_metadata = {
             "lines": ocr_res["lines"],
@@ -411,7 +430,10 @@ def process_single_page_ocr(
             "execution_time_ms": ocr_res["execution_time_ms"],
             "structured_layout": ocr_res.get("structured_layout", {}),
             "technical_corrections": ocr_res.get("technical_corrections", []),
-            "tokens": ocr_res.get("tokens", [])
+            "tokens": ocr_res.get("tokens", []),
+            "is_manually_edited": is_manual,
+            "user_manual_transcription": user_manual_text,
+            "ai_recovered_transcription": ocr_res["full_text"]
         }
         page.status = "transcribed"
         page.error_message = None
@@ -582,6 +604,11 @@ def update_page_transcription(
             detail=f"Page {page_number} not found."
         )
 
+    meta = page.ocr_metadata or {}
+    meta["is_manually_edited"] = True
+    meta["user_manual_transcription"] = body.transcription
+    meta["manual_edit_timestamp"] = time.time()
+    page.ocr_metadata = meta
     page.edited_transcription = body.transcription
     db.commit()
 

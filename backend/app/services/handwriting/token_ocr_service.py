@@ -416,6 +416,8 @@ def recover_small_parenthetical(
             "Subject Domain: 'TCB' (Transmission Control Block) verified in Computer Science & Networking"
         ]
         replacement = raw_tok.replace("TBD", "TCB")
+        if replacement.startswith("(") and not replacement.endswith(")"):
+            replacement += ")"
         return {
             "original_token": raw_tok,
             "suggested_token": replacement,
