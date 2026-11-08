@@ -1,0 +1,992 @@
+{
+  "mode": "page1_and_benchmark",
+  "total_lines_evaluated": 67,
+  "pages_included": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "differing_lines_count": 67,
+  "differing_lines_pct": 100.0,
+  "small": {
+    "model_name": "microsoft/trocr-small-handwritten",
+    "load_time_s": 6.519,
+    "total_time_s": 114.8,
+    "avg_inference_ms": 1713.0,
+    "median_inference_ms": 1655.3,
+    "min_inference_ms": 1264.56,
+    "max_inference_ms": 2594.15,
+    "avg_confidence": 67.3,
+    "hallucinations_count": 0,
+    "empty_count": 0,
+    "technical_terms": {
+      "matches": {
+        "TCP": false,
+        "SYN": true,
+        "ACK": true,
+        "RST": false,
+        "TCB": false,
+        "DoS": false,
+        "DDoS": false,
+        "SYN flood": false,
+        "TCP session hijacking": false,
+        "TCP RST attack": false,
+        "TCP ACK flood": false,
+        "Transmission Control Block": false,
+        "backlog queue": true,
+        "SYN cookies": false,
+        "RFC 5961": false
+      },
+      "matched_count": 3,
+      "total_targets": 15,
+      "accuracy": 0.2,
+      "precision": 1.0,
+      "recall": 0.2,
+      "f1": 0.3333
+    }
+  },
+  "base": {
+    "model_name": "microsoft/trocr-base-handwritten",
+    "load_time_s": 3.808,
+    "total_time_s": 1528.75,
+    "avg_inference_ms": 22816.3,
+    "median_inference_ms": 14190.0,
+    "min_inference_ms": 9286.4,
+    "max_inference_ms": 554346.97,
+    "avg_confidence": 72.1,
+    "hallucinations_count": 0,
+    "empty_count": 0,
+    "technical_terms": {
+      "matches": {
+        "TCP": true,
+        "SYN": true,
+        "ACK": false,
+        "RST": false,
+        "TCB": false,
+        "DoS": false,
+        "DDoS": false,
+        "SYN flood": false,
+        "TCP session hijacking": false,
+        "TCP RST attack": false,
+        "TCP ACK flood": false,
+        "Transmission Control Block": true,
+        "backlog queue": true,
+        "SYN cookies": false,
+        "RFC 5961": true
+      },
+      "matched_count": 5,
+      "total_targets": 15,
+      "accuracy": 0.3333,
+      "precision": 1.0,
+      "recall": 0.3333,
+      "f1": 0.5
+    }
+  },
+  "performance_slowdown_factor": 13.32,
+  "page_level_metrics": {
+    "1": {
+      "page_number": 1,
+      "lines_count": 23,
+      "is_full_page": true,
+      "small": {
+        "text": "Nicaragua A S KHENIANCASTHA Notes on TCI attacks!. TORONTO flood A MIN Hood is a denial-of-Service (DollARD attack that exploits the TV three-way handshake (SYN, IN-HOK, MCBD. TOP is connection-oriented, so a server must I reserve memory for every connection request it receives. The attacker' abuses this by starting I am any handshakes and never finishing them, Until the same has no room left for genuine Insecs it is called a half-open attack. Because the connection is left in the STATENED states waiting for an RCK What never comes. How the attack works I # The attackers ends away large number of I'll packets to the target ' party' usually write supposed (fate) source. It addresses \" 2 for each fifty the server allocates a Transmission Control Work (TBD entry in its backlog queue and replies with a UN MACK 3 TrueSYN-MORE goes to the # spoofed address, so not the ever returns The server keeps recommending and holding",
+        "cer": 0.1745,
+        "wer": 0.4103,
+        "char_acc": 0.8255,
+        "word_acc": 0.5897,
+        "avg_conf": 69.3,
+        "avg_time_ms": 1764.2
+      },
+      "base": {
+        "text": "# Niranjana A! KH.EN.LANCA25142 Notes on # TCP \" Attacks 1. TCP SYN Hood A SYN. flood is a denial-of - service (001,000) # attack that exploits the TCP three-way... # handshake (IYN, IYN-H.K. H.K). T.P. # his connection-oriented, so a server must # preserve memory for every connection request it # receives. The attacker abuses this by starting # for any homelessness and never finishing them; # until the server has no room left for genuine peers. It is called a half-open attack... # because the connection is left in the... # SIGN-LECENDED states waiting for an ACM # that never comes. How the attack works I. # The attacker sends a very large number of If you packets to the target party \" usually with equipped (fated source if addresses. \" a. for # leads (IN, the server allocates a. - Transmission Control block (TCD entry in # puts backlog queue and replies with a.PIN - # MEK. 3. \" The KYN. HEK goes to the # proofed address, so no MCK ever returns. # The server keeps retransmitting and holding",
+        "cer": 0.1981,
+        "wer": 0.4808,
+        "char_acc": 0.8019,
+        "word_acc": 0.5192,
+        "avg_conf": 70.9,
+        "avg_time_ms": 38286.7
+      }
+    },
+    "2": {
+      "page_number": 2,
+      "lines_count": 8,
+      "is_full_page": false,
+      "small": {
+        "text": "... ' the entry until it times out. 4. The backlog I queue Pills up Ness (IN pockets from I spoofed source addresses hide the real attacker litigation \" I'll cookies' server. # said MOK arrives # Tuning larger ' backlopy Aftering illicit 38 against spoofed It's. # # TCI Session Hijacking TCI session Injacking is an attack in which the attacker",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 65.89,
+        "avg_time_ms": 1953.7
+      },
+      "base": {
+        "text": "# the entry until it times out. It. The backlog I gave pills up. New IYN pockets from # spoofed source addresses wide the real # Jattacker Mitigation-PIN cookies: sewer.... # platid HICK arrives. \" Tuningi larger backlog, # filtering CUCN 3rd against spoofed it's. # 2. TCF Session hijacking TCP session # projecting is an attack in which the attacker",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 71.23,
+        "avg_time_ms": 15303.8
+      }
+    },
+    "3": {
+      "page_number": 3,
+      "lines_count": 9,
+      "is_full_page": false,
+      "small": {
+        "text": "password. The identifies pockets by U Sequenced acknowledgment numbers (for Attacker-learns. or predicts these values, the # fewer cannot tell the attacker's packets From the real client's How the attack works I-half? track: the attacker monitors the # Iggett the attacker sends a spoof packet I genuine. It Take over the attacker now # Unauthorized access: attacker can read clay",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 68.43,
+        "avg_time_ms": 1670.1
+      },
+      "base": {
+        "text": "# password. TCP identifies packets by if # sequence-acknowledgement numbers. If an # Tattacker learns or predicts these valves, the # fewer cannot tell the attacker's jackets # from the real client's. How the attack works #, I. I W.P. I. track the attacker monitors the # flyiest: the attacker sends a spoofed jacket # genuine. It. Take over it he attacker now # (Unauthorised access: attacker can read data,",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 74.34,
+        "avg_time_ms": 14456.9
+      }
+    },
+    "4": {
+      "page_number": 4,
+      "lines_count": 9,
+      "is_full_page": false,
+      "small": {
+        "text": "Password cracking is needed. \" ACK storm. # the out-of-sync client and server keep Prediction board (blind hijacking. \" Yes soon Attack the NET Crest Play in T.F just no listener. In a T.K.A.T attack also added a connection reset or reset spoofing attorney the attacker forges an AT significant than flooding the whole host. How the attack works I The attacker",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 62.6,
+        "avg_time_ms": 1627.3
+      },
+      "base": {
+        "text": "# password cracking is needed. \" MCK storm: of the out-of - sync client and sewer keep # prediction hard (behind hijacking? \" Session # Attack. The NFT Crest) play in TCP # just to listener. In a TCP AT. attack, also # called a connection reset or reset, spoofling # fattacky the attacker forges on NIT segment # than flooding the whole host. # How the attack works in the attacker",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 71.91,
+        "avg_time_ms": 13522.8
+      }
+    },
+    "5": {
+      "page_number": 5,
+      "lines_count": 4,
+      "is_full_page": false,
+      "small": {
+        "text": "Members of both endpoints. A The attacker does cost for attackers. one small packet can validation: L.H. 1961 accepts a rest only of UNIVI rules to flag unexpected bursts of",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 70.03,
+        "avg_time_ms": 1707.8
+      },
+      "base": {
+        "text": "# members of both endpoints. 2. The attacker # slow cost for attacker one small packet can #politation. RFC 5961 accepts a reset only if # LOFFLFF rules to flag unexpected bursts of",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 71.88,
+        "avg_time_ms": 14481.1
+      }
+    },
+    "6": {
+      "page_number": 6,
+      "lines_count": 10,
+      "is_full_page": false,
+      "small": {
+        "text": "MRT packets; random sequence numbers. It TCI MCK Hood HnMCK flood is a # Johnstone. Plot \" attack in which the attacker Jackets with the MLK flag set to the target. In queue encourages MLK packets only Because the packets are unsolicited, the Attack sorts! The attacker (often a, jacketing usually with random or roofed # source addresses and ports. A Each packet so the packet is discarded or on N.T is",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 63.82,
+        "avg_time_ms": 1592.0
+      },
+      "base": {
+        "text": "# NOT jackets; random sequence numbers. It. # JTCP. M.CK. flood. Mr. M.K. flood is a # polyometric DD of attack in which the attacker # packets with the MCK flag set to the target. # for a gems in exchange, M.K packets only Because the pockets are unsolicited, the # Jattack works!. The attacker Caften a, # pocketary usually with random or spoofed... # produce addresses and parts. 2. Each jacket If so the packet is discarded or an NIT is",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 69.76,
+        "avg_time_ms": 16415.7
+      }
+    },
+    "7": {
+      "page_number": 7,
+      "lines_count": 4,
+      "is_full_page": false,
+      "small": {
+        "text": ".. ' the target to the attacker. Motivation belong to a tracked connection as early as blackholding \" Not protection' scrubbing floods before they reach the origin series",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 72.3,
+        "avg_time_ms": 1534.5
+      },
+      "base": {
+        "text": "# the target to the attacker. Mitigation - # belong to a tracked connection as early as # blackholing. \" DDOT protection something # floods before they reach the origin series.",
+        "cer": null,
+        "wer": null,
+        "char_acc": null,
+        "word_acc": null,
+        "avg_conf": 81.85,
+        "avg_time_ms": 12941.7
+      }
+    }
+  },
+  "line_comparisons": [
+    {
+      "page": 1,
+      "line_idx": 1,
+      "small_text": "Nicaragua A S KHENIANCASTHA Notes on",
+      "base_text": "# Niranjana A! KH.EN.LANCA25142 Notes on",
+      "small_conf": 69.2,
+      "base_conf": 61.5,
+      "small_time_ms": 2486.65,
+      "base_time_ms": 24183.33,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 2,
+      "small_text": "TCI attacks!. TORONTO flood A MIN",
+      "base_text": "# TCP \" Attacks 1. TCP SYN Hood A SYN.",
+      "small_conf": 33.1,
+      "base_conf": 58.1,
+      "small_time_ms": 1813.14,
+      "base_time_ms": 18372.66,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 3,
+      "small_text": "Hood is a denial-of-Service (DollARD",
+      "base_text": "flood is a denial-of - service (001,000)",
+      "small_conf": 63.7,
+      "base_conf": 66.6,
+      "small_time_ms": 2037.58,
+      "base_time_ms": 16777.2,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 4,
+      "small_text": "attack that exploits the TV three-way",
+      "base_text": "# attack that exploits the TCP three-way...",
+      "small_conf": 76.8,
+      "base_conf": 71.7,
+      "small_time_ms": 1608.16,
+      "base_time_ms": 13511.33,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 5,
+      "small_text": "handshake (SYN, IN-HOK, MCBD. TOP",
+      "base_text": "# handshake (IYN, IYN-H.K. H.K). T.P.",
+      "small_conf": 46.6,
+      "base_conf": 60.1,
+      "small_time_ms": 2503.29,
+      "base_time_ms": 554346.97,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 6,
+      "small_text": "is connection-oriented, so a server must",
+      "base_text": "# his connection-oriented, so a server must",
+      "small_conf": 82.9,
+      "base_conf": 88.1,
+      "small_time_ms": 1625.67,
+      "base_time_ms": 15809.59,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 7,
+      "small_text": "I reserve memory for every connection request it",
+      "base_text": "# preserve memory for every connection request it",
+      "small_conf": 94.3,
+      "base_conf": 92.2,
+      "small_time_ms": 1461.17,
+      "base_time_ms": 11411.35,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 8,
+      "small_text": "receives. The attacker' abuses this by starting",
+      "base_text": "# receives. The attacker abuses this by starting",
+      "small_conf": 86.0,
+      "base_conf": 73.9,
+      "small_time_ms": 1656.9,
+      "base_time_ms": 12644.62,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 9,
+      "small_text": "I am any handshakes and never finishing them,",
+      "base_text": "# for any homelessness and never finishing them;",
+      "small_conf": 72.3,
+      "base_conf": 76.8,
+      "small_time_ms": 1764.91,
+      "base_time_ms": 13609.21,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 10,
+      "small_text": "Until the same has no room left for genuine",
+      "base_text": "# until the server has no room left for genuine",
+      "small_conf": 82.5,
+      "base_conf": 82.4,
+      "small_time_ms": 1756.43,
+      "base_time_ms": 13608.95,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 11,
+      "small_text": "Insecs it is called a half-open attack.",
+      "base_text": "peers. It is called a half-open attack...",
+      "small_conf": 78.5,
+      "base_conf": 76.2,
+      "small_time_ms": 1912.84,
+      "base_time_ms": 14719.68,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 12,
+      "small_text": "Because the connection is left in the",
+      "base_text": "# because the connection is left in the...",
+      "small_conf": 90.1,
+      "base_conf": 82.6,
+      "small_time_ms": 1389.62,
+      "base_time_ms": 11379.74,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 13,
+      "small_text": "STATENED states waiting for an RCK",
+      "base_text": "# SIGN-LECENDED states waiting for an ACM",
+      "small_conf": 68.3,
+      "base_conf": 58.1,
+      "small_time_ms": 1704.95,
+      "base_time_ms": 15182.12,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 14,
+      "small_text": "What never comes. How the attack works I",
+      "base_text": "# that never comes. How the attack works I.",
+      "small_conf": 77.1,
+      "base_conf": 85.9,
+      "small_time_ms": 1515.22,
+      "base_time_ms": 13662.22,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 15,
+      "small_text": "# The attackers ends away large number of",
+      "base_text": "# The attacker sends a very large number of",
+      "small_conf": 78.5,
+      "base_conf": 83.3,
+      "small_time_ms": 1530.15,
+      "base_time_ms": 12523.33,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 16,
+      "small_text": "I'll packets to the target ' party' usually write",
+      "base_text": "If you packets to the target party \" usually with",
+      "small_conf": 55.2,
+      "base_conf": 74.2,
+      "small_time_ms": 2594.15,
+      "base_time_ms": 14979.03,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 17,
+      "small_text": "supposed (fate) source. It addresses \" 2 for",
+      "base_text": "equipped (fated source if addresses. \" a. for",
+      "small_conf": 55.7,
+      "base_conf": 62.4,
+      "small_time_ms": 1989.63,
+      "base_time_ms": 16000.61,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 18,
+      "small_text": "each fifty the server allocates a",
+      "base_text": "# leads (IN, the server allocates a.",
+      "small_conf": 69.8,
+      "base_conf": 51.4,
+      "small_time_ms": 1289.19,
+      "base_time_ms": 13347.28,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 19,
+      "small_text": "Transmission Control Work (TBD entry in",
+      "base_text": "- Transmission Control block (TCD entry in",
+      "small_conf": 75.2,
+      "base_conf": 59.0,
+      "small_time_ms": 1454.74,
+      "base_time_ms": 11024.93,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 20,
+      "small_text": "its backlog queue and replies with a UN",
+      "base_text": "# puts backlog queue and replies with a.PIN -",
+      "small_conf": 60.6,
+      "base_conf": 65.2,
+      "small_time_ms": 1658.84,
+      "base_time_ms": 13186.14,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 21,
+      "small_text": "MACK 3 TrueSYN-MORE goes to the",
+      "base_text": "# MEK. 3. \" The KYN. HEK goes to the",
+      "small_conf": 50.7,
+      "base_conf": 52.3,
+      "small_time_ms": 1779.55,
+      "base_time_ms": 22289.7,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 22,
+      "small_text": "# spoofed address, so not the ever returns",
+      "base_text": "# proofed address, so no MCK ever returns.",
+      "small_conf": 57.5,
+      "base_conf": 70.9,
+      "small_time_ms": 1656.49,
+      "base_time_ms": 15833.81,
+      "text_differ": true
+    },
+    {
+      "page": 1,
+      "line_idx": 23,
+      "small_text": "The server keeps recommending and holding",
+      "base_text": "# The server keeps retransmitting and holding",
+      "small_conf": 69.4,
+      "base_conf": 77.7,
+      "small_time_ms": 1386.4,
+      "base_time_ms": 12189.8,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 1,
+      "small_text": "... ' the entry until it times out. 4. The backlog",
+      "base_text": "# the entry until it times out. It. The backlog",
+      "small_conf": 74.1,
+      "base_conf": 92.1,
+      "small_time_ms": 2462.82,
+      "base_time_ms": 16501.53,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 2,
+      "small_text": "I queue Pills up Ness (IN pockets from",
+      "base_text": "I gave pills up. New IYN pockets from",
+      "small_conf": 58.5,
+      "base_conf": 57.1,
+      "small_time_ms": 1984.95,
+      "base_time_ms": 14167.29,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 9,
+      "small_text": "I spoofed source addresses hide the real",
+      "base_text": "# spoofed source addresses wide the real",
+      "small_conf": 89.4,
+      "base_conf": 77.7,
+      "small_time_ms": 1402.0,
+      "base_time_ms": 11713.94,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 10,
+      "small_text": "attacker litigation \" I'll cookies' server.",
+      "base_text": "# Jattacker Mitigation-PIN cookies: sewer....",
+      "small_conf": 64.0,
+      "base_conf": 64.4,
+      "small_time_ms": 2045.59,
+      "base_time_ms": 16609.1,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 13,
+      "small_text": "# said MOK arrives # Tuning larger ' backlopy",
+      "base_text": "# platid HICK arrives. \" Tuningi larger backlog,",
+      "small_conf": 48.5,
+      "base_conf": 62.7,
+      "small_time_ms": 2079.85,
+      "base_time_ms": 19192.72,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 17,
+      "small_text": "Aftering illicit 38 against spoofed It's.",
+      "base_text": "# filtering CUCN 3rd against spoofed it's.",
+      "small_conf": 57.4,
+      "base_conf": 65.9,
+      "small_time_ms": 1775.12,
+      "base_time_ms": 16331.38,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 18,
+      "small_text": "# # TCI Session Hijacking TCI session",
+      "base_text": "# 2. TCF Session hijacking TCP session",
+      "small_conf": 61.4,
+      "base_conf": 67.7,
+      "small_time_ms": 1955.17,
+      "base_time_ms": 15262.39,
+      "text_differ": true
+    },
+    {
+      "page": 2,
+      "line_idx": 19,
+      "small_text": "Injacking is an attack in which the attacker",
+      "base_text": "# projecting is an attack in which the attacker",
+      "small_conf": 73.8,
+      "base_conf": 82.2,
+      "small_time_ms": 1924.33,
+      "base_time_ms": 12651.85,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 4,
+      "small_text": "password. The identifies pockets by U",
+      "base_text": "# password. TCP identifies packets by if",
+      "small_conf": 69.0,
+      "base_conf": 58.8,
+      "small_time_ms": 1396.63,
+      "base_time_ms": 10211.34,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 6,
+      "small_text": "Sequenced acknowledgment numbers (for",
+      "base_text": "# sequence-acknowledgement numbers. If an",
+      "small_conf": 52.6,
+      "base_conf": 76.9,
+      "small_time_ms": 1428.68,
+      "base_time_ms": 14190.03,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 7,
+      "small_text": "Attacker-learns. or predicts these values, the",
+      "base_text": "# Tattacker learns or predicts these valves, the",
+      "small_conf": 71.9,
+      "base_conf": 71.3,
+      "small_time_ms": 2185.35,
+      "base_time_ms": 14109.79,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 8,
+      "small_text": "# fewer cannot tell the attacker's packets",
+      "base_text": "# fewer cannot tell the attacker's jackets",
+      "small_conf": 66.7,
+      "base_conf": 84.2,
+      "small_time_ms": 1638.13,
+      "base_time_ms": 11902.52,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 9,
+      "small_text": "From the real client's How the attack works",
+      "base_text": "# from the real client's. How the attack works",
+      "small_conf": 83.9,
+      "base_conf": 88.1,
+      "small_time_ms": 1844.83,
+      "base_time_ms": 14235.33,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 10,
+      "small_text": "I-half? track: the attacker monitors the",
+      "base_text": "#, I. I W.P. I. track the attacker monitors the",
+      "small_conf": 70.4,
+      "base_conf": 58.6,
+      "small_time_ms": 1894.92,
+      "base_time_ms": 21858.82,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 17,
+      "small_text": "# Iggett the attacker sends a spoof packet",
+      "base_text": "# flyiest: the attacker sends a spoofed jacket",
+      "small_conf": 56.0,
+      "base_conf": 77.6,
+      "small_time_ms": 1499.18,
+      "base_time_ms": 14215.51,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 20,
+      "small_text": "I genuine. It Take over the attacker now",
+      "base_text": "# genuine. It. Take over it he attacker now",
+      "small_conf": 67.5,
+      "base_conf": 88.7,
+      "small_time_ms": 1647.95,
+      "base_time_ms": 13978.1,
+      "text_differ": true
+    },
+    {
+      "page": 3,
+      "line_idx": 23,
+      "small_text": "# Unauthorized access: attacker can read clay",
+      "base_text": "# (Unauthorised access: attacker can read data,",
+      "small_conf": 77.9,
+      "base_conf": 64.9,
+      "small_time_ms": 1495.45,
+      "base_time_ms": 15410.77,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 1,
+      "small_text": "Password cracking is needed. \" ACK storm.",
+      "base_text": "# password cracking is needed. \" MCK storm:",
+      "small_conf": 69.8,
+      "base_conf": 70.2,
+      "small_time_ms": 1663.97,
+      "base_time_ms": 15407.43,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 2,
+      "small_text": "# the out-of-sync client and server keep",
+      "base_text": "of the out-of - sync client and sewer keep",
+      "small_conf": 69.1,
+      "base_conf": 75.4,
+      "small_time_ms": 1893.23,
+      "base_time_ms": 13957.75,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 6,
+      "small_text": "Prediction board (blind hijacking. \" Yes soon",
+      "base_text": "# prediction hard (behind hijacking? \" Session",
+      "small_conf": 63.8,
+      "base_conf": 61.0,
+      "small_time_ms": 1640.22,
+      "base_time_ms": 12771.27,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 10,
+      "small_text": "Attack the NET Crest Play in T.F",
+      "base_text": "# Attack. The NFT Crest) play in TCP",
+      "small_conf": 49.6,
+      "base_conf": 66.1,
+      "small_time_ms": 1502.61,
+      "base_time_ms": 15321.79,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 15,
+      "small_text": "just no listener. In a T.K.A.T attack also",
+      "base_text": "# just to listener. In a TCP AT. attack, also",
+      "small_conf": 47.8,
+      "base_conf": 71.8,
+      "small_time_ms": 2259.63,
+      "base_time_ms": 16485.59,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 16,
+      "small_text": "added a connection reset or reset spoofing",
+      "base_text": "# called a connection reset or reset, spoofling",
+      "small_conf": 69.0,
+      "base_conf": 77.5,
+      "small_time_ms": 1533.39,
+      "base_time_ms": 12720.97,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 17,
+      "small_text": "attorney the attacker forges an AT significant",
+      "base_text": "# fattacky the attacker forges on NIT segment",
+      "small_conf": 52.7,
+      "base_conf": 75.1,
+      "small_time_ms": 1503.29,
+      "base_time_ms": 15339.32,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 21,
+      "small_text": "than flooding the whole host.",
+      "base_text": "# than flooding the whole host.",
+      "small_conf": 71.8,
+      "base_conf": 73.8,
+      "small_time_ms": 1264.56,
+      "base_time_ms": 9286.4,
+      "text_differ": true
+    },
+    {
+      "page": 4,
+      "line_idx": 22,
+      "small_text": "How the attack works I The attacker",
+      "base_text": "# How the attack works in the attacker",
+      "small_conf": 69.8,
+      "base_conf": 76.3,
+      "small_time_ms": 1385.22,
+      "base_time_ms": 10415.05,
+      "text_differ": true
+    },
+    {
+      "page": 5,
+      "line_idx": 3,
+      "small_text": "Members of both endpoints. A The attacker",
+      "base_text": "# members of both endpoints. 2. The attacker",
+      "small_conf": 91.0,
+      "base_conf": 86.8,
+      "small_time_ms": 1645.74,
+      "base_time_ms": 14001.86,
+      "text_differ": true
+    },
+    {
+      "page": 5,
+      "line_idx": 17,
+      "small_text": "does cost for attackers. one small packet can",
+      "base_text": "# slow cost for attacker one small packet can",
+      "small_conf": 77.2,
+      "base_conf": 76.3,
+      "small_time_ms": 1603.3,
+      "base_time_ms": 11767.49,
+      "text_differ": true
+    },
+    {
+      "page": 5,
+      "line_idx": 19,
+      "small_text": "validation: L.H. 1961 accepts a rest only of",
+      "base_text": "#politation. RFC 5961 accepts a reset only if",
+      "small_conf": 44.9,
+      "base_conf": 69.9,
+      "small_time_ms": 1930.89,
+      "base_time_ms": 16529.89,
+      "text_differ": true
+    },
+    {
+      "page": 5,
+      "line_idx": 25,
+      "small_text": "UNIVI rules to flag unexpected bursts of",
+      "base_text": "# LOFFLFF rules to flag unexpected bursts of",
+      "small_conf": 67.0,
+      "base_conf": 54.5,
+      "small_time_ms": 1651.37,
+      "base_time_ms": 15625.14,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 1,
+      "small_text": "MRT packets; random sequence numbers. It",
+      "base_text": "# NOT jackets; random sequence numbers. It.",
+      "small_conf": 56.2,
+      "base_conf": 69.9,
+      "small_time_ms": 1546.0,
+      "base_time_ms": 12883.76,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 2,
+      "small_text": "TCI MCK Hood HnMCK flood is a",
+      "base_text": "# JTCP. M.CK. flood. Mr. M.K. flood is a",
+      "small_conf": 56.1,
+      "base_conf": 60.4,
+      "small_time_ms": 1887.84,
+      "base_time_ms": 28469.65,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 3,
+      "small_text": "# Johnstone. Plot \" attack in which the attacker",
+      "base_text": "# polyometric DD of attack in which the attacker",
+      "small_conf": 50.5,
+      "base_conf": 67.2,
+      "small_time_ms": 1780.0,
+      "base_time_ms": 15668.87,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 5,
+      "small_text": "Jackets with the MLK flag set to the target.",
+      "base_text": "# packets with the MCK flag set to the target.",
+      "small_conf": 81.3,
+      "base_conf": 86.1,
+      "small_time_ms": 1655.27,
+      "base_time_ms": 15633.05,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 6,
+      "small_text": "In queue encourages MLK packets only",
+      "base_text": "# for a gems in exchange, M.K packets only",
+      "small_conf": 41.6,
+      "base_conf": 59.5,
+      "small_time_ms": 1279.1,
+      "base_time_ms": 19477.77,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 8,
+      "small_text": "Because the packets are unsolicited, the",
+      "base_text": "Because the pockets are unsolicited, the",
+      "small_conf": 82.9,
+      "base_conf": 76.8,
+      "small_time_ms": 1314.14,
+      "base_time_ms": 11742.71,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 14,
+      "small_text": "Attack sorts! The attacker (often a,",
+      "base_text": "# Jattack works!. The attacker Caften a,",
+      "small_conf": 74.4,
+      "base_conf": 67.3,
+      "small_time_ms": 1655.79,
+      "base_time_ms": 16822.27,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 16,
+      "small_text": "jacketing usually with random or roofed",
+      "base_text": "# pocketary usually with random or spoofed...",
+      "small_conf": 69.6,
+      "base_conf": 69.9,
+      "small_time_ms": 1548.74,
+      "base_time_ms": 14408.69,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 17,
+      "small_text": "# source addresses and ports. A Each packet",
+      "base_text": "# produce addresses and parts. 2. Each jacket",
+      "small_conf": 59.1,
+      "base_conf": 62.3,
+      "small_time_ms": 1516.86,
+      "base_time_ms": 13224.21,
+      "text_differ": true
+    },
+    {
+      "page": 6,
+      "line_idx": 22,
+      "small_text": "so the packet is discarded or on N.T is",
+      "base_text": "If so the packet is discarded or an NIT is",
+      "small_conf": 66.5,
+      "base_conf": 78.2,
+      "small_time_ms": 1736.6,
+      "base_time_ms": 15825.9,
+      "text_differ": true
+    },
+    {
+      "page": 7,
+      "line_idx": 11,
+      "small_text": ".. ' the target to the attacker. Motivation",
+      "base_text": "# the target to the attacker. Mitigation -",
+      "small_conf": 52.7,
+      "base_conf": 85.7,
+      "small_time_ms": 1988.11,
+      "base_time_ms": 12839.01,
+      "text_differ": true
+    },
+    {
+      "page": 7,
+      "line_idx": 13,
+      "small_text": "belong to a tracked connection as early as",
+      "base_text": "# belong to a tracked connection as early as",
+      "small_conf": 86.6,
+      "base_conf": 95.5,
+      "small_time_ms": 1389.05,
+      "base_time_ms": 11810.0,
+      "text_differ": true
+    },
+    {
+      "page": 7,
+      "line_idx": 16,
+      "small_text": "blackholding \" Not protection' scrubbing",
+      "base_text": "# blackholing. \" DDOT protection something",
+      "small_conf": 54.8,
+      "base_conf": 62.0,
+      "small_time_ms": 1373.54,
+      "base_time_ms": 13946.9,
+      "text_differ": true
+    },
+    {
+      "page": 7,
+      "line_idx": 18,
+      "small_text": "floods before they reach the origin series",
+      "base_text": "# floods before they reach the origin series.",
+      "small_conf": 95.1,
+      "base_conf": 84.2,
+      "small_time_ms": 1387.18,
+      "base_time_ms": 13170.95,
+      "text_differ": true
+    }
+  ]
+}
