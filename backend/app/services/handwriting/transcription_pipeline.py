@@ -14,6 +14,7 @@ from app.services.handwriting.document_structure_service import (
 )
 from app.services.handwriting.terminology_service import extract_document_terminology
 from app.services.handwriting.technical_recovery_service import recover_technical_line
+from app.services.handwriting.word_context_recovery_service import DocumentConsistencyIndex
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,8 @@ def transcribe_page_image(
     image_path: Path,
     original_image_path: Optional[Path] = None,
     subject: Optional[str] = None,
-    page_num: int = 1
+    page_num: int = 1,
+    doc_index: Optional[Any] = None
 ) -> Dict[str, Any]:
     """
     Execute complete handwriting recognition on a document page image.
@@ -122,6 +124,9 @@ def transcribe_page_image(
 
     # 3. Technical OCR Recovery Layer
     vocab_index = extract_document_terminology(text_parts, subject=subject)
+    if doc_index is None:
+        raw_lines_by_page = {page_num: text_parts}
+        doc_index = DocumentConsistencyIndex(raw_lines_by_page)
     recovered_lines_data = []
     technical_corrections = []
     page_tokens = []
@@ -141,7 +146,8 @@ def transcribe_page_image(
             line_crop_bgr=crop_bgr,
             line_conf=l_conf,
             line_bbox=[int(bx), int(by), int(bw), int(bh)],
-            return_tokens=True
+            return_tokens=True,
+            doc_index=doc_index
         )
         l_item["recovered_text"] = rec_text
         l_item["tokens"] = l_tokens

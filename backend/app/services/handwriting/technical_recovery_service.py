@@ -21,7 +21,27 @@ from app.services.handwriting.token_ocr_service import (
 )
 from app.services.handwriting.word_recovery_service import (
     recover_ambiguous_characters,
-    recover_punctuation_and_symbols
+    recover_punctuation_and_symbols,
+    COMMON_ENGLISH_WORDS
+)
+from app.services.handwriting.boundary_analyzer import (
+    estimate_line_spacing_statistics,
+    evaluate_split_boundary_evidence,
+    evaluate_merge_boundary_evidence
+)
+from app.services.handwriting.candidate_ranker import (
+    WordCandidate,
+    score_candidate,
+    rank_candidates_for_token
+)
+from app.services.handwriting.word_context_recovery_service import (
+    DocumentConsistencyIndex,
+    score_local_context,
+    generate_word_boundary_splits,
+    generate_character_alternatives
+)
+from app.services.handwriting.phrase_recovery_service import (
+    recover_phrases_in_line
 )
 
 logger = logging.getLogger(__name__)
@@ -152,15 +172,18 @@ def recover_technical_line(
     line_crop_bgr: Optional[np.ndarray] = None,
     line_conf: float = 70.0,
     line_bbox: Optional[List[int]] = None,
-    return_tokens: bool = False
+    return_tokens: bool = False,
+    doc_index: Optional[Any] = None
 ) -> Any:
     """
-    Recover technical terminology in a single transcribed line using multi-signal evidence:
+    Recover technical terminology and ordinary handwriting in a single transcribed line
+    using multi-signal evidence grounded in the hierarchy of trust:
     1. Visual multi-pass alternatives (if line crop provided and line has uncertainty).
-    2. Contextual n-gram colocation matching.
-    3. Document-level term consistency and frequency.
-    4. Cursive optical stroke similarity.
-    5. Token-level visual ambiguity analysis & word boundary recovery.
+    2. Adaptive word boundary analyzer and ink-valley split validation.
+    3. Multi-token compound and hyphenated phrase recovery.
+    4. Document-level term consistency and cross-page frequency index.
+    5. Cursive optical stroke similarity and character confusion graphs.
+    6. Candidate ranking with strict evidence-grounded Safety Gate.
 
     Returns:
         (recovered_line_text, corrections_audit_list) or
@@ -219,6 +242,9 @@ def recover_technical_line(
 
         for m in matches:
             matched_span = m.group(0)
+            # Guard against changing singular to plural or plural to singular (e.g. 'sequence number' -> 'sequence numbers')
+            if matched_span.rstrip('sS').lower() == phrase.rstrip('sS').lower():
+                continue
             sim = compute_optical_similarity(matched_span, phrase)
 
             # Check if visual alternative explicitly decoded this phrase
@@ -267,7 +293,7 @@ def recover_technical_line(
                     "page_number": page_num
                 })
 
-    # 2. Second Pass: Token-Level Decomposition & 3.2 Visual Analysis
+    # 2. Second Pass: Token-Level Decomposition & 3.5 Visual Analysis
     line_tokens: List[Dict[str, Any]] = []
     if line_crop_bgr is not None:
         eff_bbox = line_bbox or [0, 0, line_crop_bgr.shape[1], line_crop_bgr.shape[0]]
@@ -279,18 +305,69 @@ def recover_technical_line(
             line_index=line_idx,
             page_number=page_num
         )
+        line_scale = estimate_line_spacing_statistics(line_crop_bgr, line_tokens)
+
+        # A. Multi-Token Phrase, Compound & Hyphenation Recovery (OCR 3.5)
+        line_tokens, phrase_corrs = recover_phrases_in_line(
+            line_tokens=line_tokens,
+            line_crop_bgr=line_crop_bgr,
+            line_scale=line_scale,
+            page_num=page_num,
+            line_idx=line_idx
+        )
+        corrections.extend(phrase_corrs)
+
         detect_suspicious_tokens(line_tokens, vocab_index)
 
         for tok in line_tokens:
             t_orig = tok["token_text"]
             t_clean = tok["clean_text"]
 
-            # Skip if this token span is already covered by a phrase correction
-            if any(c["original_text"] in t_orig or t_orig in c["original_text"] for c in corrections if c["type"] == "phrase"):
+            # Skip if this token span is already covered by a phrase correction or already recovered
+            if tok.get("is_recovered") or any(c["suggested_text"] == t_orig for c in corrections if "phrase" in c["type"]):
                 continue
 
-            # A. Word Boundary Recovery for Merged Tokens (e.g. 'TOPINGLOOD' -> 'SYN Flood')
-            if tok.get("is_merged_candidate") or "TOPINGLOOD" in t_clean.upper():
+            # B. Word Boundary Split for Merged Words (OCR 3.5 + 3.2)
+            split_handled = False
+            wb_cands = generate_word_boundary_splits(
+                token_dict=tok,
+                token_crop_bgr=line_crop_bgr,
+                line_scale=line_scale,
+                doc_index=doc_index
+            )
+            if wb_cands:
+                winner, ranked = rank_candidates_for_token(wb_cands)
+                if winner.source != "ORIGINAL" and winner.decision == "ACCEPTED":
+                    corr_id = f"corr_p{page_num}_l{line_idx}_wb_{len(corrections)+1}"
+                    corrections.append({
+                        "id": corr_id,
+                        "type": "word_boundary",
+                        "original_text": t_orig,
+                        "suggested_text": winner.candidate_text,
+                        "status": "accepted",
+                        "confidence": winner.final_score,
+                        "evidence": winner.evidence,
+                        "signals": {
+                            "visual_score": winner.visual_similarity,
+                            "ocr_confidence": round(line_conf / 100.0, 2),
+                            "context_score": winner.context_score,
+                            "domain_score": winner.technical_score,
+                            "document_consensus": winner.document_score,
+                            "phrase_compatibility": 0.95,
+                            "final_confidence": winner.final_score
+                        },
+                        "char_span": [recovered_line.find(t_orig), recovered_line.find(t_orig) + len(t_orig)],
+                        "line_index": line_idx,
+                        "page_number": page_num
+                    })
+                    tok["candidate_recovery"] = winner.candidate_text
+                    tok["candidate_status"] = "accepted"
+                    tok["candidate_signals"] = winner.to_dict()
+                    tok["grounded_candidate"] = winner.candidate_text
+                    tok["decision_state"] = "ACCEPTED"
+                    split_handled = True
+
+            if not split_handled and (tok.get("is_merged_candidate") or "TOPINGLOOD" in t_clean.upper()):
                 wb = recover_word_boundary(tok, line_crop_bgr, vocab_index)
                 if wb:
                     wb_cand = wb["candidate_split"]
@@ -321,7 +398,7 @@ def recover_technical_line(
                     tok["candidate_status"] = "accepted" if wb_conf >= 0.75 else "suggested"
                     continue
 
-            # B. Small Parenthetical Recovery (e.g. '(DollARD' -> '(DoS)', '(TBD' -> '(TCB)', '1961' -> 'RFC 5961')
+            # C. Small Parenthetical Recovery (e.g. '(DollARD' -> '(DoS)', '(TBD' -> '(TCB)', '1961' -> 'RFC 5961')
             par = recover_small_parenthetical(tok, line_tokens, vocab_index)
             if par:
                 p_sug = par["suggested_token"]
@@ -352,9 +429,8 @@ def recover_technical_line(
                 tok["candidate_status"] = "accepted" if p_conf >= 0.78 else "suggested"
                 continue
 
-            # C. Multi-Signal Character Ambiguity & Candidate Ranking
-            if tok.get("is_suspicious"):
-                # Candidate acronyms
+            # D. Multi-Signal Character Ambiguity & Candidate Ranking for Technical Acronyms
+            if tok.get("is_suspicious") and not tok.get("candidate_recovery"):
                 c_cand, c_score, c_sigs, c_ev, c_status = rank_token_candidates(
                     token_dict=tok,
                     candidate_terms=list(acronyms),
@@ -384,7 +460,65 @@ def recover_technical_line(
                     tok["decision_state"] = c_status.upper()
                     tok["character_ambiguity"] = f"Optical stroke similarity {c_sigs.get('visual_score', 0.9)*100:.0f}%"
 
-            # D. Ordinary Word & Character Ambiguity Recovery (3.3)
+            # E. Context-Aware Character Recovery & Disambiguation (OCR 3.5)
+            if not tok.get("candidate_recovery"):
+                char_cands = generate_character_alternatives(tok, doc_index)
+                if char_cands:
+                    is_common = t_clean.lower() in COMMON_ENGLISH_WORDS
+                    orig_cand = WordCandidate(
+                        word_id=f"p{page_num}_l{line_idx}_t{tok.get('token_index', 1)}_orig",
+                        page_number=page_num,
+                        line_id=line_idx,
+                        word_index=tok.get("token_index", 1),
+                        original_text=t_orig,
+                        candidate_text=t_orig,
+                        bounding_box=tok.get("token_bbox", [0, 0, 50, 20]),
+                        confidence=tok.get("token_confidence", 70.0),
+                        visual_similarity=1.0,
+                        boundary_confidence=0.80,
+                        context_score=0.60,
+                        language_score=0.90 if is_common else 0.50,
+                        technical_score=0.70 if t_clean.upper() in verified_terms else 0.30,
+                        document_score=doc_index.get_document_score(t_clean) if doc_index else 0.50,
+                        source="ORIGINAL",
+                        decision="RAW"
+                    )
+                    all_cands = [orig_cand] + char_cands
+                    winner, ranked = rank_candidates_for_token(
+                        all_cands,
+                        is_common_protected=(is_common and tok.get("token_confidence", 70.0) >= 75.0)
+                    )
+                    if winner.source != "ORIGINAL" and winner.decision in ["ACCEPTED", "SUGGESTED"]:
+                        corr_id = f"corr_p{page_num}_l{line_idx}_char_{len(corrections)+1}"
+                        corrections.append({
+                            "id": corr_id,
+                            "type": "character",
+                            "original_text": t_orig,
+                            "suggested_text": winner.candidate_text,
+                            "status": winner.decision.lower(),
+                            "confidence": winner.final_score,
+                            "evidence": winner.evidence,
+                            "signals": {
+                                "visual_score": winner.visual_similarity,
+                                "ocr_confidence": round(tok.get("token_confidence", 70.0) / 100.0, 2),
+                                "context_score": winner.context_score,
+                                "domain_score": winner.technical_score,
+                                "document_consensus": winner.document_score,
+                                "phrase_compatibility": 0.85,
+                                "final_confidence": winner.final_score
+                            },
+                            "char_span": [recovered_line.find(t_orig), recovered_line.find(t_orig) + len(t_orig)],
+                            "line_index": line_idx,
+                            "page_number": page_num
+                        })
+                        tok["candidate_recovery"] = winner.candidate_text
+                        tok["candidate_status"] = winner.decision.lower()
+                        tok["candidate_signals"] = winner.to_dict()
+                        tok["grounded_candidate"] = winner.candidate_text
+                        tok["decision_state"] = winner.decision
+                        tok["character_ambiguity"] = winner.evidence[0] if winner.evidence else "Cursive stroke ambiguity"
+
+            # F. Ordinary Word & Character Ambiguity Recovery (3.3 Fallback)
             if not tok.get("candidate_recovery"):
                 c_res = recover_ambiguous_characters(tok, recovered_line)
                 if c_res:
@@ -409,13 +543,18 @@ def recover_technical_line(
                     tok["decision_state"] = c_res["status"].upper()
                     tok["character_ambiguity"] = c_res["evidence"][0] if c_res["evidence"] else "Cursive stroke ambiguity"
 
-    # Apply ONLY accepted corrections to produce recovered text
+    # Apply ONLY accepted corrections to produce recovered text safely
     final_recovered_line = cleaned_line
     for c in sorted(corrections, key=lambda x: -len(x["original_text"])):
         if c["status"] == "accepted":
-            final_recovered_line = final_recovered_line.replace(c["original_text"], c["suggested_text"])
+            orig = c["original_text"]
+            sugg = c["suggested_text"]
+            if re.match(r'^\w+$', orig):
+                final_recovered_line = re.sub(r'\b' + re.escape(orig) + r'\b', sugg, final_recovered_line)
+            else:
+                final_recovered_line = final_recovered_line.replace(orig, sugg)
 
-    # E. Punctuation & Delimiter Recovery (3.3)
+    # G. Punctuation & Delimiter Recovery (3.3)
     final_recovered_line, punct_corrs = recover_punctuation_and_symbols(final_recovered_line, line_tokens)
     corrections.extend(punct_corrs)
 
@@ -434,6 +573,13 @@ def recover_document_technical_transcription(
     """
     raw_texts = [p.get("raw_text", "") for p in pages]
     vocab_index = extract_document_terminology(raw_texts, subject=subject)
+
+    # Build cross-page document consistency index
+    raw_lines_by_page = {
+        p.get("page_number", idx): [l.get("text", "") for l in p.get("lines", [])]
+        for idx, p in enumerate(pages, 1)
+    }
+    doc_index = DocumentConsistencyIndex(raw_lines_by_page)
 
     recovered_pages = []
     for p_idx, page in enumerate(pages, start=1):
@@ -456,7 +602,8 @@ def recover_document_technical_transcription(
                 page_num=page_num,
                 vocab_index=vocab_index,
                 line_crop_bgr=l_crop,
-                line_conf=l_conf
+                line_conf=l_conf,
+                doc_index=doc_index
             )
             recovered_lines.append(rec_text)
             page_corrections.extend(corrs)

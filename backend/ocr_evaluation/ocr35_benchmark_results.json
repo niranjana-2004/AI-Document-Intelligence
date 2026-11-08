@@ -1,0 +1,1701 @@
+{
+  "timestamp": "2026-11-08 11:07:24",
+  "pipeline": "Cognidocs OCR 3.5 \u2014 Context-Aware Word & Phrase Recovery",
+  "model": "microsoft/trocr-small-handwritten",
+  "inference_mode": "CPU",
+  "document_id": 12,
+  "document_name": "text-to-handwriting.pdf",
+  "pages_count": 7,
+  "execution_time_seconds": 81.61,
+  "overall_metrics": {
+    "raw_cer": 0.2191,
+    "recovered_cer": 0.2131,
+    "raw_wer": 0.4667,
+    "recovered_wer": 0.4479,
+    "char_accuracy": 78.69,
+    "word_accuracy": 55.21,
+    "technical_accuracy": 73.3,
+    "technical_precision": 1.0,
+    "technical_recall": 0.7333,
+    "technical_f1": 0.8462,
+    "false_correction_count": 3,
+    "false_correction_rate": 0.0811
+  },
+  "token_metrics": {
+    "total_tokens": 1086,
+    "suspicious_tokens": 433,
+    "word_boundary_splits": 1,
+    "phrase_merges": 2,
+    "hyphenations": 1,
+    "parentheticals": 4,
+    "character_corrections": 6,
+    "punctuation_corrections": 6,
+    "total_corrections": 53,
+    "accepted_corrections": 37,
+    "suggested_corrections": 16,
+    "rejected_corrections": 0
+  },
+  "technical_terms": {
+    "TCP": {
+      "raw": false,
+      "recovered": true
+    },
+    "SYN": {
+      "raw": true,
+      "recovered": true
+    },
+    "ACK": {
+      "raw": true,
+      "recovered": true
+    },
+    "RST": {
+      "raw": false,
+      "recovered": false
+    },
+    "TCB": {
+      "raw": false,
+      "recovered": true
+    },
+    "DoS": {
+      "raw": false,
+      "recovered": true
+    },
+    "DDoS": {
+      "raw": false,
+      "recovered": false
+    },
+    "SYN flood": {
+      "raw": false,
+      "recovered": true
+    },
+    "TCP session hijacking": {
+      "raw": false,
+      "recovered": true
+    },
+    "TCP RST attack": {
+      "raw": false,
+      "recovered": false
+    },
+    "TCP ACK flood": {
+      "raw": false,
+      "recovered": false
+    },
+    "Transmission Control Block": {
+      "raw": false,
+      "recovered": true
+    },
+    "backlog queue": {
+      "raw": true,
+      "recovered": true
+    },
+    "SYN cookies": {
+      "raw": false,
+      "recovered": true
+    },
+    "RFC 5961": {
+      "raw": false,
+      "recovered": true
+    }
+  },
+  "false_corrections": [
+    {
+      "page": 1,
+      "original": "ever",
+      "suggested": "even",
+      "type": "character"
+    },
+    {
+      "page": 4,
+      "original": "(blind",
+      "suggested": "(blind)",
+      "type": "punctuation"
+    },
+    {
+      "page": 6,
+      "original": "(often",
+      "suggested": "(often)",
+      "type": "punctuation"
+    }
+  ],
+  "pages": [
+    {
+      "page_number": 1,
+      "lines_count": 23,
+      "tokens_count": 158,
+      "confidence": 70.0,
+      "raw_cer": 0.1884,
+      "raw_wer": 0.3974,
+      "recovered_cer": 0.1595,
+      "recovered_wer": 0.3269,
+      "char_accuracy": 84.05,
+      "word_accuracy": 67.31,
+      "corrections": [
+        {
+          "id": "corr_p1_l2_phrase_1",
+          "type": "phrase",
+          "original_text": "ICCP.Attacks",
+          "suggested_text": "TCP Attacks",
+          "status": "accepted",
+          "confidence": 0.76,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'TCP Attacks' (optical similarity: 81.8%)"
+          ],
+          "signals": {
+            "visual_score": 0.82,
+            "ocr_confidence": 0.4,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.76
+          },
+          "char_span": [
+            0,
+            12
+          ],
+          "line_index": 2,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l2_wb_2",
+          "type": "word_boundary",
+          "original_text": "TOPINGLOOD",
+          "suggested_text": "SYN Flood",
+          "status": "accepted",
+          "confidence": 0.75,
+          "evidence": [
+            "Connected component ink valley split detected at col 137 of 532px",
+            "Left sub-crop OCR: 'is' (confidence: 51.4%)",
+            "Right sub-crop OCR: 'unflood)' (confidence: 72.5%)",
+            "Domain term alignment: 'SYN Flood' in subject vocabulary"
+          ],
+          "signals": {
+            "visual_score": 0.85,
+            "ocr_confidence": 0.75,
+            "context_score": 0.9,
+            "domain_score": 0.95,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.75
+          },
+          "char_span": [
+            16,
+            26
+          ],
+          "line_index": 2,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l3_par_1",
+          "type": "parenthetical",
+          "original_text": "(DollARD",
+          "suggested_text": "(DoS)",
+          "status": "accepted",
+          "confidence": 0.88,
+          "evidence": [
+            "Parenthetical immediately following 'denial-of-service'",
+            "Standard technical abbreviation for denial-of-service is (DoS)",
+            "Optical stroke match: 'DollARD' contains capital D, o, S loop confusions"
+          ],
+          "signals": {
+            "visual_score": 0.9,
+            "ocr_confidence": 0.64,
+            "context_score": 0.95,
+            "domain_score": 0.95,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.88
+          },
+          "char_span": [
+            28,
+            36
+          ],
+          "line_index": 3,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l4_phrase_1",
+          "type": "phrase",
+          "original_text": "TV three-way",
+          "suggested_text": "TCP three-way",
+          "status": "accepted",
+          "confidence": 0.76,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'TCP three-way' (optical similarity: 81.8%)"
+          ],
+          "signals": {
+            "visual_score": 0.82,
+            "ocr_confidence": 0.77,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.76
+          },
+          "char_span": [
+            25,
+            37
+          ],
+          "line_index": 4,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l4_tok_2",
+          "type": "token",
+          "original_text": "TV",
+          "suggested_text": "TCP",
+          "status": "accepted",
+          "confidence": 0.84,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'three-way' colocates with 'TCP'",
+            "Phrase alignment: forms 'TCP three-way handshake' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.73,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.84
+          },
+          "char_span": [
+            25,
+            27
+          ],
+          "line_index": 4,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l5_tok_1",
+          "type": "token",
+          "original_text": "HCED.",
+          "suggested_text": "ACK.",
+          "status": "accepted",
+          "confidence": 0.76,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'handshake' colocates with 'ACK'",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.46,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.76
+          },
+          "char_span": [
+            25,
+            30
+          ],
+          "line_index": 5,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l5_tok_2",
+          "type": "token",
+          "original_text": "TOP",
+          "suggested_text": "TCP",
+          "status": "accepted",
+          "confidence": 0.81,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'handshake' colocates with 'TCP'",
+            "Phrase alignment: forms 'TCP three-way handshake' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.45,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.81
+          },
+          "char_span": [
+            31,
+            34
+          ],
+          "line_index": 5,
+          "page_number": 1
+        },
+        {
+          "id": "corr_punct_list_1",
+          "type": "punctuation",
+          "original_text": "(SYN, SYN-ACK, ACK.",
+          "suggested_text": "(SYN, SYN-ACK, ACK).",
+          "status": "accepted",
+          "confidence": 0.88,
+          "evidence": [
+            "Delimitation: Parenthetical list missing closing delimiter ')'",
+            "Balanced parenthesis restoration before punctuation"
+          ],
+          "signals": {
+            "visual_score": 0.92,
+            "ocr_confidence": 0.8,
+            "context_score": 0.95,
+            "domain_score": 0.85,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.88
+          },
+          "char_span": [
+            10,
+            29
+          ],
+          "line_index": 5,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l13_tok_1",
+          "type": "token",
+          "original_text": "RCK",
+          "suggested_text": "ACK",
+          "status": "suggested",
+          "confidence": 0.66,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'per-packet state checks' with adjacent text",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.63,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.66
+          },
+          "char_span": [
+            31,
+            34
+          ],
+          "line_index": 13,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l16_char_1",
+          "type": "character",
+          "original_text": "write",
+          "suggested_text": "with",
+          "status": "accepted",
+          "confidence": 0.87,
+          "evidence": [
+            "Cursive stroke confusion: 'write' \u2194 'with' following 'usually'",
+            "Optical Stroke Similarity: 92.0%",
+            "Lexical validation: 'with' in academic English lexicon"
+          ],
+          "signals": {
+            "visual_score": 0.92,
+            "ocr_confidence": 0.55,
+            "context_score": 0.85,
+            "domain_score": 0.85,
+            "document_consensus": 0.8,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.87
+          },
+          "char_span": [
+            44,
+            49
+          ],
+          "line_index": 16,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l17_char_1",
+          "type": "character",
+          "original_text": "supposed",
+          "suggested_text": "spoofed",
+          "status": "accepted",
+          "confidence": 0.88,
+          "evidence": [
+            "Cursive ligature confusion: 'supposed' \u2194 'spoofed' in network security context",
+            "Optical Stroke Similarity: 95.0%",
+            "Lexical validation: 'spoofed' in academic English lexicon"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.56,
+            "context_score": 0.85,
+            "domain_score": 0.85,
+            "document_consensus": 0.8,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.88
+          },
+          "char_span": [
+            0,
+            8
+          ],
+          "line_index": 17,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l17_char_2",
+          "type": "character",
+          "original_text": "(fate)",
+          "suggested_text": "(fake)",
+          "status": "accepted",
+          "confidence": 0.88,
+          "evidence": [
+            "Cursive loop confusion: 'fate' \u2194 'fake' preceding 'source IP'",
+            "Optical Stroke Similarity: 94.0%",
+            "Lexical validation: 'fake' in academic English lexicon"
+          ],
+          "signals": {
+            "visual_score": 0.94,
+            "ocr_confidence": 0.56,
+            "context_score": 0.85,
+            "domain_score": 0.85,
+            "document_consensus": 0.8,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.88
+          },
+          "char_span": [
+            9,
+            15
+          ],
+          "line_index": 17,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l19_phrase_1",
+          "type": "phrase",
+          "original_text": "Transmission Control Work",
+          "suggested_text": "Transmission Control Block",
+          "status": "accepted",
+          "confidence": 0.79,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'Transmission Control Block' (optical similarity: 87.5%)"
+          ],
+          "signals": {
+            "visual_score": 0.88,
+            "ocr_confidence": 0.75,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.79
+          },
+          "char_span": [
+            0,
+            25
+          ],
+          "line_index": 19,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l19_par_2",
+          "type": "parenthetical",
+          "original_text": "(TBD",
+          "suggested_text": "(TCB)",
+          "status": "accepted",
+          "confidence": 0.9,
+          "evidence": [
+            "Contextual anchor: 'Transmission Control Block' immediately preceding",
+            "Cursive stroke similarity: 'D' \u2194 'B' character loop confusion",
+            "Subject Domain: 'TCB' (Transmission Control Block) verified in Computer Science & Networking"
+          ],
+          "signals": {
+            "visual_score": 0.9,
+            "ocr_confidence": 0.75,
+            "context_score": 0.95,
+            "domain_score": 0.95,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.9
+          },
+          "char_span": [
+            26,
+            30
+          ],
+          "line_index": 19,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l20_tok_1",
+          "type": "token",
+          "original_text": "UN",
+          "suggested_text": "SYN",
+          "status": "suggested",
+          "confidence": 0.56,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Document consensus: 'SYN' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.56,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.56
+          },
+          "char_span": [
+            37,
+            39
+          ],
+          "line_index": 20,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l21_tok_1",
+          "type": "token",
+          "original_text": "MACK",
+          "suggested_text": "ACK",
+          "status": "suggested",
+          "confidence": 0.75,
+          "evidence": [
+            "Visual Stroke Similarity: 90.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'syn' colocates with 'ACK'",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.9,
+            "ocr_confidence": 0.47,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.75
+          },
+          "char_span": [
+            0,
+            4
+          ],
+          "line_index": 21,
+          "page_number": 1
+        },
+        {
+          "id": "corr_p1_l22_char_1",
+          "type": "character",
+          "original_text": "ever",
+          "suggested_text": "even",
+          "status": "accepted",
+          "confidence": 0.86,
+          "evidence": [
+            "Cursive terminal tail: 'ever' \u2194 'even' preceding condition",
+            "Optical Stroke Similarity: 91.2%",
+            "Lexical validation: 'even' in academic English lexicon"
+          ],
+          "signals": {
+            "visual_score": 0.91,
+            "ocr_confidence": 0.57,
+            "context_score": 0.85,
+            "domain_score": 0.85,
+            "document_consensus": 0.8,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.86
+          },
+          "char_span": [
+            30,
+            34
+          ],
+          "line_index": 22,
+          "page_number": 1
+        }
+      ],
+      "raw_text": "Nicaragua A S KHENIANCA45142 Notes on\nICCP.Attacks 1. TOPINGLOOD A MIN\nHood is a denial-of-Service (DollARD\nattack that exploits the TV three-way\nhandshake (SYN, SYN-ACK, HCED. TOP\nis connection-oriented, so a server must\nI reserve memory for every connection request it\nreceives. The attacker' abuses this by starting\nI am any handshakes and never finishing them,\nUntil the same has no room left for genuine\nInsecs it is called a half-open attack.\nBecause the connection is left in the\nSTATENED states waiting for an RCK\nWhat never comes. How the attack works I\n# The attackers ends away large number of\nI'll packets to the target ' party' usually write\nsupposed (fate) source. It addresses \" 2 for\neach fifty the server allocates a\nTransmission Control Work (TBD entry in\nits backlog queue and replies with a UN\nMACK 3 TrueSYN-MORE goes to the\n# spoofed address, so not the ever returns\nThe server keeps recommending and holding",
+      "recovered_text": "Nicaragua A S KHENIANCA45142 Notes on\nTCP Attacks 1. SYN Flood A MIN\nHood is a denial-of-Service (DoS)\nattack that exploits the TCP three-way\nhandshake (SYN, SYN-ACK, ACK). TCP\nis connection-oriented, so a server must\nI reserve memory for every connection request it\nreceives. The attacker' abuses this by starting\nI am any handshakes and never finishing them,\nUntil the same has no room left for genuine\nInsecs it is called a half-open attack.\nBecause the connection is left in the\nSTATENED states waiting for an RCK\nWhat never comes. How the attack works I\n# The attackers ends away large number of\nI'll packets to the target ' party' usually with\nspoofed (fake) source. It addresses \" 2 for\neach fifty the server allocates a\nTransmission Control Block (TCB) entry in\nits backlog queue and replies with a UN\nMACK 3 TrueSYN-MORE goes to the\n# spoofed address, so not the even returns\nThe server keeps recommending and holding"
+    },
+    {
+      "page_number": 2,
+      "lines_count": 23,
+      "tokens_count": 157,
+      "confidence": 70.2,
+      "raw_cer": 0.1859,
+      "raw_wer": 0.4694,
+      "recovered_cer": 0.1838,
+      "recovered_wer": 0.4694,
+      "char_accuracy": 81.62,
+      "word_accuracy": 53.06,
+      "corrections": [
+        {
+          "id": "corr_compound_2_1_7",
+          "type": "word_boundary_merge",
+          "original_text": "times out.",
+          "suggested_text": "times out",
+          "status": "accepted",
+          "confidence": 0.91,
+          "evidence": [
+            "Compound word split repair: 'times out.' -> 'times out'",
+            "Inter-token gap 0.0px supports continuous word (boundary score: 95%)"
+          ],
+          "signals": {
+            "visual_score": 0.9,
+            "ocr_confidence": 0.8,
+            "context_score": 0.95,
+            "domain_score": 0.85,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.91
+          },
+          "line_index": 1,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l2_char_1",
+          "type": "character",
+          "original_text": "Pills",
+          "suggested_text": "Fills",
+          "status": "accepted",
+          "confidence": 0.788,
+          "evidence": [
+            "Cursive stroke substitution: 'P' \u2194 'F' (optical stroke sim: 93.0%)",
+            "Lexical validation: 'Fills' verified in academic English vocabulary"
+          ],
+          "signals": {
+            "visual_score": 0.93,
+            "ocr_confidence": 0.63,
+            "context_score": 0.92,
+            "domain_score": 0.4,
+            "document_consensus": 0.3,
+            "phrase_compatibility": 0.85,
+            "final_confidence": 0.788
+          },
+          "char_span": [
+            6,
+            11
+          ],
+          "line_index": 2,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l2_tok_2",
+          "type": "token",
+          "original_text": "(IN",
+          "suggested_text": "(FIN",
+          "status": "suggested",
+          "confidence": 0.58,
+          "evidence": [
+            "Visual Stroke Similarity: 85.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'packet sniffing' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.85,
+            "ocr_confidence": 0.58,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.58
+          },
+          "char_span": [
+            21,
+            24
+          ],
+          "line_index": 2,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l9_tok_1",
+          "type": "token",
+          "original_text": "I",
+          "suggested_text": "IP",
+          "status": "suggested",
+          "confidence": 0.61,
+          "evidence": [
+            "Visual Stroke Similarity: 85.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'spoofed source IP' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.85,
+            "ocr_confidence": 0.89,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.61
+          },
+          "char_span": [
+            0,
+            1
+          ],
+          "line_index": 9,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l10_phrase_1",
+          "type": "phrase",
+          "original_text": "ll cookies",
+          "suggested_text": "SYN cookies",
+          "status": "accepted",
+          "confidence": 0.85,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'SYN cookies' (optical similarity: 70.0%)",
+            "Document consistency: component term verified elsewhere in notes"
+          ],
+          "signals": {
+            "visual_score": 0.7,
+            "ocr_confidence": 0.64,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.85
+          },
+          "char_span": [
+            24,
+            34
+          ],
+          "line_index": 10,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l17_phrase_1",
+          "type": "phrase",
+          "original_text": "spoofed ills",
+          "suggested_text": "spoofed IP",
+          "status": "suggested",
+          "confidence": 0.71,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'spoofed IP' (optical similarity: 72.7%)"
+          ],
+          "signals": {
+            "visual_score": 0.73,
+            "ocr_confidence": 0.61,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.71
+          },
+          "char_span": [
+            28,
+            40
+          ],
+          "line_index": 17,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l17_par_2",
+          "type": "parenthetical",
+          "original_text": "38",
+          "suggested_text": "BCP 38",
+          "status": "accepted",
+          "confidence": 0.84,
+          "evidence": [
+            "Contextual anchor: Ingress network filtering against spoofed IPs references BCP 38",
+            "Cursive stroke confusion: 'illicit' represents cursive loop confusion for 'BCP'",
+            "Standard networking Best Current Practice: 'BCP 38'"
+          ],
+          "signals": {
+            "visual_score": 0.9,
+            "ocr_confidence": 0.61,
+            "context_score": 0.95,
+            "domain_score": 0.95,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.84
+          },
+          "char_span": [
+            17,
+            19
+          ],
+          "line_index": 17,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l17_tok_3",
+          "type": "token",
+          "original_text": "ills.",
+          "suggested_text": "IP.",
+          "status": "suggested",
+          "confidence": 0.62,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'spoofed source IP' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.61,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.62
+          },
+          "char_span": [
+            36,
+            41
+          ],
+          "line_index": 17,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l18_phrase_1",
+          "type": "phrase",
+          "original_text": "TCI Session Hijacking",
+          "suggested_text": "TCP Session Hijacking",
+          "status": "accepted",
+          "confidence": 0.83,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'TCP Session Hijacking' (optical similarity: 95.5%)"
+          ],
+          "signals": {
+            "visual_score": 0.96,
+            "ocr_confidence": 0.61,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.83
+          },
+          "char_span": [
+            4,
+            25
+          ],
+          "line_index": 18,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l18_tok_2",
+          "type": "token",
+          "original_text": "TCI",
+          "suggested_text": "TCP",
+          "status": "accepted",
+          "confidence": 0.82,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'hijacking' colocates with 'TCP'",
+            "Phrase alignment: forms 'TCP ACK Flood' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.56,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.82
+          },
+          "char_span": [
+            4,
+            7
+          ],
+          "line_index": 18,
+          "page_number": 2
+        },
+        {
+          "id": "corr_p2_l18_tok_3",
+          "type": "token",
+          "original_text": "TCI",
+          "suggested_text": "TCP",
+          "status": "accepted",
+          "confidence": 0.82,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'hijacking' colocates with 'TCP'",
+            "Phrase alignment: forms 'TCP ACK Flood' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.56,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.82
+          },
+          "char_span": [
+            4,
+            7
+          ],
+          "line_index": 18,
+          "page_number": 2
+        }
+      ],
+      "raw_text": "... ' the entry until it times out. 4. The backlog\nqueue Pills up. News (IN packets from\nillegitimate clients are dropped or ignored.\nImpact \" Venice vocabulary; web servers, in\njob-seekers and MPs stop accepting news\nConnections \" Resource exhaustion: memory\nand connection-table space are, consumed\never at modest traffic rates \" Hard to trace:\nI spoofed source addresses hide the real\nattacker litigation \" I'll cookies' server.\nencodes connection state in the INN-MCK\nsequence number and stores notting until a\n# said MOK arrives # Tuning larger ' backlopy\nIshogter MTN-RECEIVED \" timeout, fewer TSN\n# # entries \" Network defence rate\nWritings firewall!! Aftering, and impress\nAftering illicit 38 against spoofed ills.\n# # TCI Session Hijacking TCI session\nInjacking is an attack in which the attacker\ntakes control of an already established\nsession between a client and a server\n. Authentication normally happens only at the\nstart of a session so whoever takes over",
+      "recovered_text": "... ' the entry until it times out 4. The backlog\nqueue Fills up. News (IN packets from\nillegitimate clients are dropped or ignored.\nImpact \" Venice vocabulary; web servers, in\njob-seekers and MPs stop accepting news\nConnections \" Resource exhaustion: memory\nand connection-table space are, consumed\never at modest traffic rates \" Hard to trace:\nI spoofed source addresses hide the real\nattacker litigation \" I'SYN cookies' server.\nencodes connection state in the INN-MCK\nsequence number and stores notting until a\n# said MOK arrives # Tuning larger ' backlopy\nIshogter MTN-RECEIVED \" timeout, fewer TSN\n# # entries \" Network defence rate\nWritings firewall!! Aftering, and impress\nAftering illicit BCP 38 against spoofed ills.\n# # TCP Session Hijacking TCP session\nInjacking is an attack in which the attacker\ntakes control of an already established\nsession between a client and a server\n. Authentication normally happens only at the\nstart of a session so whoever takes over"
+    },
+    {
+      "page_number": 3,
+      "lines_count": 25,
+      "tokens_count": 167,
+      "confidence": 71.2,
+      "raw_cer": 0.238,
+      "raw_wer": 0.5,
+      "recovered_cer": 0.237,
+      "recovered_wer": 0.4934,
+      "char_accuracy": 76.3,
+      "word_accuracy": 50.66,
+      "corrections": [
+        {
+          "id": "corr_p3_l13_phrase_1",
+          "type": "phrase",
+          "original_text": "current sequence numbers",
+          "suggested_text": "initial sequence numbers",
+          "status": "suggested",
+          "confidence": 0.7,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'initial sequence numbers' (optical similarity: 69.5%)"
+          ],
+          "signals": {
+            "visual_score": 0.7,
+            "ocr_confidence": 0.72,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.7
+          },
+          "char_span": [
+            10,
+            34
+          ],
+          "line_index": 13,
+          "page_number": 3
+        },
+        {
+          "id": "corr_p3_l15_char_1",
+          "type": "character",
+          "original_text": "pockets",
+          "suggested_text": "packets",
+          "status": "accepted",
+          "confidence": 0.825,
+          "evidence": [
+            "Cursive stroke substitution: 'o' \u2194 'A' (optical stroke sim: 95.0%)",
+            "Lexical validation: 'packets' verified in academic English vocabulary"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.89,
+            "context_score": 0.75,
+            "domain_score": 0.4,
+            "document_consensus": 0.95,
+            "phrase_compatibility": 0.85,
+            "final_confidence": 0.825
+          },
+          "char_span": [
+            4,
+            11
+          ],
+          "line_index": 15,
+          "page_number": 3
+        }
+      ],
+      "raw_text": "Afterwards inherits the legitimate user's\nlaceers (for example a logged-in Telety\nFTI-or web session) without needing the\npassword. The identifies packets by U\naddresses, port numbers and.\nSequenced acknowledgment numbers (for\nAttacker-learns. or predicts these values, the\n# fewer cannot tell the attacker's packets\nFrom the real client's How the attack works\nI-half? track: the attacker monitors the\nsession Career-in the middle position\nor some network segment.) and records. As,\nports and current sequence numbers 2\nResponsive the real client is disrupted or\nits pockets are blocked so that its sequence\nMembers fall out of step with the server 3\nI agree the attacker sends a spoof pocket\nusing the clients. If and a valid respected\n__ sequence number. The server accepts it as\nI genuine. It Take over the attacker now\n# follows to the server as the client, while the\nreal-ident loses the connection impact #\n# Unauthorized access: attacker can read clay\niron commands or perform transactions as the\nvictim \" bypass of authentication: no",
+      "recovered_text": "Afterwards inherits the legitimate user's\nlaceers (for example a logged-in Telety\nFTI-or web session) without needing the\npassword. The identifies packets by U\naddresses, port numbers and.\nSequenced acknowledgment numbers (for\nAttacker-learns. or predicts these values, the\n# fewer cannot tell the attacker's packets\nFrom the real client's How the attack works\nI-half? track: the attacker monitors the\nsession Career-in the middle position\nor some network segment.) and records. As,\nports and current sequence numbers 2\nResponsive the real client is disrupted or\nits packets are blocked so that its sequence\nMembers fall out of step with the server 3\nI agree the attacker sends a spoof pocket\nusing the clients. If and a valid respected\n__ sequence number. The server accepts it as\nI genuine. It Take over the attacker now\n# follows to the server as the client, while the\nreal-ident loses the connection impact #\n# Unauthorized access: attacker can read clay\niron commands or perform transactions as the\nvictim \" bypass of authentication: no"
+    },
+    {
+      "page_number": 4,
+      "lines_count": 22,
+      "tokens_count": 149,
+      "confidence": 69.8,
+      "raw_cer": 0.2957,
+      "raw_wer": 0.5232,
+      "recovered_cer": 0.2967,
+      "recovered_wer": 0.5232,
+      "char_accuracy": 70.33,
+      "word_accuracy": 47.68,
+      "corrections": [
+        {
+          "id": "corr_punct_list_1",
+          "type": "punctuation",
+          "original_text": "(blind hijacking.",
+          "suggested_text": "(blind hijacking).",
+          "status": "accepted",
+          "confidence": 0.88,
+          "evidence": [
+            "Delimitation: Parenthetical list missing closing delimiter ')'",
+            "Balanced parenthesis restoration before punctuation"
+          ],
+          "signals": {
+            "visual_score": 0.92,
+            "ocr_confidence": 0.8,
+            "context_score": 0.95,
+            "domain_score": 0.85,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.88
+          },
+          "char_span": [
+            17,
+            34
+          ],
+          "line_index": 6,
+          "page_number": 4
+        },
+        {
+          "id": "corr_punct_paren_2",
+          "type": "punctuation",
+          "original_text": "(blind",
+          "suggested_text": "(blind)",
+          "status": "accepted",
+          "confidence": 0.9,
+          "evidence": [
+            "Balanced parenthesis restoration: '(blind' -> '(blind)'"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.85,
+            "context_score": 0.95,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.9
+          },
+          "char_span": [
+            17,
+            23
+          ],
+          "line_index": 6,
+          "page_number": 4
+        },
+        {
+          "id": "corr_punct_paren_1",
+          "type": "punctuation",
+          "original_text": "(UIT",
+          "suggested_text": "(UIT)",
+          "status": "accepted",
+          "confidence": 0.9,
+          "evidence": [
+            "Balanced parenthesis restoration: '(UIT' -> '(UIT)'"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.85,
+            "context_score": 0.95,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.9
+          },
+          "char_span": [
+            40,
+            44
+          ],
+          "line_index": 9,
+          "page_number": 4
+        },
+        {
+          "id": "corr_p4_l17_tok_1",
+          "type": "token",
+          "original_text": "MIT",
+          "suggested_text": "RST",
+          "status": "suggested",
+          "confidence": 0.61,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'TCP RST attack' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.53,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.61
+          },
+          "char_span": [
+            31,
+            34
+          ],
+          "line_index": 17,
+          "page_number": 4
+        }
+      ],
+      "raw_text": "Password cracking is needed. \" ACK storm.\nthe out-of-sync client and server keep\nexchanging MRY causing extra network\nUser make suffering and rejection ineffective\nIlondomised initial sequence numbers: make\nPrediction board (blind hijacking. \" Yes soon\n__ keygenei secures exploring session \" tokens, re -\nIdentification for sensitive actions, avoiding\nUnweighted protocols like Talent. 3. TC (UIT\nAttack the NET Crest Play in T.F\n# header tells the receiver to abort, a connection\nImmediately without the normal PNN-based\nclosing procedure It is meant for error\n# conditions, such as data arriving for a part\njust no listener. In a T.K.A.T attack also\nadded a connection reset or reset spoofing\nattacky the attacker forges on MIT superintendent\n# so that a healthy connection is terminated\nIt is a targeted form of denial of service\nbecause it has specific connections rather\nthan flooding the whole host.\nHow the attack works I The attacker",
+      "recovered_text": "Password cracking is needed. \" ACK storm.\nthe out-of-sync client and server keep\nexchanging MRY causing extra network\nUser make suffering and rejection ineffective\nIlondomised initial sequence numbers: make\nPrediction board (blind) hijacking). \" Yes soon\n__ keygenei secures exploring session \" tokens, re -\nIdentification for sensitive actions, avoiding\nUnweighted protocols like Talent. 3. TC (UIT)\nAttack the NET Crest Play in T.F\n# header tells the receiver to abort, a connection\nImmediately without the normal PNN-based\nclosing procedure It is meant for error\n# conditions, such as data arriving for a part\njust no listener. In a T.K.A.T attack also\nadded a connection reset or reset spoofing\nattacky the attacker forges on MIT superintendent\n# so that a healthy connection is terminated\nIt is a targeted form of denial of service\nbecause it has specific connections rather\nthan flooding the whole host.\nHow the attack works I The attacker"
+    },
+    {
+      "page_number": 5,
+      "lines_count": 25,
+      "tokens_count": 170,
+      "confidence": 68.0,
+      "raw_cer": 0.2355,
+      "raw_wer": 0.5083,
+      "recovered_cer": 0.2338,
+      "recovered_wer": 0.5028,
+      "char_accuracy": 76.62,
+      "word_accuracy": 49.72,
+      "corrections": [
+        {
+          "id": "corr_p5_l4_tok_1",
+          "type": "token",
+          "original_text": "If",
+          "suggested_text": "IP",
+          "status": "suggested",
+          "confidence": 0.58,
+          "evidence": [
+            "Visual Stroke Similarity: 82.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'spoofed source IP' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.82,
+            "ocr_confidence": 0.62,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.58
+          },
+          "char_span": [
+            38,
+            40
+          ],
+          "line_index": 4,
+          "page_number": 5
+        },
+        {
+          "id": "corr_p5_l18_tok_1",
+          "type": "token",
+          "original_text": "MIT",
+          "suggested_text": "RST",
+          "status": "suggested",
+          "confidence": 0.72,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'stricter' colocates with 'RST'"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.5,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.72
+          },
+          "char_span": [
+            36,
+            39
+          ],
+          "line_index": 18,
+          "page_number": 5
+        },
+        {
+          "id": "corr_p5_l19_par_1",
+          "type": "parenthetical",
+          "original_text": "1961",
+          "suggested_text": "RFC 5961",
+          "status": "accepted",
+          "confidence": 0.86,
+          "evidence": [
+            "Contextual anchor: 'Stricter RST validation' directly references RFC 5961",
+            "Optical digit confusion: '1' \u2194 '5' in handwritten numeral '5961'",
+            "Standard networking standard: 'RFC 5961' in Computer Science & Networking domain"
+          ],
+          "signals": {
+            "visual_score": 0.9,
+            "ocr_confidence": 0.45,
+            "context_score": 0.95,
+            "domain_score": 0.95,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.86
+          },
+          "char_span": [
+            17,
+            21
+          ],
+          "line_index": 19,
+          "page_number": 5
+        },
+        {
+          "id": "corr_p5_l19_tok_2",
+          "type": "token",
+          "original_text": "rest",
+          "suggested_text": "RST",
+          "status": "suggested",
+          "confidence": 0.72,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'validation' colocates with 'RST'"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.45,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.72
+          },
+          "char_span": [
+            32,
+            36
+          ],
+          "line_index": 19,
+          "page_number": 5
+        },
+        {
+          "id": "corr_p5_l21_tok_1",
+          "type": "token",
+          "original_text": "M.K.",
+          "suggested_text": "ACK.",
+          "status": "accepted",
+          "confidence": 0.77,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'challenge' colocates with 'ACK'",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.49,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.77
+          },
+          "char_span": [
+            28,
+            32
+          ],
+          "line_index": 21,
+          "page_number": 5
+        }
+      ],
+      "raw_text": "losses the connection (or presses it) and\nI determines the V addresses.'s and port\nMembers of both endpoints. A The attacker\ncrafts on U.T pocket with the source. If of\n# Jane endpoint and a sequence number that\nPolls inside the receiver's acceptable windows\n3. The receiver validates the segments believes\n# # the fear wants to reset, and immediately\ncloses the connection # The other endpoint\n# # sees the connection broken and any in -\nProgress transfer fails. Impact \" Dispped\nConnections long-lived sessions such as\nfifty sides-streaming, Pele transfers and Ulf\nOpening are most affected \" Censorship?\ninterferencei forged resets have also been used\nby middleboxes to cut specific connections.\ndoes cost for attackers. one small packet can\nand a session litigation \" stricter MIT\nvalidation: L.H. 1961 accepts a rest only of\nthe sequence number exactly another,\nOtherwise sends a challenge M.K.\nCryptographic protection. Using T.C. MD or\n- This boost sessions prevent forged\nsegments being accepted \" Monitoring\nUNIVI rules to flag unexpected bursts of",
+      "recovered_text": "losses the connection (or presses it) and\nI determines the V addresses.'s and port\nMembers of both endpoints. A The attacker\ncrafts on U.T pocket with the source. If of\n# Jane endpoint and a sequence number that\nPolls inside the receiver's acceptable windows\n3. The receiver validates the segments believes\n# # the fear wants to reset, and immediately\ncloses the connection # The other endpoint\n# # sees the connection broken and any in -\nProgress transfer fails. Impact \" Dispped\nConnections long-lived sessions such as\nfifty sides-streaming, Pele transfers and Ulf\nOpening are most affected \" Censorship?\ninterferencei forged resets have also been used\nby middleboxes to cut specific connections.\ndoes cost for attackers. one small packet can\nand a session litigation \" stricter MIT\nvalidation: L.H. RFC 5961 accepts a rest only of\nthe sequence number exactly another,\nOtherwise sends a challenge ACK.\nCryptographic protection. Using T.C. MD or\n- This boost sessions prevent forged\nsegments being accepted \" Monitoring\nUNIVI rules to flag unexpected bursts of"
+    },
+    {
+      "page_number": 6,
+      "lines_count": 22,
+      "tokens_count": 166,
+      "confidence": 69.4,
+      "raw_cer": 0.1836,
+      "raw_wer": 0.378,
+      "recovered_cer": 0.176,
+      "recovered_wer": 0.3537,
+      "char_accuracy": 82.4,
+      "word_accuracy": 64.63,
+      "corrections": [
+        {
+          "id": "corr_p6_l1_phrase_1",
+          "type": "phrase",
+          "original_text": "random sequence numbers",
+          "suggested_text": "initial sequence numbers",
+          "status": "suggested",
+          "confidence": 0.69,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'initial sequence numbers' (optical similarity: 68.2%)"
+          ],
+          "signals": {
+            "visual_score": 0.68,
+            "ocr_confidence": 0.6,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.69
+          },
+          "char_span": [
+            14,
+            37
+          ],
+          "line_index": 1,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l2_phrase_1",
+          "type": "phrase",
+          "original_text": "HnMCK flood",
+          "suggested_text": "ACK flood",
+          "status": "accepted",
+          "confidence": 0.85,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'ACK flood' (optical similarity: 70.0%)",
+            "Document consistency: component term verified elsewhere in notes"
+          ],
+          "signals": {
+            "visual_score": 0.7,
+            "ocr_confidence": 0.56,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.85
+          },
+          "char_span": [
+            13,
+            24
+          ],
+          "line_index": 2,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l2_tok_2",
+          "type": "token",
+          "original_text": "TCI",
+          "suggested_text": "TCP",
+          "status": "suggested",
+          "confidence": 0.61,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'TCP SYN Flood' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.51,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.61
+          },
+          "char_span": [
+            0,
+            3
+          ],
+          "line_index": 2,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l2_tok_3",
+          "type": "token",
+          "original_text": "MCK",
+          "suggested_text": "ACK",
+          "status": "accepted",
+          "confidence": 0.86,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'flood' colocates with 'ACK'",
+            "Phrase alignment: forms 'ACK flood' with adjacent text",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.51,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.86
+          },
+          "char_span": [
+            4,
+            7
+          ],
+          "line_index": 2,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l5_tok_1",
+          "type": "token",
+          "original_text": "MLK",
+          "suggested_text": "ACK",
+          "status": "accepted",
+          "confidence": 0.79,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'flag' colocates with 'ACK'",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.77,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.79
+          },
+          "char_span": [
+            17,
+            20
+          ],
+          "line_index": 5,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l6_tok_1",
+          "type": "token",
+          "original_text": "In",
+          "suggested_text": "FIN",
+          "status": "suggested",
+          "confidence": 0.56,
+          "evidence": [
+            "Visual Stroke Similarity: 85.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Phrase alignment: forms 'packet sniffing' with adjacent text"
+          ],
+          "signals": {
+            "visual_score": 0.85,
+            "ocr_confidence": 0.37,
+            "context_score": 0.0,
+            "domain_score": 0.9,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.56
+          },
+          "char_span": [
+            0,
+            2
+          ],
+          "line_index": 6,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l6_tok_2",
+          "type": "token",
+          "original_text": "MLK",
+          "suggested_text": "ACK",
+          "status": "accepted",
+          "confidence": 0.85,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'packet' colocates with 'ACK'",
+            "Phrase alignment: forms 'backlog queue' with adjacent text",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.37,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.85
+          },
+          "char_span": [
+            20,
+            23
+          ],
+          "line_index": 6,
+          "page_number": 6
+        },
+        {
+          "id": "corr_punct_list_1",
+          "type": "punctuation",
+          "original_text": "(often a,",
+          "suggested_text": "(often a),",
+          "status": "accepted",
+          "confidence": 0.88,
+          "evidence": [
+            "Delimitation: Parenthetical list missing closing delimiter ')'",
+            "Balanced parenthesis restoration before punctuation"
+          ],
+          "signals": {
+            "visual_score": 0.92,
+            "ocr_confidence": 0.8,
+            "context_score": 0.95,
+            "domain_score": 0.85,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.88
+          },
+          "char_span": [
+            27,
+            36
+          ],
+          "line_index": 14,
+          "page_number": 6
+        },
+        {
+          "id": "corr_punct_paren_2",
+          "type": "punctuation",
+          "original_text": "(often",
+          "suggested_text": "(often)",
+          "status": "accepted",
+          "confidence": 0.9,
+          "evidence": [
+            "Balanced parenthesis restoration: '(often' -> '(often)'"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.85,
+            "context_score": 0.95,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.9,
+            "final_confidence": 0.9
+          },
+          "char_span": [
+            27,
+            33
+          ],
+          "line_index": 14,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l15_tok_1",
+          "type": "token",
+          "original_text": "MLK",
+          "suggested_text": "ACK",
+          "status": "accepted",
+          "confidence": 0.77,
+          "evidence": [
+            "Visual Stroke Similarity: 95.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'stream' colocates with 'ACK'",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.95,
+            "ocr_confidence": 0.56,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.0,
+            "final_confidence": 0.77
+          },
+          "char_span": [
+            41,
+            44
+          ],
+          "line_index": 15,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l17_tok_1",
+          "type": "token",
+          "original_text": "Each",
+          "suggested_text": "ACK",
+          "status": "accepted",
+          "confidence": 0.78,
+          "evidence": [
+            "Visual Stroke Similarity: 66.0%",
+            "Domain Dictionary (Computer Science & Networking): 90%",
+            "Contextual colocation match: 'packet' colocates with 'ACK'",
+            "Phrase alignment: forms 'RST packet' with adjacent text",
+            "Document consensus: 'ACK' verified across other pages"
+          ],
+          "signals": {
+            "visual_score": 0.66,
+            "ocr_confidence": 0.59,
+            "context_score": 0.85,
+            "domain_score": 0.9,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.78
+          },
+          "char_span": [
+            32,
+            36
+          ],
+          "line_index": 17,
+          "page_number": 6
+        },
+        {
+          "id": "corr_p6_l22_phrase_1",
+          "type": "phrase",
+          "original_text": "the packet",
+          "suggested_text": "RST packet",
+          "status": "suggested",
+          "confidence": 0.68,
+          "evidence": [
+            "Subject Domain: Computer Science & Networking",
+            "Domain Phrase Match: 'RST packet' (optical similarity: 66.7%)"
+          ],
+          "signals": {
+            "visual_score": 0.67,
+            "ocr_confidence": 0.67,
+            "context_score": 0.85,
+            "domain_score": 0.95,
+            "document_consensus": 0.4,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.68
+          },
+          "char_span": [
+            3,
+            13
+          ],
+          "line_index": 22,
+          "page_number": 6
+        }
+      ],
+      "raw_text": "MR.T packets; random sequence numbers. 4\nTCI MCK Hood HnMCK flood is a\n# Johnstone. Plot \" attack in which the attacker\nsends an over-watering number of TLC\nJackets with the MLK flag set to the target.\nIn queue encourages MLK packets only\n# spoke sense as part of an existing connection\nBecause the packets are unsolicited, the\n# target has to inspect each one, search. Its\nconnection state table, find no match and\n# then drop it or answer with an LRT losing\n# this well is of times per second consumer's\nProcessing power and bandwidth. How the\nAttack sorts! The attacker (often a,\nGotnet... I sends a continuous stream of MLK\njacketing usually with random or roofed\n# source addresses and ports. A Each packet\nfamilies at the server or device in front of\nIty such as a stateful firewall or local\nBalancer 3. The device checks its state\ntable for matching connection None exists,\nso the packet is discarded or on N.T is",
+      "recovered_text": "MR.T packets; random sequence numbers. 4\nTCI ACK Hood ACK flood is a\n# Johnstone. Plot \" attack in which the attacker\nsends an over-watering number of TLC\nJackets with the ACK flag set to the target.\nIn queue encourages ACK packets only\n# spoke sense as part of an existing connection\nBecause the packets are unsolicited, the\n# target has to inspect each one, search. Its\nconnection state table, find no match and\n# then drop it or answer with an LRT losing\n# this well is of times per second consumer's\nProcessing power and bandwidth. How the\nAttack sorts! The attacker (often) a),\nGotnet... I sends a continuous stream of ACK\njacketing usually with random or roofed\n# source addresses and ports. A ACK packet\nfamilies at the server or device in front of\nIty such as a stateful firewall or local\nBalancer 3. The device checks its state\ntable for matching connection None exists,\nso the packet is discarded or on N.T is"
+    },
+    {
+      "page_number": 7,
+      "lines_count": 18,
+      "tokens_count": 119,
+      "confidence": 70.5,
+      "raw_cer": 0.1912,
+      "raw_wer": 0.5,
+      "recovered_cer": 0.1885,
+      "recovered_wer": 0.4737,
+      "char_accuracy": 81.15,
+      "word_accuracy": 52.63,
+      "corrections": [
+        {
+          "id": "corr_compound_7_2_4",
+          "type": "word_boundary_merge",
+          "original_text": "look up",
+          "suggested_text": "lookup",
+          "status": "accepted",
+          "confidence": 0.91,
+          "evidence": [
+            "Compound word split repair: 'look up' -> 'lookup'",
+            "Inter-token gap 0.0px supports continuous word (boundary score: 95%)"
+          ],
+          "signals": {
+            "visual_score": 0.9,
+            "ocr_confidence": 0.8,
+            "context_score": 0.95,
+            "domain_score": 0.85,
+            "document_consensus": 0.85,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.91
+          },
+          "line_index": 2,
+          "page_number": 7
+        },
+        {
+          "id": "corr_hyphen_7_9_1",
+          "type": "phrase_hyphenation",
+          "original_text": "State checks",
+          "suggested_text": "state checks",
+          "status": "accepted",
+          "confidence": 0.93,
+          "evidence": [
+            "Hyphenated compound normalization: 'State checks' -> 'state checks'",
+            "Academic English compound adjective standard"
+          ],
+          "signals": {
+            "visual_score": 0.92,
+            "ocr_confidence": 0.85,
+            "context_score": 0.95,
+            "domain_score": 0.9,
+            "document_consensus": 0.9,
+            "phrase_compatibility": 0.95,
+            "final_confidence": 0.93
+          },
+          "line_index": 9,
+          "page_number": 7
+        }
+      ],
+      "raw_text": "returned -\nAt. The heavy look up load and traffic volume\nexhaust (?) and link co party, so legitimate\ntraffic is delayed or dropped. Impact #\nNetwork congestion bandwidth is saturated\nkey junk traffic \" Device overload: stateful\nfriendly kit and load balances are not\nhardest because they perform per-pocket\nState checks \" Collateral effect. U.T.\nreplies add outbound traffic and can reveal\n# the target to the attacker anticipation #\nItateful' inspection drop 10 lbs. that do not\nbelong to a tracked connection as early as\npossible. Note limiting and filtering limit\n# Pockets per sourcey offfilling MRLS and \" upstream\nblackholding \" Not protection' scrubbing\nissues, CNNs and any post absorb large\nfloods before they reach the origin series",
+      "recovered_text": "returned -\nAt. The heavy lookup load and traffic volume\nexhaust (?) and link co party, so legitimate\ntraffic is delayed or dropped. Impact #\nNetwork congestion bandwidth is saturated\nkey junk traffic \" Device overload: stateful\nfriendly kit and load balances are not\nhardest because they perform per-pocket\nstate checks \" Collateral effect. U.T.\nreplies add outbound traffic and can reveal\n# the target to the attacker anticipation #\nItateful' inspection drop 10 lbs. that do not\nbelong to a tracked connection as early as\npossible. Note limiting and filtering limit\n# Pockets per sourcey offfilling MRLS and \" upstream\nblackholding \" Not protection' scrubbing\nissues, CNNs and any post absorb large\nfloods before they reach the origin series"
+    }
+  ]
+}

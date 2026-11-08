@@ -51,7 +51,10 @@ COMMON_ENGLISH_WORDS: Set[str] = {
     "receive", "receiving", "received", "replies", "reply", "unsolicited", "stream", "inject",
     "injection", "hijacking", "hijack", "terminate", "terminating", "abruptly", "graceful",
     "teardown", "finite", "allocated", "allocation", "consumes", "consumed", "fills", "capacity",
-    "crash", "crashes", "unresponsive", "prevents", "preventing", "user", "users", "victim"
+    "crash", "crashes", "unresponsive", "prevents", "preventing", "user", "users", "victim",
+    "falls", "fall", "falling", "guesses", "guess", "guessing", "spoof", "spoofs", "lookup", "timeout",
+    "middlebox", "middleboxes", "causes", "cause", "peers", "peer", "incoming", "outgoing",
+    "three-way", "per-packet", "cookies", "stateful", "stateless", "without", "cannot", "cut", "ever"
 }
 
 

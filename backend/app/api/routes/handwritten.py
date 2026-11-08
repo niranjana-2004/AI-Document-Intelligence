@@ -22,6 +22,7 @@ from app.services.handwriting.image_preprocessor import (
     generate_page_stages
 )
 from app.services.handwriting.transcription_pipeline import transcribe_page_image
+from app.services.handwriting.word_context_recovery_service import DocumentConsistencyIndex
 from app.services.handwriting.subject_service import (
     ACADEMIC_SUBJECTS,
     auto_detect_and_set_subject,
@@ -263,6 +264,9 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
     db.commit()
 
     total_pages = len(pages)
+    cached_lines = {p.page_number: (p.raw_transcription or "").splitlines() for p in pages if p.raw_transcription}
+    doc_index = DocumentConsistencyIndex(cached_lines) if cached_lines else None
+
     for idx, page in enumerate(pages):
         img_to_ocr = Path(page.processed_image_path or page.original_image_path)
         orig_img = Path(page.original_image_path) if page.original_image_path else None
@@ -271,7 +275,8 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
                 img_to_ocr,
                 original_image_path=orig_img,
                 subject=document.subject,
-                page_num=page.page_number
+                page_num=page.page_number,
+                doc_index=doc_index
             )
             existing_meta = page.ocr_metadata or {}
             is_manual = existing_meta.get("is_manually_edited", False)
@@ -405,6 +410,14 @@ def process_single_page_ocr(
             detail=f"Page {page_number} not found."
         )
 
+    sibling_pages = (
+        db.query(HandwrittenPage)
+        .filter(HandwrittenPage.document_id == document_id)
+        .all()
+    )
+    cached_lines = {p.page_number: (p.raw_transcription or "").splitlines() for p in sibling_pages if p.raw_transcription}
+    doc_index = DocumentConsistencyIndex(cached_lines) if cached_lines else None
+
     img_to_ocr = Path(page.processed_image_path or page.original_image_path)
     orig_img = Path(page.original_image_path) if page.original_image_path else None
     try:
@@ -412,7 +425,8 @@ def process_single_page_ocr(
             img_to_ocr,
             original_image_path=orig_img,
             subject=document.subject,
-            page_num=page_number
+            page_num=page_number,
+            doc_index=doc_index
         )
         existing_meta = page.ocr_metadata or {}
         is_manual = existing_meta.get("is_manually_edited", False)
