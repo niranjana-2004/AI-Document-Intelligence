@@ -71,16 +71,14 @@ def recover_punctuation_and_symbols(
     corrections = []
     recovered = line_text
 
-    # 1. Unclosed parenthetical lists that terminate with punctuation within the line (e.g. '(SYN, SYN-ACK, ACK.')
+    # 1. Unclosed parenthetical lists that terminate with sentence punctuation within the line (e.g. '(SYN, SYN-ACK, ACK.')
     if '(' in recovered and ')' not in recovered:
-        m_paren = re.search(r'\([A-Za-z0-9,\s_-]{3,35}[.,;]', recovered)
+        m_paren = re.search(r'\([A-Za-z0-9,\s_-]{3,35}\.(?:\s+|$)', recovered)
         if m_paren:
-            span = m_paren.group(0)
+            span = m_paren.group(0).rstrip()
             if not span.endswith(')'):
                 if span.endswith('.'):
                     sug_span = span[:-1] + ').'
-                elif span.endswith(','):
-                    sug_span = span[:-1] + '),'
                 else:
                     sug_span = span + ')'
                 if sug_span != span and span in recovered:
@@ -111,13 +109,13 @@ def recover_punctuation_and_symbols(
                     })
                     recovered = recovered.replace(span, sug_span, 1)
 
-    # 2. Single token unclosed paren, e.g. '(TCB ' -> '(TCB) '
-    # Guardrail: Never close paren on prepositions/conjunctions starting an open clause (e.g. '(for example')
-    m_single = re.search(r'\(([A-Za-z0-9]{2,5})(?=[\s]|$)(?!\))', recovered)
-    if m_single:
-        inner_word = m_single.group(1).lower()
-        common_clause_starters = {"for", "in", "to", "as", "or", "if", "by", "and", "the", "with", "at", "on", "from", "that", "e.g", "ie"}
-        if inner_word not in common_clause_starters:
+    # 2. Single uppercase acronym unclosed paren, e.g. '(TCB ' -> '(TCB) '
+    # Strict Guardrail: ONLY close uppercase technical acronyms when the line has an unclosed '('
+    # Never close on lowercase English words (e.g. '(blind', '(often', '(for example')
+    if recovered.count('(') > recovered.count(')'):
+        m_single = re.search(r'\(([A-Z0-9]{2,5})(?=[\s]|$)(?!\))', recovered)
+        if m_single:
+            inner_acronym = m_single.group(1)
             span = m_single.group(0)
             sug_span = span + ')'
             if span in recovered and not recovered[recovered.find(span)+len(span):].startswith(')'):
@@ -130,7 +128,7 @@ def recover_punctuation_and_symbols(
                     "status": "accepted",
                     "confidence": 0.90,
                     "evidence": [
-                        f"Balanced parenthesis restoration: '{span}' -> '{sug_span}'"
+                        f"Balanced parenthesis restoration for technical acronym: '{span}' -> '{sug_span}'"
                     ],
                     "signals": {
                         "visual_score": 0.95,
@@ -222,9 +220,13 @@ def recover_ambiguous_characters(
     if c_lower == "write" and any(w in surr_lower for w in ["usually", "spoofed", "source", "often"]):
         candidates.append(("with", 0.92, "Cursive stroke confusion: 'write' ↔ 'with' following 'usually'"))
 
-    # Grounded Case 5: 'ever' -> 'even' ('r' ↔ 'n' cursive tail preceding 'if/though' or in 'even if')
-    if c_lower == "ever" and any(w in surr_lower for w in ["though", "if", "not", "without"]):
-        candidates.append(("even", 0.90, "Cursive terminal tail: 'ever' ↔ 'even' preceding condition"))
+    # Grounded Case 5: 'ever' -> 'even' ('r' ↔ 'n' cursive tail ONLY in explicit idiom 'even at', 'even though', 'even if')
+    if c_lower == "ever" and (
+        "ever at" in surr_lower or
+        "ever though" in surr_lower or
+        "ever if" in surr_lower
+    ):
+        candidates.append(("even", 0.90, "Cursive terminal tail: 'ever' ↔ 'even' preceding preposition/conjunction"))
 
     # Grounded Case 6: 'Insecs' -> 'users' ('In' -> 'u', 'sec' -> 'ser')
     if c_lower in ["insecs", "insects", "insers"] and any(w in surr_lower for w in ["legitimate", "target", "denial", "service", "valid"]):

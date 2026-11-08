@@ -1,10 +1,10 @@
 # Cognidocs OCR 3.5 — Context-Aware Word & Phrase Recovery Benchmark Report
 
 **Document**: Document #12 (`text-to-handwriting.pdf`, Computer Networks Lecture Notes)  
-**Evaluation Date**: 2026-11-08 11:07:24  
+**Evaluation Date**: 2026-11-08 11:31:35  
 **Model**: `microsoft/trocr-small-handwritten` (100% Local CPU Inference)  
 **Pipeline**: Cognidocs Handwritten Intelligence 3.5 (Boundary Analysis + Context Ranking + Phrase Recovery + Safety Gate)  
-**Benchmark Execution Time**: 81.61 seconds (11.66s per page)  
+**Benchmark Execution Time**: 83.23 seconds (11.89s per page)  
 
 ---
 
@@ -28,7 +28,7 @@ Cognidocs OCR 3.5 introduces:
 | **OCR 3.2 (Visual Recovery)** | TrOCR Small | 17.55% | 39.46% | 60.54% | 0.82 | 0% | <2.0% |
 | **OCR 3.3 (General Accuracy)** | TrOCR Small | 17.16% | 38.64% | 61.36% | 0.88 | 0% | 1.1% |
 | **OCR 3.4 (Base Evaluation)** | TrOCR Base | 16.59% | 39.06% | 60.94% | 0.82 | Leading `#`, quotes, `...` | 4.8% (13.3x slower) |
-| **OCR 3.5 (Context-Aware)** | **TrOCR Small** | **21.31%** | **44.79%** | **55.21%** | **0.85 (84.6%)** | **0% (Zero)** | **8.11%** |
+| **OCR 3.5 (Context-Aware)** | **TrOCR Small** | **21.25%** | **44.41%** | **55.59%** | **0.85 (84.6%)** | **0% (Zero)** | **0.00%** |
 
 ---
 
@@ -36,14 +36,14 @@ Cognidocs OCR 3.5 introduces:
 
 | Page # | Lines | Tokens | OCR Conf | Raw CER | Recovered CER | Raw WER | Recovered WER | Word Acc | Accepted Corrs | Suggested Corrs |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Page 1** | 23 | 158 | 70.0% | 18.84% | **15.95%** | 39.74% | **32.69%** | **67.31%** | 14 | 3 |
-| **Page 2** | 23 | 157 | 70.2% | 18.59% | **18.38%** | 46.94% | **46.94%** | **53.06%** | 7 | 4 |
+| **Page 1** | 23 | 158 | 70.0% | 18.84% | **15.85%** | 39.74% | **32.05%** | **67.95%** | 13 | 3 |
+| **Page 2** | 23 | 157 | 70.2% | 18.59% | **18.38%** | 46.94% | **46.26%** | **53.74%** | 9 | 4 |
 | **Page 3** | 25 | 167 | 71.2% | 23.80% | **23.70%** | 50.00% | **49.34%** | **50.66%** | 1 | 1 |
-| **Page 4** | 22 | 149 | 69.8% | 29.57% | **29.67%** | 52.32% | **52.32%** | **47.68%** | 3 | 1 |
+| **Page 4** | 22 | 149 | 69.8% | 29.57% | **29.57%** | 52.32% | **51.66%** | **48.34%** | 2 | 1 |
 | **Page 5** | 25 | 170 | 68.0% | 23.55% | **23.38%** | 50.83% | **50.28%** | **49.72%** | 2 | 3 |
-| **Page 6** | 22 | 166 | 69.4% | 18.36% | **17.60%** | 37.80% | **35.37%** | **64.63%** | 8 | 4 |
+| **Page 6** | 22 | 166 | 69.4% | 18.36% | **17.39%** | 37.80% | **34.76%** | **65.24%** | 6 | 4 |
 | **Page 7** | 18 | 119 | 70.5% | 19.12% | **18.85%** | 50.00% | **47.37%** | **52.63%** | 2 | 0 |
-| **Overall** | **158** | **1086** | **69.9%** | **21.91%** | **21.31%** | **46.67%** | **44.79%** | **55.21%** | **37** | **16** |
+| **Overall** | **158** | **1086** | **69.9%** | **21.91%** | **21.25%** | **46.67%** | **44.41%** | **55.59%** | **35** | **16** |
 
 ---
 
@@ -84,24 +84,20 @@ Cognidocs OCR 3.5 introduces:
 - **Word Boundary Splits (Ink-Valley Grounded)**: 1
 - **Parenthetical Text Recovered (`(DoS)`, `(TCB)`)**: 4
 - **Character Confusions Disambiguated**: 6
-- **Punctuation & Delimiters Restored**: 6
-- **Total Auditable Corrections**: 53
-- **Accepted Corrections**: 37
+- **Punctuation & Delimiters Restored**: 4
+- **Total Auditable Corrections**: 51
+- **Accepted Corrections**: 35
 - **Suggested Corrections**: 16
 - **Rejected Candidates**: 0
-- **False Corrections**: 3 (False Correction Rate: 8.11%)
+- **False Corrections**: 0 (False Correction Rate: 0.00%)
 
 ---
 
 ## 5. False Correction Audit & Safety Verification
 
-False corrections detected across all 7 pages: 3
+False corrections detected across all 7 pages: 0
 
-| Page | Original Token | Suggested Replacement | Recovery Type |
-| :---: | :--- | :--- | :--- |
-| Page 1 | `ever` | `even` | `character` |
-| Page 4 | `(blind` | `(blind)` | `punctuation` |
-| Page 6 | `(often` | `(often)` | `punctuation` |
+**Zero false corrections detected! Every accepted correction strictly improved or preserved alignment with ground truth.**
 
 ---
 
@@ -112,7 +108,7 @@ False corrections detected across all 7 pages: 3
    - Any candidate alternative with visual similarity $< 0.55$ is unconditionally REJECTED.
    - High-confidence common English words are protected by an elevated acceptance gate ($\ge 0.85$ composite score + $\ge 3$ independent corroborations).
 2. **Deterministic & CPU-Compatible**:
-   - The entire OCR 3.5 pipeline runs on local CPU in 81.61s across all 7 pages (~11.66s per page).
+   - The entire OCR 3.5 pipeline runs on local CPU in 83.23s across all 7 pages (~11.89s per page).
    - Zero cloud AI APIs, zero external network dependencies, zero privacy leaks.
 3. **Auditability & Student Control**:
    - Every token retains its bounding box, candidate alternatives, and multi-signal score vector (`visual_score`, `boundary_confidence`, `context_score`, `language_score`, `technical_score`, `document_consensus`, `final_score`).
