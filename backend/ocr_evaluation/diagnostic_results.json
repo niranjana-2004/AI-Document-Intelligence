@@ -1,0 +1,406 @@
+[
+  {
+    "line_idx": 0,
+    "gt": "Niranjana A S 21BIT042 Notes on TCP Attacks",
+    "variants": {
+      "Config_A_Eval_Default": {
+        "elapsed_ms": 17595.66,
+        "raw_text": "# Niranjana A ! KH.EN_LANCA25142 Notes on",
+        "cleaned_text": "# Niranjana A! KH.EN_LANCA25142 Notes on",
+        "cer": 0.6744,
+        "wer": 0.75,
+        "raw_token_ids": [
+          0,
+          10431,
+          28140,
+          260,
+          267,
+          1113,
+          83,
+          27785,
+          30496,
+          4
+        ]
+      },
+      "Config_B_Native_DecoderStart2": {
+        "elapsed_ms": 29706.37,
+        "raw_text": "# Niranjana A ! KH.EN.LANCA25142 Notes on",
+        "cleaned_text": "# Niranjana A! KH.EN.LANCA25142 Notes on",
+        "cer": 0.6744,
+        "wer": 0.75,
+        "raw_token_ids": [
+          2,
+          10431,
+          28140,
+          260,
+          267,
+          1113,
+          83,
+          27785,
+          30496,
+          4
+        ]
+      },
+      "Config_C_Greedy_Beam1": {
+        "elapsed_ms": 9837.19,
+        "raw_text": "# Niranjana A.I KH.EN.LANCASIA notes on",
+        "cleaned_text": "# Niranjana A.I KH.EN.LANCASIA notes on",
+        "cer": 0.6977,
+        "wer": 0.875,
+        "raw_token_ids": [
+          2,
+          10431,
+          28140,
+          260,
+          267,
+          1113,
+          83,
+          4,
+          100,
+          30496
+        ]
+      },
+      "Config_D_Suppressed_BadTokens": {
+        "elapsed_ms": 22394.1,
+        "raw_text": "- Niranjana A ! KH.EN.LANCA25142 Notes on",
+        "cleaned_text": "- Niranjana A! KH.EN.LANCA25142 Notes on",
+        "cer": 0.6744,
+        "wer": 0.75,
+        "raw_token_ids": [
+          2,
+          12,
+          28140,
+          260,
+          267,
+          1113,
+          83,
+          27785,
+          30496,
+          4
+        ]
+      },
+      "Config_E_PostProcessed_Strip": {
+        "elapsed_ms": 27971.06,
+        "raw_text": "# Niranjana A ! KH.EN.LANCA25142 Notes on",
+        "cleaned_text": "Niranjana A! KH.EN.LANCA25142 Notes on",
+        "cer": 0.6279,
+        "wer": 0.625,
+        "raw_token_ids": [
+          2,
+          10431,
+          28140,
+          260,
+          267,
+          1113,
+          83,
+          27785,
+          30496,
+          4
+        ]
+      }
+    }
+  },
+  {
+    "line_idx": 1,
+    "gt": "1. TCP SYN Flood",
+    "variants": {
+      "Config_A_Eval_Default": {
+        "elapsed_ms": 20494.34,
+        "raw_text": "# TCP \" Attacks 1 . TCP SYN Hood A SYN.",
+        "cleaned_text": "# TCP \" Attacks 1. TCP SYN Hood A SYN.",
+        "cer": 1.5625,
+        "wer": 1.75,
+        "raw_token_ids": [
+          0,
+          10431,
+          42113,
+          22,
+          39465,
+          112,
+          479,
+          42113,
+          18132,
+          487
+        ]
+      },
+      "Config_B_Native_DecoderStart2": {
+        "elapsed_ms": 20874.85,
+        "raw_text": "# TCP \" Attacks 1 . TCP SYN Hood A SYN.",
+        "cleaned_text": "# TCP \" Attacks 1. TCP SYN Hood A SYN.",
+        "cer": 1.5625,
+        "wer": 1.75,
+        "raw_token_ids": [
+          2,
+          10431,
+          42113,
+          22,
+          39465,
+          112,
+          479,
+          42113,
+          18132,
+          487
+        ]
+      },
+      "Config_C_Greedy_Beam1": {
+        "elapsed_ms": 6489.21,
+        "raw_text": "# TE ( Attacks ! TCP SYN Hood A SYN.",
+        "cleaned_text": "# TE (Attacks! TCP SYN Hood A SYN.",
+        "cer": 1.4375,
+        "wer": 1.5,
+        "raw_token_ids": [
+          2,
+          10431,
+          13180,
+          36,
+          39465,
+          27785,
+          42113,
+          18132,
+          487,
+          14604
+        ]
+      },
+      "Config_D_Suppressed_BadTokens": {
+        "elapsed_ms": 23191.49,
+        "raw_text": "- \" TOP- Attacks 1 . TCP SYN Hood A SYN.",
+        "cleaned_text": "- \" TOP-Attacks 1. TCP SYN Hood A SYN.",
+        "cer": 1.5625,
+        "wer": 1.5,
+        "raw_token_ids": [
+          2,
+          12,
+          22,
+          17918,
+          12,
+          39465,
+          112,
+          479,
+          42113,
+          18132
+        ]
+      },
+      "Config_E_PostProcessed_Strip": {
+        "elapsed_ms": 20407.41,
+        "raw_text": "# TCP \" Attacks 1 . TCP SYN Hood A SYN.",
+        "cleaned_text": "TCP \" Attacks 1. TCP SYN Hood A SYN.",
+        "cer": 1.4375,
+        "wer": 1.5,
+        "raw_token_ids": [
+          2,
+          10431,
+          42113,
+          22,
+          39465,
+          112,
+          479,
+          42113,
+          18132,
+          487
+        ]
+      }
+    }
+  },
+  {
+    "line_idx": 3,
+    "gt": "exploits the TCP three-way handshake (SYN, SYN-ACK, ACK). TCP is",
+    "variants": {
+      "Config_A_Eval_Default": {
+        "elapsed_ms": 14014.22,
+        "raw_text": "# attack that exploits the TCP three - way ...",
+        "cleaned_text": "# attack that exploits the TCP three-way...",
+        "cer": 0.7969,
+        "wer": 0.9,
+        "raw_token_ids": [
+          0,
+          10431,
+          908,
+          14,
+          25924,
+          5,
+          42113,
+          130,
+          111,
+          169
+        ]
+      },
+      "Config_B_Native_DecoderStart2": {
+        "elapsed_ms": 13834.91,
+        "raw_text": "# attack that exploits the TCP three - way ...",
+        "cleaned_text": "# attack that exploits the TCP three-way...",
+        "cer": 0.7969,
+        "wer": 0.9,
+        "raw_token_ids": [
+          2,
+          10431,
+          908,
+          14,
+          25924,
+          5,
+          42113,
+          130,
+          111,
+          169
+        ]
+      },
+      "Config_C_Greedy_Beam1": {
+        "elapsed_ms": 6534.58,
+        "raw_text": "# attack that exploits the T.P three - way ...",
+        "cleaned_text": "# attack that exploits the T.P three-way...",
+        "cer": 0.8125,
+        "wer": 1.0,
+        "raw_token_ids": [
+          2,
+          10431,
+          908,
+          14,
+          25924,
+          5,
+          255,
+          4,
+          510,
+          130
+        ]
+      },
+      "Config_D_Suppressed_BadTokens": {
+        "elapsed_ms": 15750.17,
+        "raw_text": "attack that exploits the T.P three - way",
+        "cleaned_text": "attack that exploits the T.P three-way",
+        "cer": 0.7969,
+        "wer": 0.9,
+        "raw_token_ids": [
+          2,
+          2611,
+          2990,
+          14,
+          25924,
+          5,
+          255,
+          4,
+          510,
+          130
+        ]
+      },
+      "Config_E_PostProcessed_Strip": {
+        "elapsed_ms": 14752.39,
+        "raw_text": "# attack that exploits the TCP three - way ...",
+        "cleaned_text": "attack that exploits the TCP three-way",
+        "cer": 0.7812,
+        "wer": 0.8,
+        "raw_token_ids": [
+          2,
+          10431,
+          908,
+          14,
+          25924,
+          5,
+          42113,
+          130,
+          111,
+          169
+        ]
+      }
+    }
+  },
+  {
+    "line_idx": 7,
+    "gt": "many handshakes and never finishing them, until the server has no room left for genuine users. It is",
+    "variants": {
+      "Config_A_Eval_Default": {
+        "elapsed_ms": 14857.05,
+        "raw_text": "\" receives . The attacker abuses this by starting",
+        "cleaned_text": "receives. The attacker abuses this by starting",
+        "cer": 0.8,
+        "wer": 1.0,
+        "raw_token_ids": [
+          0,
+          113,
+          9524,
+          479,
+          20,
+          12082,
+          13052,
+          42,
+          30,
+          1158
+        ]
+      },
+      "Config_B_Native_DecoderStart2": {
+        "elapsed_ms": 14261.95,
+        "raw_text": "# receives . The attacker abuses this by starting",
+        "cleaned_text": "# receives. The attacker abuses this by starting",
+        "cer": 0.79,
+        "wer": 1.0,
+        "raw_token_ids": [
+          2,
+          10431,
+          9524,
+          479,
+          20,
+          12082,
+          13052,
+          42,
+          30,
+          1158
+        ]
+      },
+      "Config_C_Greedy_Beam1": {
+        "elapsed_ms": 3983.18,
+        "raw_text": "\" receives . The attacker abuses this by starting",
+        "cleaned_text": "receives. The attacker abuses this by starting",
+        "cer": 0.8,
+        "wer": 1.0,
+        "raw_token_ids": [
+          2,
+          113,
+          9524,
+          479,
+          20,
+          12082,
+          13052,
+          42,
+          30,
+          1158
+        ]
+      },
+      "Config_D_Suppressed_BadTokens": {
+        "elapsed_ms": 12414.35,
+        "raw_text": "... receives . The attacker abuses this by starting",
+        "cleaned_text": "... receives. The attacker abuses this by starting",
+        "cer": 0.79,
+        "wer": 1.0,
+        "raw_token_ids": [
+          2,
+          1666,
+          9524,
+          479,
+          20,
+          12082,
+          13052,
+          42,
+          30,
+          1158
+        ]
+      },
+      "Config_E_PostProcessed_Strip": {
+        "elapsed_ms": 13534.79,
+        "raw_text": "# receives . The attacker abuses this by starting",
+        "cleaned_text": "receives. The attacker abuses this by starting",
+        "cer": 0.8,
+        "wer": 1.0,
+        "raw_token_ids": [
+          2,
+          10431,
+          9524,
+          479,
+          20,
+          12082,
+          13052,
+          42,
+          30,
+          1158
+        ]
+      }
+    }
+  }
+]
