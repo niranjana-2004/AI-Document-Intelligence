@@ -1,0 +1,11 @@
+1. Introduction to CSS
+What is CSS, and its role in web development
+CSS stands for Cascading Style Sheets. It is a style sheet language used to describe the presentation and formatting of HTML document.
+In web development, HTML is responsible for defining the structure and content of a web page, while CSS is responsible for the layout, colors, fonts, and other visual elements.
+By separating the content from its presentation, CSS allows web developers to create consistent and visually appealing design.
+Types of CSS:
+1. Inline CSS
+2. Internal CSS
+3. External CSS
+Inline CSS is generally discouraged because it mixes content with presentation, making
+

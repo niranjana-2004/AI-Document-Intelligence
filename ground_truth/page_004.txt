@@ -1,0 +1,9 @@
+execute commands, or modify traffic without password cracking.
+- ACK storm: The out-of-sync client and server keep exchanging ACKs, causing extra network load.
+Mitigation:
+- End-to-end encryption: TLS/SSL, SSH, and IPSec make payload sniffing and injection ineffective.
+- Randomised initial sequence numbers: Make prediction hard (blind hijacking).
+- Session hygiene: Secure, expiring session tokens, re-authentication for sensitive actions, avoiding unencrypted protocols like Telnet.
+
+3. TCP RST Attack
+A TCP RST (Reset) flag in TCP header tells the receiver to abort a connection immediately without the normal FIN-based closing procedure. It is meant for error conditions, such as data arriving for a port with no listener. In a TCP RST attack (also called connection reset or reset spoofing attack), the attacker forges an RST segment so that a healthy connection is terminated. It is a targeted form of denial of service because it kills specific connections rather than flooding the whole host.

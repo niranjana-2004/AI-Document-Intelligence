@@ -1,0 +1,10 @@
+RST packets, random sequence numbers, etc.
+
+4. TCP ACK Flood
+A TCP ACK Flood is a volumetric DDoS attack in which the attacker sends an overwhelming number of TCP packets with the ACK flag set to the target.
+Under normal operation, ACK packets only make sense as part of an existing connection. Because the packets are unsolicited, the target has to inspect each one, search its connection state tables, find no match, and then drop it or answer with an RST.
+Doing this millions of times per second consumes processing power and bandwidth.
+How the attack works:
+1. The attacker (often a botnet) sends a continuous stream of TCP ACK packets, usually with random or spoofed source addresses and ports.
+2. The packet arrives at the server or a device in front of it, such as a stateful firewall or load balancer.
+3. The device checks its state table for a matching connection. None exists, so the packet is discarded or an RST is

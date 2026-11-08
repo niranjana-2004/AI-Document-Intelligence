@@ -1,0 +1,14 @@
+the entry until it times out.
+4. The backlog queue fills up. New SYN packets from legitimate clients are dropped or ignored.
+Impact:
+- Service unavailability: Web servers and APIs stop accepting new connections.
+- Resource exhaustion: Memory and connection-table space are consumed even at modest traffic rates.
+- Hard to trace: Spoofed source addresses hide the real attacker.
+Mitigation:
+- SYN cookies: Server encodes connection state in the SYN-ACK sequence number and stores nothing until a valid ACK returns.
+- Tuning: Larger backlog queue, shorter SYN_RECEIVED timeout, fewer SYN-ACK retries.
+- Network defence: Rate limiting, firewall filtering, and ingress filtering (BCP 38) against spoofed IPs.
+
+2. TCP Session Hijacking
+TCP Session Hijacking is an attack in which the attacker takes control of an already established session between a client and a server.
+Authentication normally happens only at the start of a session, so whoever takes over

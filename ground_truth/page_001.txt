@@ -1,0 +1,8 @@
+Niranjana A S 21BIT042 Notes on TCP Attacks
+1. TCP SYN Flood
+TCP SYN Flood is a denial-of-service (DoS/DDoS) attack that exploits the TCP three-way handshake (SYN, SYN-ACK, ACK). TCP is connection-oriented, so a server must reserve memory for every connection request it receives. The attacker abuses this by starting many handshakes and never finishing them, until the server has no room left for genuine users. It is called a half-open attack because the connection is left in the SYN_RECEIVED state waiting for an ACK that never comes.
+How the attack works:
+1. The attacker sends a very large number of SYN packets to the target port, usually with spoofed (fake) source IP addresses.
+2. For each SYN packet, the server allocates a Transmission Control Block (TCB) entry in its backlog queue and replies with a SYN-ACK.
+3. That SYN-ACK goes to the spoofed address, so no ACK ever returns.
+The server keeps retransmitting and holding

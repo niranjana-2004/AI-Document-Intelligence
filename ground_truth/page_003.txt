@@ -1,0 +1,8 @@
+afterwards inherits the legitimate user's session (for example a logged-in Telnet, SSH or web session) without needing the password. TCP identifies packets by IP addresses, port numbers and sequence/acknowledgment numbers. If an attacker learns or predicts these values, the server cannot tell the attacker's packets from the real client's.
+How the attack works:
+1. Sniff / Track: The attacker monitors the session (e.g. man-in-the-middle position or same network segment) and records IP, ports and current sequence numbers.
+2. Desync: The real client is disrupted or its packets are blocked so that its sequence numbers fall out of step with the server.
+3. Injection: The attacker sends a spoofed packet using the client's IP and a valid expected sequence number. The server accepts it as genuine.
+4. Takeover: The attacker now talks to the server as the client, while the real client loses the connection.
+Impact:
+- Unauthorized access: Attacker can read data,

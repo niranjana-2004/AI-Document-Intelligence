@@ -1,0 +1,10 @@
+returned.
+4. The heavy lookup load and traffic volume exhaust CPU and link capacity, so legitimate traffic is delayed or dropped.
+Impact:
+- Network congestion: Bandwidth is saturated by junk traffic.
+- Device overload: Stateful firewalls, NAT, and load balancers are hit hardest because they perform per-packet state checks.
+- Collateral effect: RST replies add outbound traffic and can reveal the target to the attacker.
+Mitigation:
+- Stateful inspection: Drop ACKs that do not belong to a tracked connection as early as possible.
+- Rate limiting and filtering: Limit packets per source, deploy SYN/ACK proxies and upstream blackholing.
+- DDoS protection: Scrubbing services, CDNs, and Anycast absorb large floods before they reach origin servers.
