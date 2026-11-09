@@ -16,11 +16,11 @@ import {
     Clock,
     Check,
     X,
-    Filter,
     Layers,
     Lightbulb
 } from 'lucide-react'
 import { apiRequest } from '../../services/api'
+import CustomTopicDropdown from './CustomTopicDropdown'
 
 export default function HandwrittenQuizTab({ documentId, transcriptionUpdated }) {
     const [quizzes, setQuizzes] = useState([])
@@ -416,16 +416,13 @@ export default function HandwrittenQuizTab({ documentId, transcriptionUpdated })
                         {availableTopics.length > 0 && (
                             <div className="config-field">
                                 <label>Topic Focus</label>
-                                <select
-                                    className="config-topic-select"
+                                <CustomTopicDropdown
                                     value={selectedTopic}
-                                    onChange={(e) => setSelectedTopic(e.target.value)}
-                                >
-                                    <option value="all">All Note Topics (Comprehensive)</option>
-                                    {availableTopics.map((top, idx) => (
-                                        <option key={idx} value={top}>{top}</option>
-                                    ))}
-                                </select>
+                                    onChange={setSelectedTopic}
+                                    options={availableTopics}
+                                    allLabel="All Note Topics (Comprehensive)"
+                                    id="quiz-config-topic"
+                                />
                             </div>
                         )}
                     </div>
@@ -476,7 +473,7 @@ export default function HandwrittenQuizTab({ documentId, transcriptionUpdated })
                     <button
                         type="button"
                         className="btn-intel-retry"
-                        onClick={() => handleGenerate()}
+                        onClick={() => handleGenerateQuiz()}
                         disabled={generating}
                     >
                         <RefreshCw size={12} className={generating ? 'spin-icon' : ''} />
@@ -813,69 +810,132 @@ export default function HandwrittenQuizTab({ documentId, transcriptionUpdated })
 
                     {/* STEP 5: DETAILED QUESTION REVIEW */}
                     <div className="results-breakdown-list">
-                        <h4 className="breakdown-heading">Detailed Examination Question Review</h4>
-                        {(submittedFeedback.feedback || []).map((fb, idx) => (
-                            <div
-                                key={idx}
-                                className={`review-card ${fb.is_correct ? 'correct-card' : (fb.is_unanswered ? 'unanswered-card' : 'incorrect-card')}`}
-                            >
-                                <div className="review-card-header">
-                                    <div className="review-status-pill">
-                                        {fb.is_correct ? (
-                                            <>
-                                                <CheckCircle2 size={14} style={{ color: '#34d399' }} />
-                                                <span>Correct</span>
-                                            </>
-                                        ) : fb.is_unanswered ? (
-                                            <>
-                                                <Clock size={14} style={{ color: '#94a3b8' }} />
-                                                <span>Unanswered / Skipped</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <XCircle size={14} style={{ color: '#f87171' }} />
-                                                <span>Incorrect</span>
-                                            </>
+                        <div className="breakdown-header-bar">
+                            <div>
+                                <h4 className="breakdown-heading">Detailed Examination Question Review</h4>
+                                <p className="breakdown-subheading">Comprehensive breakdown of questions, your submitted responses, verified solutions, and note evidence.</p>
+                            </div>
+                            <div className="breakdown-summary-stat">
+                                <span className="stat-highlight">{submittedFeedback.correct_count}</span>
+                                <span className="stat-total"> / {submittedFeedback.total_questions || (submittedFeedback.feedback || []).length} Correct</span>
+                            </div>
+                        </div>
+
+                        {(submittedFeedback.feedback || []).map((fb, idx) => {
+                            const isCorrect = Boolean(fb.is_correct)
+                            const isUnanswered = Boolean(fb.is_unanswered)
+
+                            return (
+                                <div
+                                    key={idx}
+                                    className={`feedback-question-card ${isCorrect ? 'is-correct' : (isUnanswered ? 'is-unanswered' : 'is-incorrect')}`}
+                                >
+                                    {/* 1. Card Top Bar: Identifiers on Left, Status Pill & Page Citation on Right */}
+                                    <div className="qcard-top-bar">
+                                        <div className="qcard-identifiers">
+                                            <span className="qcard-number-badge">Question {idx + 1}</span>
+                                            <span className="qcard-category-badge">{fb.category || 'CONCEPTUAL'}</span>
+                                            {fb.topic && <span className="qcard-topic-badge">{fb.topic}</span>}
+                                        </div>
+
+                                        <div className="qcard-status-badges">
+                                            <div className={`qcard-result-pill ${isCorrect ? 'correct' : (isUnanswered ? 'unanswered' : 'incorrect')}`}>
+                                                {isCorrect ? (
+                                                    <>
+                                                        <CheckCircle2 size={13} className="status-icon" />
+                                                        <span>Correct</span>
+                                                    </>
+                                                ) : isUnanswered ? (
+                                                    <>
+                                                        <Clock size={13} className="status-icon" />
+                                                        <span>Skipped</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <XCircle size={13} className="status-icon" />
+                                                        <span>Incorrect</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                            {fb.page_number && (
+                                                <span className="qcard-page-citation">
+                                                    <BookOpen size={11} className="page-icon" />
+                                                    <span>Page {fb.page_number}</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Prominent Question Typography */}
+                                    <div className="qcard-prompt-wrapper">
+                                        <h3 className="qcard-prompt-text">{fb.question}</h3>
+                                    </div>
+
+                                    {/* 3. Answer Comparison Surfaces */}
+                                    <div className="qcard-answers-grid">
+                                        {/* User's Answer */}
+                                        <div className={`answer-surface user-answer-surface ${isCorrect ? 'correct-state' : (isUnanswered ? 'unanswered-state' : 'incorrect-state')}`}>
+                                            <div className="answer-surface-label">
+                                                <span className="label-text">YOUR ANSWER</span>
+                                                {isCorrect ? (
+                                                    <span className="label-icon-badge correct"><Check size={11} /> Correct</span>
+                                                ) : isUnanswered ? (
+                                                    <span className="label-icon-badge unanswered">Unanswered</span>
+                                                ) : (
+                                                    <span className="label-icon-badge incorrect"><X size={11} /> Incorrect</span>
+                                                )}
+                                            </div>
+                                            <div className="answer-surface-content">
+                                                <p className="answer-text-value">
+                                                    {fb.user_answer || '(No answer provided)'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Correct Answer */}
+                                        {!isCorrect && (
+                                            <div className="answer-surface correct-answer-surface">
+                                                <div className="answer-surface-label">
+                                                    <span className="label-text">CORRECT ANSWER</span>
+                                                    <span className="label-icon-badge verified"><CheckCircle2 size={11} /> Verified Key</span>
+                                                </div>
+                                                <div className="answer-surface-content">
+                                                    <p className="answer-text-value verified">
+                                                        {fb.correct_answer}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                    <div className="review-meta-group">
-                                        <span className="q-category-pill">{fb.category || 'CONCEPTUAL'}</span>
-                                        {fb.topic && <span className="q-topic-pill">{fb.topic}</span>}
-                                        <span className="page-citation-pill">Page {fb.page_number}</span>
-                                    </div>
-                                </div>
 
-                                <p className="review-question">{fb.question}</p>
+                                    {/* 4. Explanation Section */}
+                                    {fb.explanation && (
+                                        <div className="qcard-explanation-block">
+                                            <div className="explanation-header">
+                                                <div className="explanation-icon-wrap">
+                                                    <Lightbulb size={13} />
+                                                </div>
+                                                <span className="explanation-title">EXPLANATION</span>
+                                            </div>
+                                            <p className="explanation-text">{fb.explanation}</p>
+                                        </div>
+                                    )}
 
-                                <div className="review-answers-box">
-                                    <div className="answer-line">
-                                        <strong>Your Answer:</strong>
-                                        <span className={fb.is_correct ? 'ans-correct' : (fb.is_unanswered ? 'ans-unanswered' : 'ans-incorrect')}>
-                                            {fb.user_answer || '(Unanswered)'}
-                                        </span>
-                                    </div>
-                                    {!fb.is_correct && (
-                                        <div className="answer-line">
-                                            <strong>Correct Answer:</strong>
-                                            <span className="ans-correct">{fb.correct_answer}</span>
+                                    {/* 5. Source Evidence from Notes */}
+                                    {fb.excerpt && (
+                                        <div className="qcard-evidence-block">
+                                            <div className="evidence-header">
+                                                <Quote size={11} className="evidence-quote-icon" />
+                                                <span className="evidence-title">From your notes (Page {fb.page_number})</span>
+                                            </div>
+                                            <blockquote className="evidence-quote-body">
+                                                "{fb.excerpt}"
+                                            </blockquote>
                                         </div>
                                     )}
                                 </div>
-
-                                {fb.explanation && (
-                                    <p className="review-explanation">
-                                        <strong>Explanation:</strong> {fb.explanation}
-                                    </p>
-                                )}
-
-                                {fb.excerpt && (
-                                    <div className="review-quote-box">
-                                        <Quote size={11} className="quote-icon" />
-                                        <span>"{fb.excerpt}"</span>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
             )}

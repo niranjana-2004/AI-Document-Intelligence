@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     Layers,
     Sparkles,
-    Check,
     RotateCw,
     Shuffle,
     ArrowLeft,
@@ -11,17 +10,13 @@ import {
     RefreshCw,
     CheckCircle2,
     Clock,
-    X,
-    Eye,
     Maximize2,
     Minimize2,
-    Sliders,
-    BookOpen,
     Quote,
-    Filter,
     Award
 } from 'lucide-react'
 import { apiRequest } from '../../services/api'
+import CustomTopicDropdown from './CustomTopicDropdown'
 
 export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpdated }) {
     const [decks, setDecks] = useState([])
@@ -353,45 +348,45 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
             {/* Smart Revision & Topic Filter Bar */}
             {activeDeck && originalCards.length > 0 && (
                 <div className="flashcard-filter-bar">
-                    <div className="study-filter-pills">
+                    <div className="study-filter-segmented">
                         <button
                             type="button"
-                            className={`study-filter-pill ${studyFilter === 'all' ? 'active' : ''}`}
+                            className={`segmented-filter-btn ${studyFilter === 'all' ? 'active' : ''}`}
                             onClick={() => setStudyFilter('all')}
                         >
-                            <span>All Cards ({originalCards.length})</span>
+                            <Layers size={13} className="btn-icon" />
+                            <span className="btn-label">All Cards</span>
+                            <span className="filter-count-badge all">{originalCards.length}</span>
                         </button>
                         <button
                             type="button"
-                            className={`study-filter-pill review ${studyFilter === 'needs_review' ? 'active' : ''}`}
+                            className={`segmented-filter-btn review ${studyFilter === 'needs_review' ? 'active' : ''}`}
                             onClick={() => setStudyFilter('needs_review')}
                         >
-                            <Clock size={12} />
-                            <span>Smart Revision ({reviewCount})</span>
+                            <Sparkles size={13} className="btn-icon" />
+                            <span className="btn-label">Smart Revision</span>
+                            <span className="filter-count-badge review">{reviewCount}</span>
                         </button>
                         <button
                             type="button"
-                            className={`study-filter-pill mastered ${studyFilter === 'mastered' ? 'active' : ''}`}
+                            className={`segmented-filter-btn mastered ${studyFilter === 'mastered' ? 'active' : ''}`}
                             onClick={() => setStudyFilter('mastered')}
                         >
-                            <CheckCircle2 size={12} />
-                            <span>Mastered ({knownCount})</span>
+                            <CheckCircle2 size={13} className="btn-icon" />
+                            <span className="btn-label">Mastered</span>
+                            <span className="filter-count-badge mastered">{knownCount}</span>
                         </button>
                     </div>
 
                     {availableTopics.length > 1 && (
                         <div className="topic-filter-dropdown-wrap">
-                            <Filter size={12} className="filter-icon" />
-                            <select
-                                className="topic-filter-select"
+                            <CustomTopicDropdown
                                 value={filterTopic}
-                                onChange={(e) => setFilterTopic(e.target.value)}
-                            >
-                                <option value="all">All Topics</option>
-                                {availableTopics.map((top, idx) => (
-                                    <option key={idx} value={top}>{top}</option>
-                                ))}
-                            </select>
+                                onChange={setFilterTopic}
+                                options={availableTopics}
+                                allLabel="All Topics"
+                                id="flashcard-topic-filter"
+                            />
                         </div>
                     )}
                 </div>
@@ -424,16 +419,13 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
                         {availableTopics.length > 0 && (
                             <div className="config-field">
                                 <label>Topic Focus</label>
-                                <select
-                                    className="config-topic-select"
+                                <CustomTopicDropdown
                                     value={selectedTopic}
-                                    onChange={(e) => setSelectedTopic(e.target.value)}
-                                >
-                                    <option value="all">All Note Topics (Diverse Mix)</option>
-                                    {availableTopics.map((top, idx) => (
-                                        <option key={idx} value={top}>{top}</option>
-                                    ))}
-                                </select>
+                                    onChange={setSelectedTopic}
+                                    options={availableTopics}
+                                    allLabel="All Note Topics (Diverse Mix)"
+                                    id="flashcard-config-topic"
+                                />
                             </div>
                         )}
                     </div>
@@ -483,7 +475,7 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
                     <button
                         type="button"
                         className="btn-intel-retry"
-                        onClick={() => handleGenerate()}
+                        onClick={() => handleGenerateDeck()}
                         disabled={generating}
                     >
                         <RefreshCw size={12} className={generating ? 'spin-icon' : ''} />
