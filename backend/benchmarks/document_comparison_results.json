@@ -1,0 +1,46 @@
+{
+  "cross_modal_benchmark": {
+    "doc_a": {
+      "id": 3,
+      "filename": "Project Report - LLM.docx",
+      "type": "DOCX"
+    },
+    "doc_b": {
+      "id": 13,
+      "filename": "Complete-PYhton-Handwritten-Notes-28-11.webp",
+      "is_handwritten": true
+    },
+    "latency_first_run_seconds": 9.902,
+    "latency_cached_ms": 52.54,
+    "statistics": {
+      "total_units": 18,
+      "similar": 0,
+      "modified": 0,
+      "added": 1,
+      "removed": 17
+    },
+    "ai_summary_preview": "Document B, 'Complete-PYhton-Handwritten-Notes-28-11.webp', has a total of 18 units with no similarities and 17 removals compared to Document A, 'Project Report - LLM.docx'. Key differences include the omission of certain sections such as 'Introduction' and '1 Problem Statement', which were present in Document A. These changes imply that Document B is a condensed version of Document A.",
+    "key_changes_count": 1,
+    "important_additions_count": 1
+  },
+  "revision_diff_benchmark": {
+    "doc_v1": {
+      "id": 14,
+      "filename": "test_base_networking.txt"
+    },
+    "doc_v2": {
+      "id": 16,
+      "filename": "test_added_networking.txt"
+    },
+    "latency_seconds": 23.126,
+    "statistics": {
+      "total_units": 4,
+      "similar": 3,
+      "modified": 0,
+      "added": 1,
+      "removed": 0
+    },
+    "detected_added_count": 1,
+    "detected_similar_count": 3
+  }
+}

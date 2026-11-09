@@ -6,6 +6,7 @@ import {
     PenTool,
     Sparkles,
     Search,
+    ArrowLeftRight,
     User,
     Info,
     LogOut,
@@ -192,6 +193,19 @@ function AppLayout({ children }) {
                         <span className="nav-label-with-badge">
                             <span>Handwritten</span>
                             <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #8b5cf6, #38bdf8)' }}>OCR</span>
+                        </span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/compare"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                        <span className="nav-icon" aria-hidden="true">
+                            <ArrowLeftRight size={18} />
+                        </span>
+                        <span className="nav-label-with-badge">
+                            <span>Compare</span>
+                            <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }}>AI</span>
                         </span>
                     </NavLink>
 

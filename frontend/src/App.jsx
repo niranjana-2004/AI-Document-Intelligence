@@ -18,6 +18,7 @@ import DashboardPage from './pages/DashboardPage'
 import Documents from './pages/Documents'
 import HandwrittenNotes from './pages/HandwrittenNotes'
 import HandwrittenStudio from './pages/HandwrittenStudio'
+import DocumentComparison from './pages/DocumentComparison'
 import AskAI from './pages/AskAI'
 import Search from './pages/Search'
 import Profile from './pages/Profile'
@@ -83,6 +84,17 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <AppLayout>
                 <HandwrittenStudio />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/compare"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <DocumentComparison />
               </AppLayout>
             </ProtectedRoute>
           }

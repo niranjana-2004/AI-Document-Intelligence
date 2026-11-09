@@ -14,6 +14,7 @@ from app.models.handwritten_analysis import (
     HandwrittenChatSession,
     HandwrittenChatMessage
 )
+from app.models.document_comparison import DocumentComparison, ensure_document_comparison_schema
 
 __all__ = [
     "User",
@@ -31,5 +32,7 @@ __all__ = [
     "HandwrittenFlashcardSet",
     "HandwrittenChatSession",
     "HandwrittenChatMessage",
+    "DocumentComparison",
+    "ensure_document_comparison_schema"
 ]
 

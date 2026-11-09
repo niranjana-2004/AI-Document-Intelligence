@@ -26,6 +26,8 @@ from app.api.dependencies import get_current_user
 from app.models.user import User
 from app.models.activity import ActivityLog
 from app.models.conversation import Conversation, ConversationMessage
+from app.schemas.document_comparison import ComparisonRequest, ComparisonResponse
+from app.services.document_comparison_service import compare_documents_service
 
 router = APIRouter(
     prefix="/documents",
@@ -56,11 +58,32 @@ def get_documents(
                 "filename": document.filename,
                 "document_type": document.document_type,
                 "text_length": document.text_length,
-                "created_at": document.created_at
+                "created_at": document.created_at,
+                "is_handwritten": bool(document.is_handwritten)
             }
             for document in documents
         ]
     }
+
+
+@router.post("/compare", response_model=ComparisonResponse)
+def compare_documents(
+    payload: ComparisonRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Intelligently compare two documents belonging to the authenticated user.
+    Produces semantic similarities, modifications, additions, removals,
+    and a grounded AI interpretation report.
+    """
+    return compare_documents_service(
+        document_a_id=payload.document_a_id,
+        document_b_id=payload.document_b_id,
+        user_id=current_user.id,
+        db=db,
+        force_refresh=payload.force_refresh
+    )
 
 @router.get("/search")
 def search_documents(

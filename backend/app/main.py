@@ -38,7 +38,9 @@ from fastapi import Query
 
 Base.metadata.create_all(bind=engine)
 from app.models.handwritten_analysis import ensure_handwritten_analysis_schema
+from app.models.document_comparison import ensure_document_comparison_schema
 ensure_handwritten_analysis_schema(engine)
+ensure_document_comparison_schema(engine)
 
 app.include_router(documents_router)
 app.include_router(auth_router)
