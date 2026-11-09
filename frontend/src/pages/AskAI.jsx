@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
@@ -17,8 +17,17 @@ import {
     Layers,
 } from 'lucide-react'
 import NeuralWaveform from '../components/motion/NeuralWaveform'
+import MultiDocumentSelector from '../components/MultiDocumentSelector'
 import { apiRequest } from '../services/api'
 import '../App.css'
+import '../styles/multi-document-chat.css'
+
+const LOADING_STEPS = [
+    'Analyzing document chunks...',
+    'Retrieving relevant cross-document passages...',
+    'Synthesizing grounded multi-document evidence...',
+    'Formulating cited response...',
+]
 
 let msgCounter = 0
 function createMessageId(prefix) {
@@ -196,6 +205,37 @@ function AskAI() {
     const suggestionsRequestIdRef = useRef(0)
     const suggestionsAbortControllerRef = useRef(null)
 
+    // Dynamic loading status indicator for inference feedback
+    const [loadingStepIndex, setLoadingStepIndex] = useState(0)
+
+    useEffect(() => {
+        if (!loading) return
+        const interval = setInterval(() => {
+            setLoadingStepIndex((prev) => (prev + 1) % LOADING_STEPS.length)
+        }, 2400)
+        return () => clearInterval(interval)
+    }, [loading])
+
+    // Clean comma-separated list of selected document titles for active scope banner
+    const selectedDocNames = useMemo(() => {
+        if (selectedDocIds.length === 0) return 'None'
+        const idSet = new Set(selectedDocIds)
+        const names = documents
+            .filter((d) => idSet.has(d.id))
+            .map((d) => d.title || d.filename)
+        return names.join(', ')
+    }, [documents, selectedDocIds])
+
+    const currentLoadingStatus = useMemo(() => {
+        if (!loading) return 'Grounded Intelligence Active'
+        if (loadingStepIndex === 0) {
+            return scopeMode === 'specific' && selectedDocIds.length > 0
+                ? `Analyzing ${selectedDocIds.length} selected documents...`
+                : `Analyzing entire document library...`
+        }
+        return LOADING_STEPS[loadingStepIndex]
+    }, [loading, loadingStepIndex, scopeMode, selectedDocIds.length])
+
     const fetchDocuments = async () => {
         try {
             setDocsLoading(true)
@@ -313,6 +353,7 @@ function AskAI() {
                 role: m.role,
                 content: m.content,
                 sources: Array.isArray(m.sources) ? m.sources : [],
+                follow_up_questions: Array.isArray(m.follow_up_questions) ? m.follow_up_questions : [],
                 timestamp: m.created_at,
             }))
             setMessages(restoredMessages)
@@ -593,33 +634,6 @@ function AskAI() {
         }
     }
 
-    const getFileTypeBadge = (doc) => {
-        if (doc.filename && doc.filename.includes('.')) {
-            const ext = doc.filename.split('.').pop()
-            if (ext) return ext.toUpperCase()
-        }
-        if (doc.document_type) {
-            if (doc.document_type.includes('pdf')) return 'PDF'
-            if (doc.document_type.includes('word') || doc.document_type.includes('docx')) return 'DOCX'
-            if (doc.document_type.includes('text') || doc.document_type.includes('plain')) return 'TXT'
-        }
-        return 'DOC'
-    }
-
-    const getFileIcon = (badge) => {
-        switch (badge) {
-            case 'PDF':
-                return '📄'
-            case 'DOCX':
-            case 'DOC':
-                return '📝'
-            case 'TXT':
-                return '📃'
-            default:
-                return '📃'
-        }
-    }
-
     const isSubmitDisabled =
         loading ||
         !question.trim() ||
@@ -665,6 +679,7 @@ function AskAI() {
         setQuestion('')
         setError('')
         setLoading(true)
+        setLoadingStepIndex(0)
 
         try {
             const data = await apiRequest(
@@ -695,12 +710,16 @@ function AskAI() {
                 'No answer returned.'
 
             const sourcesList = Array.isArray(data?.results) ? data.results : []
+            const followUpQuestions = Array.isArray(data?.follow_up_questions)
+                ? data.follow_up_questions
+                : []
 
             const asstMsg = {
                 id: createMessageId('asst'),
                 role: 'assistant',
                 content: aiAnswer,
                 sources: sourcesList,
+                follow_up_questions: followUpQuestions,
                 timestamp: new Date().toISOString(),
             }
 
@@ -733,6 +752,7 @@ function AskAI() {
         } finally {
             if (currentRequestId === activeRequestIdRef.current) {
                 setLoading(false)
+                setLoadingStepIndex(0)
             }
         }
     }
@@ -836,10 +856,11 @@ function AskAI() {
                             )
                         }
 
-                        const filename = matchingSource.filename || `Document #${matchingSource.document_id || num}`
+                        const docTitle = matchingSource.document_title || matchingSource.filename || `Document #${matchingSource.document_id || num}`
                         const pageLabel = matchingSource.page_number != null
                             ? `Page ${matchingSource.page_number}`
                             : 'Page unavailable'
+                        const sourceTypeTag = matchingSource.source_type === 'handwritten' ? 'Handwritten' : 'Printed'
 
                         const isHighlighted =
                             highlightedCitation &&
@@ -852,8 +873,8 @@ function AskAI() {
                                 type="button"
                                 className={`citation-pill ${isHighlighted ? 'citation-pill-active' : ''}`}
                                 onClick={() => handleCitationClick(msgId, num)}
-                                title={`View Source ${num}: ${filename} (${pageLabel})`}
-                                aria-label={`Source ${num}: ${filename}, ${pageLabel}`}
+                                title={`View Source [${num}]: ${docTitle} (${sourceTypeTag} · ${pageLabel})`}
+                                aria-label={`Source ${num}: ${docTitle}, ${pageLabel}`}
                             >
                                 <span className="citation-pill-bracket">[</span>
                                 <span className="citation-pill-num">{num}</span>
@@ -1181,85 +1202,38 @@ function AskAI() {
                     </div>
                 </header>
 
-            {/* =================================
-                COLLAPSIBLE DOCUMENT SELECTOR PANEL
-            ================================= */}
-            {scopeMode === 'specific' && isDocPickerOpen && (
-                <section className="scope-picker-panel" aria-label="Select Documents for AI Scope">
-                    <div className="scope-picker-header">
-                        <span className="scope-picker-title">
-                            Select documents to ground your inquiry ({selectedDocIds.length} of {documents.length} selected)
+            {/* ACTIVE SCOPE BANNER (WHEN SPECIFIC DOCUMENTS ARE ACTIVE) */}
+            {scopeMode === 'specific' && selectedDocIds.length > 0 && !isDocPickerOpen && (
+                <div className="active-scope-banner" role="status" aria-label="Active document scope">
+                    <div className="active-scope-left">
+                        <Layers size={14} className="active-scope-icon" aria-hidden="true" />
+                        <span className="active-scope-title">Active Scope:</span>
+                        <span className="active-scope-names" title={selectedDocNames}>
+                            {selectedDocNames}
                         </span>
-                        <div className="scope-picker-actions">
-                            <button
-                                type="button"
-                                className="scope-chip-btn"
-                                onClick={handleSelectAllDocs}
-                                disabled={loading || selectedDocIds.length === documents.length}
-                            >
-                                Select All
-                            </button>
-                            <button
-                                type="button"
-                                className="scope-chip-btn"
-                                onClick={handleClearDocs}
-                                disabled={loading || selectedDocIds.length === 0}
-                            >
-                                Clear
-                            </button>
-                            <button
-                                type="button"
-                                className="scope-chip-btn scope-chip-close"
-                                onClick={() => setIsDocPickerOpen(false)}
-                            >
-                                Done ✓
-                            </button>
-                        </div>
                     </div>
-
-                    {documents.length === 0 ? (
-                        <p className="scope-picker-empty">
-                            No documents found. Please upload documents on the{' '}
-                            <Link to="/documents" className="scope-link">Documents</Link> page.
-                        </p>
-                    ) : (
-                        <div className="scope-picker-grid" role="group" aria-label="Selectable documents">
-                            {documents.map((doc) => {
-                                const isSelected = selectedDocIds.includes(doc.id)
-                                const typeBadge = getFileTypeBadge(doc)
-                                return (
-                                    <label
-                                        key={doc.id}
-                                        className={`scope-picker-item ${isSelected ? 'selected' : ''} ${loading ? 'disabled' : ''}`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            className="scope-picker-checkbox"
-                                            checked={isSelected}
-                                            onChange={() => handleToggleDoc(doc.id)}
-                                            disabled={loading}
-                                            aria-label={`Select ${doc.filename}`}
-                                        />
-                                        <span className="scope-picker-doc-icon" aria-hidden="true">
-                                            {getFileIcon(typeBadge)}
-                                        </span>
-                                        <span className="scope-picker-doc-name" title={doc.filename}>
-                                            {doc.filename}
-                                        </span>
-                                        <span className="scope-picker-badge">{typeBadge}</span>
-                                    </label>
-                                )
-                            })}
-                        </div>
-                    )}
-
-                    {selectedDocIds.length === 0 && (
-                        <p className="scope-picker-warning" role="alert">
-                            ⚠️ Please select at least one document to ask a question.
-                        </p>
-                    )}
-                </section>
+                    <button
+                        type="button"
+                        className="active-scope-edit-btn"
+                        onClick={() => setIsDocPickerOpen(true)}
+                        title="Modify selected documents"
+                    >
+                        Change Scope ▾
+                    </button>
+                </div>
             )}
+
+            {/* SEARCHABLE MULTI-DOCUMENT SELECTOR PANEL */}
+            <MultiDocumentSelector
+                isOpen={scopeMode === 'specific' && isDocPickerOpen}
+                onClose={() => setIsDocPickerOpen(false)}
+                documents={documents}
+                selectedDocIds={selectedDocIds}
+                onToggleDoc={handleToggleDoc}
+                onSelectAll={handleSelectAllDocs}
+                onClear={handleClearDocs}
+                loading={loading}
+            />
 
             {/* Document repository loading / error alerts */}
             {docsLoading && (
@@ -1400,6 +1374,28 @@ function AskAI() {
                                                 {renderFormattedAnswer(msg.content, msg.sources, msg.id)}
                                             </div>
 
+                                            {/* FOLLOW-UP QUESTION SUGGESTION CHIPS */}
+                                            {Array.isArray(msg.follow_up_questions) && msg.follow_up_questions.length > 0 && (
+                                                <div className="followup-questions-container" aria-label="Suggested follow-up questions">
+                                                    <span className="followup-questions-label">Suggested Follow-ups</span>
+                                                    <div className="followup-questions-chips">
+                                                        {msg.follow_up_questions.map((fq, fqIdx) => (
+                                                            <button
+                                                                key={`fq-${msg.id}-${fqIdx}`}
+                                                                type="button"
+                                                                className="followup-chip"
+                                                                onClick={() => handleAskAI(fq)}
+                                                                disabled={loading}
+                                                                title={`Ask: "${fq}"`}
+                                                            >
+                                                                <Sparkles size={13} className="followup-icon" aria-hidden="true" />
+                                                                <span>{fq}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="assistant-bubble-footer">
                                                 <span className="assistant-time">
                                                     {formatTimestamp(msg.timestamp)}
@@ -1439,6 +1435,21 @@ function AskAI() {
 
                                                 {isDrawerExpanded && (
                                                     <div className="sources-cards-list">
+                                                        {/* Multi-document evidence summary */}
+                                                        {(() => {
+                                                            const distinctDocIds = new Set(
+                                                                sortedSources.map((s) => s.document_id).filter((id) => id != null)
+                                                            )
+                                                            const docCount = distinctDocIds.size || 1
+                                                            return (
+                                                                <div className="multi-doc-sources-summary">
+                                                                    <span className="sources-summary-title">
+                                                                        Cross-Document Evidence: {docCount} {docCount === 1 ? 'document' : 'documents'} · {sortedSources.length} {sortedSources.length === 1 ? 'passage' : 'passages'}
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        })()}
+
                                                         {sortedSources.map((source, sIdx) => {
                                                             const citeNum = source.citation_index || (sIdx + 1)
                                                             const isHighlighted =
@@ -1448,14 +1459,20 @@ function AskAI() {
                                                             const excerptKey = `${msg.id}-${citeNum}`
                                                             const isExpanded = Boolean(expandedSourceExcerpts[excerptKey])
 
-                                                            const filename =
-                                                                source.filename || `Document #${source.document_id || citeNum}`
+                                                            const docTitle =
+                                                                source.document_title ||
+                                                                source.filename ||
+                                                                `Document #${source.document_id || citeNum}`
+                                                            const isHw =
+                                                                source.source_type === 'handwritten' ||
+                                                                (source.document_type && source.document_type.toLowerCase().includes('handwritten')) ||
+                                                                (source.filename && source.filename.toLowerCase().includes('handwritten'))
                                                             const pageLabel =
                                                                 source.page_number != null
                                                                     ? `Page ${source.page_number}`
                                                                     : 'Page N/A'
                                                             const contentText =
-                                                                source.content || source.text || 'No text excerpt available.'
+                                                                source.content || source.text || source.excerpt || 'No text excerpt available.'
                                                             const needsTruncation = contentText.length > 220
                                                             const displayText =
                                                                 !needsTruncation || isExpanded
@@ -1477,15 +1494,19 @@ function AskAI() {
                                                                         isHighlighted ? 'source-card-highlighted' : ''
                                                                     }`}
                                                                     tabIndex={0}
-                                                                    aria-label={`Source ${citeNum}: ${filename}, ${pageLabel}`}
+                                                                    aria-label={`Source ${citeNum}: ${docTitle}, ${pageLabel}`}
                                                                 >
                                                                     <div className="source-card-topbar">
                                                                         <div className="source-meta-group">
                                                                             <span className="source-idx-pill">
                                                                                 [{citeNum}]
                                                                             </span>
-                                                                            <span className="source-name" title={filename}>
-                                                                                📄 {filename}
+                                                                            <span className="source-name" title={docTitle}>
+                                                                                {isHw ? '✍️ ' : '📄 '}
+                                                                                {docTitle}
+                                                                            </span>
+                                                                            <span className={`source-type-pill ${isHw ? 'hw' : 'printed'}`}>
+                                                                                {isHw ? 'HANDWRITTEN' : 'PRINTED'}
                                                                             </span>
                                                                             <span className="source-page-badge">
                                                                                 {pageLabel}
@@ -1500,16 +1521,39 @@ function AskAI() {
                                                                             )}
                                                                         </div>
 
-                                                                        {needsTruncation && (
-                                                                            <button
-                                                                                type="button"
-                                                                                className="source-expand-btn"
-                                                                                onClick={() => toggleSourceExcerpt(msg.id, citeNum)}
-                                                                                aria-expanded={isExpanded}
-                                                                            >
-                                                                                {isExpanded ? 'Less ▴' : 'More ▾'}
-                                                                            </button>
-                                                                        )}
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+                                                                            {source.document_id && (
+                                                                                isHw ? (
+                                                                                    <Link
+                                                                                        to={`/handwritten/${source.document_id}`}
+                                                                                        className="source-nav-link"
+                                                                                        title="Open in Handwritten Studio"
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                    >
+                                                                                        Studio ↗
+                                                                                    </Link>
+                                                                                ) : (
+                                                                                    <Link
+                                                                                        to="/documents"
+                                                                                        className="source-nav-link"
+                                                                                        title="Open in Documents Library"
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                    >
+                                                                                        Doc ↗
+                                                                                    </Link>
+                                                                                )
+                                                                            )}
+                                                                            {needsTruncation && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="source-expand-btn"
+                                                                                    onClick={() => toggleSourceExcerpt(msg.id, citeNum)}
+                                                                                    aria-expanded={isExpanded}
+                                                                                >
+                                                                                    {isExpanded ? 'Less ▴' : 'More ▾'}
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
 
                                                                     <p className="source-excerpt-text">
@@ -1542,7 +1586,7 @@ function AskAI() {
                                         <NeuralWaveform
                                             isGenerating={true}
                                             compact={true}
-                                            statusText="Scanning document chunks & synthesizing answer..."
+                                            statusText={currentLoadingStatus}
                                         />
                                     </div>
                                 </div>
@@ -1569,7 +1613,7 @@ function AskAI() {
                                     <NeuralWaveform
                                         isGenerating={true}
                                         compact={true}
-                                        statusText="Scanning document chunks & synthesizing answer..."
+                                        statusText={currentLoadingStatus}
                                     />
                                 </div>
                             </div>
