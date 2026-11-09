@@ -43,11 +43,12 @@ def format_conversation_history(conversation_history: list | None) -> str:
 def generate_response(
     query: str,
     context: str,
-    conversation_history: list | None = None
+    conversation_history: list | None = None,
+    is_multi_document: bool = False
 ) -> str:
     """
     Generate a grounded, synthesized answer with inline source citations
-    using the local Ollama LLM.
+    using the local Ollama LLM. Supports both single-document and multi-document synthesis.
     """
 
     if not query.strip():
@@ -56,6 +57,11 @@ def generate_response(
     if not context.strip():
         return FALLBACK_ANSWER
 
+    # If is_multi_document not explicitly passed, detect if context contains multiple documents
+    if not is_multi_document:
+        doc_matches = set(re.findall(r"\[Source \d+ \| Document: ([^|]+)", context))
+        is_multi_document = len(doc_matches) > 1
+
     history_text = format_conversation_history(conversation_history)
     history_section = (
         f"CONVERSATION HISTORY:\n--------\n{history_text}\n--------\n\n"
@@ -63,10 +69,25 @@ def generate_response(
         else ""
     )
 
-    prompt = f"""You are Cognidocs AI, an intelligent document analysis assistant.
-Answer the user's question directly, concisely, and factually using ONLY the provided document sources.
-
-STRICT GUIDELINES:
+    if is_multi_document:
+        guidelines = f"""STRICT GUIDELINES FOR MULTI-DOCUMENT SYNTHESIS:
+1. Grounded cross-document synthesis: Answer using ONLY the supplied document sources. Synthesize facts across the selected documents in your own words.
+2. Cross-document comparison & attribution:
+   - When asked to compare, contrast, or find similarities, explicitly distinguish:
+     * Shared concepts or principles common to multiple documents.
+     * Unique details or perspectives specific to individual documents.
+     * Contradicting or differing statements (e.g., "Document A defines X as ... [1], whereas Document B states ... [2].").
+   - Clearly attribute findings to the respective document by referring to its name from the source headers.
+3. Inline citations: Cite the source number in square brackets, such as [1] or [2], immediately after each fact, claim, or quote derived from that source (e.g., "TCP provides reliable, ordered stream delivery [1], while UDP prioritizes low latency [2].").
+4. Source numbering rule: You must ONLY cite the assigned header number N from "[Source N | ...]". Never invent citations or copy internal bibliography numbers.
+5. Strict factual grounding: Do not use outside knowledge, extrapolate, speculate, or fabricate any facts, page numbers, or titles.
+6. Inadequate information: If the provided sources do not contain sufficient information to answer the question, respond exactly with:
+"{FALLBACK_ANSWER}"
+Do not guess or provide unsupported speculation.
+7. Formatting: Use clean markdown sections (e.g. Overview, Key Differences, Shared Concepts) or clear bullet points when synthesizing across documents.
+8. Conversational grounding: Conversation history is provided solely to understand conversational context and resolve follow-up references. Conversation history is NOT evidence. All factual claims must cite only source indices ([1], [2], etc.) from the current SOURCES."""
+    else:
+        guidelines = f"""STRICT GUIDELINES:
 1. Grounded synthesis: Synthesize a clear, direct answer in your own words based exclusively on the provided sources. Do not reproduce entire source chunks verbatim.
 2. Inline citations: Cite the source number in square brackets, such as [1] or [2], immediately after each statement, fact, or claim derived from that source (e.g., "The system employs AES-256 encryption [1] and SHA-256 hashing [2].").
 3. Source numbering rule: Each source is identified by a "[Source N | ...]" header label. You must ONLY cite the assigned header number N (e.g., [1], [2], [3], etc.).
@@ -77,7 +98,12 @@ STRICT GUIDELINES:
 "{FALLBACK_ANSWER}"
 Do not guess or provide unsupported speculation.
 7. Formatting: Use concise paragraphs or a clean list if multiple items are requested. Keep the response professional, natural, and directly focused on the inquiry.
-8. Conversational grounding: Conversation history is provided solely to understand conversational context and resolve follow-up references. Conversation history is NOT evidence. All factual claims must be strictly grounded in the SOURCES below and must cite only source indices ([1], [2], etc.) from the current SOURCES.
+8. Conversational grounding: Conversation history is provided solely to understand conversational context and resolve follow-up references. Conversation history is NOT evidence. All factual claims must be strictly grounded in the SOURCES below and must cite only source indices ([1], [2], etc.) from the current SOURCES."""
+
+    prompt = f"""You are Cognidocs AI, an intelligent document analysis assistant.
+Answer the user's question directly, concisely, and factually using ONLY the provided document sources.
+
+{guidelines}
 
 {history_section}SOURCES:
 --------

@@ -1,0 +1,127 @@
+{
+  "case_a": {
+    "status": "PASS",
+    "latency": 0.0,
+    "result_count": 6,
+    "sources": [
+      {
+        "title": "test",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      }
+    ]
+  },
+  "case_b": {
+    "status": "PASS",
+    "latency": 0.01,
+    "source_types": [
+      "handwritten",
+      "printed"
+    ],
+    "sources": [
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Complete PYhton Handwritten Notes 28 11",
+        "page": 1,
+        "type": "handwritten"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      }
+    ]
+  },
+  "case_c": {
+    "status": "PASS",
+    "latency": 0.0,
+    "result_count": 6,
+    "sources": [
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      },
+      {
+        "title": "Project Report LLM",
+        "page": 1,
+        "type": "printed"
+      }
+    ]
+  },
+  "case_d": {
+    "status": "PASS",
+    "latency": 13.43,
+    "answer": "The provided documents do not contain sufficient information to answer this question."
+  },
+  "case_e": {
+    "status": "PASS",
+    "latency": 0.01,
+    "attributed_document_id": 13,
+    "attributed_page": 1
+  }
+}

@@ -30,6 +30,7 @@ from app.schemas.document_comparison import ComparisonRequest, ComparisonRespons
 from app.services.document_comparison_service import compare_documents_service
 from app.schemas.document_mind_map import MindMapRequest, MindMapResponse
 from app.services.document_mind_map_service import generate_document_mind_map_service
+from app.services.handwriting.handwritten_source_service import sync_handwritten_chunks_and_embeddings
 
 router = APIRouter(
     prefix="/documents",
@@ -179,7 +180,7 @@ def ask_question(
         # Verify that all requested documents exist and belong to the authenticated user
         if effective_document_ids is not None:
             owned_docs = (
-                db.query(Document.id)
+                db.query(Document)
                 .filter(
                     Document.user_id == current_user.id,
                     Document.id.in_(effective_document_ids)
@@ -192,6 +193,16 @@ def ask_question(
                     status_code=404,
                     detail="One or more selected documents were not found."
                 )
+
+            # Ensure handwritten documents have indexed DocumentChunks
+            for doc in owned_docs:
+                if doc.is_handwritten:
+                    chunk_count = db.query(DocumentChunk).filter(DocumentChunk.document_id == doc.id).count()
+                    if chunk_count == 0:
+                        try:
+                            sync_handwritten_chunks_and_embeddings(doc.id, db)
+                        except Exception as e:
+                            logger.warning(f"Failed to auto-sync handwritten chunks for doc #{doc.id}: {e}")
 
         conversation: Conversation | None = None
         if request.conversation_id is not None:
@@ -215,7 +226,8 @@ def ask_question(
             document_id=request.document_id,
             document_ids=effective_document_ids,
             top_k=request.top_k,
-            user_id=cast(int, current_user.id)
+            user_id=cast(int, current_user.id),
+            conversation_history=request.conversation_history
         )
 
         # Persist conversation and messages on successful answer

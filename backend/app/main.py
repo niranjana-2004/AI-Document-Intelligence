@@ -40,9 +40,11 @@ Base.metadata.create_all(bind=engine)
 from app.models.handwritten_analysis import ensure_handwritten_analysis_schema
 from app.models.document_comparison import ensure_document_comparison_schema
 from app.models.document_mind_map import ensure_mind_map_schema
+from app.models.chat_cache import ensure_chat_cache_schema
 ensure_handwritten_analysis_schema(engine)
 ensure_document_comparison_schema(engine)
 ensure_mind_map_schema(engine)
+ensure_chat_cache_schema(engine)
 
 app.include_router(documents_router)
 app.include_router(auth_router)

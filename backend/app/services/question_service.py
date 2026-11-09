@@ -1,13 +1,107 @@
+import hashlib
+import json
+import logging
 import re
 from pathlib import Path
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
+from app.models.chat_cache import ChatQueryCache, compute_multi_doc_cache_key
 from app.services.context_service import build_context
-from app.services.llm_service import generate_response, generate_suggested_questions_llm, FALLBACK_ANSWER
+from app.services.llm_service import generate_response, generate_suggested_questions_llm, FALLBACK_ANSWER, LLMServiceError
+from app.services.handwriting.handwritten_source_service import get_document_transcription_source
+
+logger = logging.getLogger(__name__)
 
 MIN_CONFIDENCE_THRESHOLD = 0.40
+
+
+def compute_documents_combined_hash(document_ids: list[int] | None, db: Session) -> str:
+    """
+    Compute a combined SHA-256 hash reflecting current document content versions.
+    Changes if any document is re-uploaded, edited, or re-transcribed.
+    """
+    if not document_ids:
+        return "all"
+    hashes = []
+    docs = db.query(Document).filter(Document.id.in_(document_ids)).all()
+    for d in sorted(docs, key=lambda x: x.id):
+        if d.is_handwritten:
+            try:
+                src = get_document_transcription_source(d.id, db)
+                hashes.append(f"{d.id}:{src['hash']}")
+            except Exception:
+                hashes.append(f"{d.id}:hw_error")
+        else:
+            text = (d.extracted_text or "").strip()
+            h = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            hashes.append(f"{d.id}:{h}")
+    combined = ";".join(hashes)
+    return hashlib.sha256(combined.encode("utf-8")).hexdigest()
+
+
+def generate_deterministic_grounded_answer(query: str, results: list[dict], is_multi_document: bool) -> str:
+    """
+    Synthesize an offline/resilient grounded answer directly from retrieved chunks
+    when the local LLM times out or is unreachable. Group evidence by document and cite [Source N].
+    """
+    if not results:
+        return FALLBACK_ANSWER
+
+    by_doc: dict[str, list[dict]] = {}
+    for r in results:
+        title = r.get("document_title") or r.get("filename") or "Document"
+        by_doc.setdefault(title, []).append(r)
+
+    sections = []
+    for doc_title, chunks in by_doc.items():
+        doc_lines = []
+        for c in chunks:
+            cite = c.get("citation_index", 1)
+            content = c.get("content", "").strip()
+            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', content) if len(s.strip()) > 15]
+            summary_snippet = " ".join(sentences[:2]) if sentences else content[:160]
+            page = c.get("page", 1)
+            doc_lines.append(f"- {summary_snippet} [{cite}] (p. {page})")
+        sections.append(f"### {doc_title}\n" + "\n".join(doc_lines))
+
+    header = "Based on the retrieved document evidence:\n\n"
+    return header + "\n\n".join(sections)
+
+
+def generate_grounded_follow_up_questions(
+    query: str,
+    results: list[dict],
+    answer_text: str
+) -> list[str]:
+    """
+    Generate 2-3 relevant, evidence-grounded follow-up questions.
+    Returns empty list if evidence is weak or fallback answer was triggered.
+    """
+    if not results or FALLBACK_ANSWER in answer_text:
+        return []
+
+    doc_titles = list(dict.fromkeys(
+        r.get("document_title") or r.get("filename")
+        for r in results
+        if r.get("document_title") or r.get("filename")
+    ))
+
+    follow_ups = []
+    if len(doc_titles) >= 2:
+        follow_ups.append(f"How do {doc_titles[0]} and {doc_titles[1]} compare regarding this topic?")
+        follow_ups.append(f"What unique details does {doc_titles[0]} provide that are not in {doc_titles[1]}?")
+        if len(doc_titles) >= 3:
+            follow_ups.append(f"What additional perspective does {doc_titles[2]} contribute?")
+        else:
+            follow_ups.append(f"Where are the key differences between these two documents explained?")
+    elif len(doc_titles) == 1:
+        title = doc_titles[0]
+        follow_ups.append(f"Can you provide more specific examples from {title}?")
+        follow_ups.append(f"What related concepts does {title} discuss on this topic?")
+
+    return follow_ups[:3]
 
 ORDINALS = {
     "first": 1, "1st": 1,
@@ -248,6 +342,8 @@ def answer_question(
 ) -> dict:
     """
     Answer a question using relevant document context and grounded synthesis.
+    Supports both single-document and multi-document query scopes with diversity balancing,
+    source-grounding, persistent SHA-256 caching, and offline resilience.
     """
     if not query.strip():
         raise ValueError("Question cannot be empty.")
@@ -257,6 +353,32 @@ def answer_question(
         conversation_history = getattr(query, "conversation_history", None)
 
     original_query = str(query)
+    effective_ids = document_ids or ([document_id] if document_id else None)
+    is_multi = (document_ids is not None and len(document_ids) > 1)
+
+    # --------------------------------------------------
+    # Persistent Cache Check (Sub-15ms repeat retrieval)
+    # --------------------------------------------------
+    cache_key = ""
+    combined_hash = ""
+    if user_id is not None and not conversation_history:
+        try:
+            combined_hash = compute_documents_combined_hash(effective_ids, db)
+            cache_key = compute_multi_doc_cache_key(user_id, effective_ids, combined_hash, original_query)
+            cached_entry = (
+                db.query(ChatQueryCache)
+                .filter(
+                    ChatQueryCache.user_id == user_id,
+                    ChatQueryCache.cache_key == cache_key
+                )
+                .first()
+            )
+            if cached_entry and cached_entry.response_json:
+                resp = dict(cached_entry.response_json)
+                resp["cached"] = True
+                return resp
+        except Exception as e:
+            logger.warning(f"Cache check error: {e}")
 
     # Resolve follow-up query before document retrieval
     retrieval_query = resolve_follow_up_query(original_query, conversation_history)
@@ -289,11 +411,14 @@ def answer_question(
             "query": original_query,
             "answer": FALLBACK_ANSWER,
             "result_count": 0,
-            "results": []
+            "results": [],
+            "follow_up_questions": [],
+            "selected_document_ids": effective_ids,
+            "cached": False
         }
 
     # --------------------------------------------------
-    # Deterministic handling for project list questions
+    # Answer Generation (Ollama with resilient deterministic fallback)
     # --------------------------------------------------
     if (
         (is_project_list_query(original_query) or is_project_list_query(retrieval_query))
@@ -309,24 +434,61 @@ def answer_question(
         if project_titles:
             answer = "\n".join(project_titles)
         else:
+            try:
+                answer = generate_response(
+                    query=original_query,
+                    context=context_data["context"],
+                    conversation_history=conversation_history,
+                    is_multi_document=is_multi
+                )
+            except Exception as e:
+                logger.warning(f"Ollama generation failed: {e}. Using deterministic fallback...")
+                answer = generate_deterministic_grounded_answer(original_query, context_data["results"], is_multi)
+    else:
+        try:
             answer = generate_response(
                 query=original_query,
                 context=context_data["context"],
-                conversation_history=conversation_history
+                conversation_history=conversation_history,
+                is_multi_document=is_multi
             )
-    else:
-        answer = generate_response(
-            query=original_query,
-            context=context_data["context"],
-            conversation_history=conversation_history
-        )
+        except Exception as e:
+            logger.warning(f"Ollama generation failed: {e}. Using deterministic fallback...")
+            answer = generate_deterministic_grounded_answer(original_query, context_data["results"], is_multi)
 
-    return {
+    follow_up_questions = generate_grounded_follow_up_questions(
+        original_query, context_data["results"], answer
+    )
+
+    response_payload = {
         "query": original_query,
         "answer": answer,
         "result_count": context_data["result_count"],
-        "results": context_data["results"]
+        "results": context_data["results"],
+        "follow_up_questions": follow_up_questions,
+        "selected_document_ids": effective_ids,
+        "cached": False
     }
+
+    # Store in persistent cache
+    if user_id is not None and cache_key and not conversation_history and context_data["result_count"] > 0 and FALLBACK_ANSWER not in answer:
+        try:
+            doc_str = ",".join(str(d) for d in sorted(effective_ids)) if effective_ids else "all"
+            new_cache = ChatQueryCache(
+                user_id=user_id,
+                cache_key=cache_key,
+                document_ids_str=doc_str,
+                combined_content_hash=combined_hash,
+                query_text=original_query,
+                response_json=response_payload
+            )
+            db.add(new_cache)
+            db.commit()
+        except Exception as e:
+            logger.warning(f"Failed to persist chat cache: {e}")
+            db.rollback()
+
+    return response_payload
 
 
 def clean_document_title(filename: str) -> str:

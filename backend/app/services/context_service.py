@@ -39,19 +39,29 @@ def build_context(
     # --------------------------------------------------
 
     context_parts = []
+    is_multi = (document_ids is not None and len(document_ids) > 1)
 
     for idx, result in enumerate(results, start=1):
         result["citation_index"] = idx
 
-        filename = result.get("filename") or "Unknown Document"
-        page_number = result.get("page_number")
-        page_str = str(page_number) if page_number is not None else "N/A"
+        doc_title = result.get("document_title") or result.get("filename") or "Unknown Document"
+        source_type = (result.get("source_type") or "printed").title()
+        chunk_id = result.get("chunk_id", "N/A")
+        page_val = result.get("page") or result.get("page_number")
+        page_str = str(page_val) if page_val is not None else "N/A"
         content = (result.get("content") or "").strip()
 
-        context_parts.append(
-            f"[Source {idx} | Document: {filename} | Page: {page_str}]\n"
-            f"{content}"
-        )
+        if is_multi:
+            context_parts.append(
+                f"[Source {idx} | Document: {doc_title} | Type: {source_type} | Page: {page_str} | Chunk: {chunk_id}]\n"
+                f"{content}"
+            )
+        else:
+            filename = result.get("filename") or "Unknown Document"
+            context_parts.append(
+                f"[Source {idx} | Document: {filename} | Page: {page_str}]\n"
+                f"{content}"
+            )
 
     context = "\n\n".join(context_parts)
 
@@ -59,5 +69,6 @@ def build_context(
         "query": query,
         "context": context,
         "results": results,
-        "result_count": len(results)
+        "result_count": len(results),
+        "is_multi_document": is_multi
     }
