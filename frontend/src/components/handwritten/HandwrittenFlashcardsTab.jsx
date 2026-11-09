@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { apiRequest } from '../../services/api'
 import CustomTopicDropdown from './CustomTopicDropdown'
+import CustomDeckDropdown from './CustomDeckDropdown'
 
 export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpdated }) {
     const [decks, setDecks] = useState([])
@@ -261,7 +262,6 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
 
     const knownCount = activeDeck?.known_count || 0
     const reviewCount = activeDeck?.needs_review_count || 0
-    const totalCount = originalCards.length
 
     // Format card type label
     const formatCardType = (typeStr) => {
@@ -284,17 +284,12 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
             <div className="intel-toolbar">
                 <div className="flashcard-deck-select-group">
                     {decks.length > 0 && (
-                        <select
-                            className="quiz-dropdown-select"
-                            value={activeDeckId || ''}
-                            onChange={(e) => setActiveDeckId(Number(e.target.value))}
-                        >
-                            {decks.map((d, idx) => (
-                                <option key={d.id} value={d.id}>
-                                    Deck #{decks.length - idx}: {d.title} ({d.cards?.length || 0} cards)
-                                </option>
-                            ))}
-                        </select>
+                        <CustomDeckDropdown
+                            decks={decks}
+                            activeDeckId={activeDeckId}
+                            onSelectDeck={(deckId) => setActiveDeckId(deckId)}
+                            id="flashcard-deck-selector"
+                        />
                     )}
                 </div>
 

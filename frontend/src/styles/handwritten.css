@@ -4781,6 +4781,263 @@
 }
 
 /* ==========================================================================
+   CUSTOM FLASHCARD DECK SELECTOR (DARK PREMIUM ACADEMIC AI)
+   ========================================================================== */
+.custom-deck-dropdown {
+    position: relative;
+    display: inline-block;
+    min-width: 320px;
+    max-width: 480px;
+    user-select: none;
+}
+
+.custom-deck-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 14px;
+    background: linear-gradient(135deg, rgba(16, 24, 44, 0.85), rgba(11, 17, 32, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px);
+    box-sizing: border-box;
+}
+
+.custom-deck-trigger:hover,
+.custom-deck-dropdown.is-open .custom-deck-trigger {
+    background: linear-gradient(135deg, rgba(22, 33, 60, 0.95), rgba(14, 21, 40, 0.98));
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.2), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.trigger-deck-info {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.trigger-deck-icon {
+    color: #a855f7;
+    flex-shrink: 0;
+}
+
+.trigger-deck-num {
+    font-size: 13px;
+    font-weight: 700;
+    color: #c084fc;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+}
+
+.trigger-deck-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f8fafc;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trigger-deck-count {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.trigger-deck-chevron {
+    color: var(--text-muted);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.trigger-deck-chevron.rotate {
+    transform: rotate(180deg);
+    color: #a855f7;
+}
+
+/* Floating Dropdown Menu Panel */
+.custom-deck-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    min-width: 320px;
+    max-width: 520px;
+    z-index: 120;
+    background: rgba(11, 17, 32, 0.98);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.custom-deck-menu.menu-downward {
+    top: calc(100% + 6px);
+    animation: fadeInDeckMenuDown 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-deck-menu.menu-upward {
+    bottom: calc(100% + 6px);
+    animation: fadeInDeckMenuUp 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInDeckMenuDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeInDeckMenuUp {
+    from {
+        opacity: 0;
+        transform: translateY(5px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.custom-deck-list-inner {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.custom-deck-list-inner::-webkit-scrollbar {
+    width: 5px;
+}
+
+.custom-deck-list-inner::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 999px;
+}
+
+.custom-deck-list-inner::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.35);
+    border-radius: 999px;
+}
+
+.custom-deck-list-inner::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.55);
+}
+
+.custom-deck-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.deck-item-left {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.deck-item-num {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #c084fc;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+}
+
+.deck-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.deck-item-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.deck-item-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+
+.deck-item-check {
+    color: #c084fc;
+    flex-shrink: 0;
+}
+
+.custom-deck-item:hover,
+.custom-deck-item.highlighted {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+.custom-deck-item:hover .deck-item-title,
+.custom-deck-item.highlighted .deck-item-title {
+    color: #ffffff;
+}
+
+.custom-deck-item.selected {
+    background: rgba(168, 85, 247, 0.14);
+    border-left-color: #a855f7;
+    color: #ffffff;
+}
+
+.custom-deck-item.selected .deck-item-title {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.custom-deck-item.selected .deck-item-count {
+    background: rgba(168, 85, 247, 0.25);
+    color: #e9d5ff;
+}
+
+/* ==========================================================================
    FLASHCARD FILTER BAR & SEGMENTED CONTROLS
    ========================================================================== */
 .flashcard-filter-bar {
@@ -5196,12 +5453,21 @@
     }
 
     .topic-filter-dropdown-wrap,
-    .custom-topic-dropdown {
+    .custom-topic-dropdown,
+    .custom-deck-dropdown {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .custom-topic-trigger,
+    .custom-deck-trigger {
         width: 100%;
     }
 
-    .custom-topic-trigger {
-        width: 100%;
+    .custom-deck-menu {
+        min-width: 0;
+        max-width: 100%;
     }
 
     .qcard-top-bar {
