@@ -28,6 +28,7 @@ from app.services.handwriting.subject_service import (
     auto_detect_and_set_subject,
     set_document_subject
 )
+from app.services.handwriting.layout_intelligence_service import analyze_page_layout
 
 logger = logging.getLogger(__name__)
 
@@ -1219,6 +1220,57 @@ def update_page_correction_status(
         "page_number": page.page_number,
         "edited_transcription": page.edited_transcription
     }
+
+
+@router.post("/{document_id}/pages/{page_number}/layout")
+def analyze_page_layout_endpoint(
+    document_id: int,
+    page_number: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Cognidocs Layout Intelligence 4.0:
+    Analyze visual page layout to detect regions (text, headings, diagrams, tables, formulas, background).
+    Operates as an independent analytical layer without modifying the raw transcription.
+    """
+    doc = db.query(Document).filter(Document.id == document_id, Document.user_id == current_user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    page = db.query(HandwrittenPage).filter(
+        HandwrittenPage.document_id == document_id,
+        HandwrittenPage.page_number == page_number
+    ).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found.")
+
+    img_path = Path(page.processed_image_path or page.original_image_path)
+    if not img_path.exists():
+        img_path = Path("backend") / img_path
+    if not img_path.exists():
+        raise HTTPException(status_code=404, detail=f"Image file not found at {img_path}")
+
+    layout_res = analyze_page_layout(img_path, page_id=page.id)
+
+    # Update metadata and page model safely
+    page.has_diagrams = bool(layout_res.get("has_diagrams", False))
+    page.diagram_blocks = [r for r in layout_res.get("regions", []) if r.get("region_type") == "diagram"]
+    page.has_math = bool(layout_res.get("has_formulas", False))
+    page.math_blocks = [r for r in layout_res.get("regions", []) if r.get("region_type") == "formula"]
+
+    meta = dict(page.ocr_metadata or {})
+    meta["layout_analysis"] = {
+        "execution_time_ms": layout_res.get("execution_time_ms", 0.0),
+        "total_regions": layout_res.get("total_regions", 0),
+        "counts_by_type": layout_res.get("counts_by_type", {}),
+        "is_empty": layout_res.get("is_empty", False)
+    }
+    page.ocr_metadata = meta
+    db.commit()
+    db.refresh(page)
+
+    return layout_res
 
 
 

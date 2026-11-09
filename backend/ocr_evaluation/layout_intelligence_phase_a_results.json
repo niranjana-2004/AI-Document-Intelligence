@@ -1,0 +1,409 @@
+{
+  "benchmark_milestone": "Layout Intelligence 4.0 \u2014 Phase A: Region Detection & Layout Benchmark",
+  "timestamp": "2026-11-09 11:49:41",
+  "total_samples": 14,
+  "total_execution_time_sec": 0.96,
+  "average_page_latency_ms": 68.43,
+  "negative_control_passed": true,
+  "text_contamination_rate_pct": 0.01,
+  "text_omission_rate_pct": 0.34,
+  "category_metrics": {
+    "text": {
+      "tp_50": 11,
+      "fp_50": 3,
+      "fn_50": 2,
+      "precision_50": 0.7857,
+      "recall_50": 0.8462,
+      "f1_50": 0.8148,
+      "precision_75": 0.7143,
+      "recall_75": 0.8333,
+      "f1_75": 0.7692
+    },
+    "heading": {
+      "tp_50": 3,
+      "fp_50": 9,
+      "fn_50": 10,
+      "precision_50": 0.25,
+      "recall_50": 0.2308,
+      "f1_50": 0.24,
+      "precision_75": 0.0,
+      "recall_75": 0.0,
+      "f1_75": 1.0
+    },
+    "diagram": {
+      "tp_50": 1,
+      "fp_50": 0,
+      "fn_50": 0,
+      "precision_50": 1.0,
+      "recall_50": 1.0,
+      "f1_50": 1.0,
+      "precision_75": 1.0,
+      "recall_75": 1.0,
+      "f1_75": 1.0
+    },
+    "table": {
+      "tp_50": 0,
+      "fp_50": 0,
+      "fn_50": 0,
+      "precision_50": 1.0,
+      "recall_50": 1.0,
+      "f1_50": 1.0,
+      "precision_75": 1.0,
+      "recall_75": 1.0,
+      "f1_75": 1.0
+    },
+    "formula": {
+      "tp_50": 0,
+      "fp_50": 0,
+      "fn_50": 0,
+      "precision_50": 1.0,
+      "recall_50": 1.0,
+      "f1_50": 1.0,
+      "precision_75": 1.0,
+      "recall_75": 1.0,
+      "f1_75": 1.0
+    },
+    "background": {
+      "tp_50": 1,
+      "fp_50": 0,
+      "fn_50": 0,
+      "precision_50": 1.0,
+      "recall_50": 1.0,
+      "f1_50": 1.0,
+      "precision_75": 1.0,
+      "recall_75": 1.0,
+      "f1_75": 1.0
+    }
+  },
+  "doc13_ocr_impact": {
+    "document_id": "13",
+    "description": "Web Development / CSS Notes & Flowchart Architecture",
+    "baseline_full_page": {
+      "lines_count": 20,
+      "cer": 0.4165,
+      "wer": 0.6981,
+      "word_accuracy": 0.3019,
+      "diagram_excluded": false
+    },
+    "experimental_layout_guided": {
+      "lines_count": 15,
+      "cer": 0.3063,
+      "wer": 0.5189,
+      "word_accuracy": 0.4811,
+      "diagram_excluded": true
+    },
+    "delta_cer": -0.1102,
+    "delta_wer": -0.1792,
+    "delta_word_accuracy": 0.1792,
+    "summary": "Excluding the flowchart diagram from text OCR lines reduced WER by 17.92 percentage points (from 69.81% to 51.89%) and reduced CER by 11.02 percentage points without modifying frozen OCR 3.5."
+  },
+  "samples_detail": [
+    {
+      "sample_id": "doc13_p01",
+      "document_id": "13",
+      "page_number": 1,
+      "subject": "Web Development & CSS Architecture Flowchart",
+      "width": 1410,
+      "height": 2000,
+      "is_empty": false,
+      "execution_time_ms": 67.07,
+      "predicted_regions_count": 4,
+      "ground_truth_regions_count": 5,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 2,
+        "diagram": 1
+      },
+      "average_iou": 0.909,
+      "has_diagrams": true,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc13_p01.png",
+      "simplified_visualization": "layout_simplified_doc13_p01.png"
+    },
+    {
+      "sample_id": "doc12_p01",
+      "document_id": "12",
+      "page_number": 1,
+      "subject": "Computer Networks \u2014 TCP Transmission Control Protocol",
+      "width": 1875,
+      "height": 2350,
+      "is_empty": false,
+      "execution_time_ms": 127.91,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.6918,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc12_p01.png",
+      "simplified_visualization": "layout_simplified_doc12_p01.png"
+    },
+    {
+      "sample_id": "doc12_p02",
+      "document_id": "12",
+      "page_number": 2,
+      "subject": "Computer Networks \u2014 TCP Header & Operation",
+      "width": 1875,
+      "height": 2350,
+      "is_empty": false,
+      "execution_time_ms": 87.39,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.8543,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc12_p02.png",
+      "simplified_visualization": "layout_simplified_doc12_p02.png"
+    },
+    {
+      "sample_id": "doc12_p03",
+      "document_id": "12",
+      "page_number": 3,
+      "subject": "Computer Networks \u2014 Three-Way Handshake",
+      "width": 1875,
+      "height": 2350,
+      "is_empty": false,
+      "execution_time_ms": 91.31,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.8669,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc12_p03.png",
+      "simplified_visualization": "layout_simplified_doc12_p03.png"
+    },
+    {
+      "sample_id": "doc12_p04",
+      "document_id": "12",
+      "page_number": 4,
+      "subject": "Computer Networks \u2014 Sliding Window & Flow Control",
+      "width": 1875,
+      "height": 2350,
+      "is_empty": false,
+      "execution_time_ms": 129.99,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.8532,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc12_p04.png",
+      "simplified_visualization": "layout_simplified_doc12_p04.png"
+    },
+    {
+      "sample_id": "doc12_p05",
+      "document_id": "12",
+      "page_number": 5,
+      "subject": "Computer Networks \u2014 Congestion Control",
+      "width": 1875,
+      "height": 2350,
+      "is_empty": false,
+      "execution_time_ms": 105.76,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.865,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc12_p05.png",
+      "simplified_visualization": "layout_simplified_doc12_p05.png"
+    },
+    {
+      "sample_id": "doc12_p06",
+      "document_id": "12",
+      "page_number": 6,
+      "subject": "Computer Networks \u2014 Connection Termination",
+      "width": 1875,
+      "height": 2350,
+      "is_empty": false,
+      "execution_time_ms": 89.17,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.8523,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc12_p06.png",
+      "simplified_visualization": "layout_simplified_doc12_p06.png"
+    },
+    {
+      "sample_id": "doc12_p07",
+      "document_id": "12",
+      "page_number": 7,
+      "subject": "Computer Networks \u2014 Summary & Protocol Properties",
+      "width": 1875,
+      "height": 2350,
+      "is_empty": false,
+      "execution_time_ms": 102.56,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.6292,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc12_p07.png",
+      "simplified_visualization": "layout_simplified_doc12_p07.png"
+    },
+    {
+      "sample_id": "doc10_p01",
+      "document_id": "10",
+      "page_number": 1,
+      "subject": "Poetry \u2014 The Road Not Taken",
+      "width": 1169,
+      "height": 1200,
+      "is_empty": false,
+      "execution_time_ms": 34.05,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.6967,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_doc10_p01.png",
+      "simplified_visualization": "layout_simplified_doc10_p01.png"
+    },
+    {
+      "sample_id": "root1_p01",
+      "document_id": "1",
+      "page_number": 1,
+      "subject": "Physics Lecture Notes \u2014 Quantum Mechanics",
+      "width": 600,
+      "height": 350,
+      "is_empty": false,
+      "execution_time_ms": 6.0,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.5396,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_root1_p01.png",
+      "simplified_visualization": "layout_simplified_root1_p01.png"
+    },
+    {
+      "sample_id": "root2_p01",
+      "document_id": "2",
+      "page_number": 1,
+      "subject": "Physics Notes \u2014 Quantum Mechanics",
+      "width": 1667,
+      "height": 973,
+      "is_empty": false,
+      "execution_time_ms": 42.13,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 2,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.0,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_root2_p01.png",
+      "simplified_visualization": "layout_simplified_root2_p01.png"
+    },
+    {
+      "sample_id": "root2_p02",
+      "document_id": "2",
+      "page_number": 2,
+      "subject": "Thermodynamics Laws",
+      "width": 1667,
+      "height": 973,
+      "is_empty": false,
+      "execution_time_ms": 40.23,
+      "predicted_regions_count": 2,
+      "ground_truth_regions_count": 1,
+      "counts_by_type": {
+        "heading": 1,
+        "text": 1
+      },
+      "average_iou": 0.0,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_root2_p02.png",
+      "simplified_visualization": "layout_simplified_root2_p02.png"
+    },
+    {
+      "sample_id": "root3_p01",
+      "document_id": "3",
+      "page_number": 1,
+      "subject": "Differential Equations",
+      "width": 500,
+      "height": 300,
+      "is_empty": false,
+      "execution_time_ms": 2.8,
+      "predicted_regions_count": 1,
+      "ground_truth_regions_count": 1,
+      "counts_by_type": {
+        "text": 1
+      },
+      "average_iou": 0.8165,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_root3_p01.png",
+      "simplified_visualization": "layout_simplified_root3_p01.png"
+    },
+    {
+      "sample_id": "root4_p01",
+      "document_id": "4",
+      "page_number": 1,
+      "subject": "Blank Negative Control",
+      "width": 400,
+      "height": 400,
+      "is_empty": true,
+      "execution_time_ms": 2.0,
+      "predicted_regions_count": 1,
+      "ground_truth_regions_count": 1,
+      "counts_by_type": {
+        "background": 1
+      },
+      "average_iou": 1.0,
+      "has_diagrams": false,
+      "has_formulas": false,
+      "has_tables": false,
+      "detailed_visualization": "layout_detailed_root4_p01.png",
+      "simplified_visualization": "layout_simplified_root4_p01.png"
+    }
+  ]
+}
