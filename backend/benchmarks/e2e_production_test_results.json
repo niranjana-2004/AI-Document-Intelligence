@@ -1,0 +1,43 @@
+{
+  "test_a_normal_handwriting": {
+    "status": "PASS",
+    "doc_id": 12,
+    "ocr_mode": "layout_guided_ocr35",
+    "lines_count": 23,
+    "execution_time_ms": 11301791.53
+  },
+  "test_b_diagram_isolation": {
+    "status": "PASS",
+    "doc_id": 13,
+    "ocr_mode": "layout_guided_ocr35",
+    "lines_count": 15,
+    "diagram_slices_suppressed": 5,
+    "execution_time_ms": 38452.33,
+    "phase3_summary_ok": true,
+    "phase3_concepts_ok": true,
+    "phase3_quiz_ok": true,
+    "phase3_flashcards_ok": true,
+    "phase3_chat_ok": true
+  },
+  "test_c_blank_page": {
+    "status": "PASS",
+    "is_empty": true,
+    "total_lines": 0,
+    "full_text": ""
+  },
+  "test_d_manual_edit_protection": {
+    "status": "PASS",
+    "manual_edit_preserved": true,
+    "flag_retained": true
+  },
+  "test_e_tenant_isolation": {
+    "status": "PASS",
+    "unauthorized_status_code": 404
+  },
+  "test_f_rollback_verification": {
+    "status": "PASS",
+    "disabled_mode": "ocr35_baseline",
+    "enabled_mode": "layout_guided_ocr35",
+    "rollback_functional": true
+  }
+}

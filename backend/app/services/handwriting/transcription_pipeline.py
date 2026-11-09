@@ -35,6 +35,8 @@ def transcribe_page_image(
     delegates to Layout Intelligence 4.0 region-aware OCR with safety fallback.
     Otherwise runs frozen production OCR 3.5 pipeline directly.
     """
+    layout_fallback_triggered = False
+    layout_fallback_reason = None
     if force_layout_guided or getattr(settings, "LAYOUT_GUIDED_OCR_ENABLED", False):
         try:
             from app.services.handwriting.layout_guided_ocr_service import transcribe_page_image_layout_guided
@@ -50,6 +52,8 @@ def transcribe_page_image(
                 f"Layout-guided OCR encountered unhandled exception on {image_path.name}: {layout_err}. "
                 "Executing immediate safe fallback to baseline OCR 3.5."
             )
+            layout_fallback_triggered = True
+            layout_fallback_reason = f"transcription_pipeline_exception: {str(layout_err)}"
     """
     Execute complete handwriting recognition on a document page image.
 
@@ -220,8 +224,8 @@ def transcribe_page_image(
         "structured_layout": structure,
         "technical_corrections": technical_corrections,
         "tokens": page_tokens,
-        "ocr_mode": "ocr35_baseline",
-        "layout_enabled": False,
-        "fallback_used": False,
-        "fallback_reason": None
+        "ocr_mode": "ocr35_baseline_fallback" if layout_fallback_triggered else "ocr35_baseline",
+        "layout_enabled": True if layout_fallback_triggered else False,
+        "fallback_used": layout_fallback_triggered,
+        "fallback_reason": layout_fallback_reason
     }

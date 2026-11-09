@@ -1,0 +1,125 @@
+{
+  "milestone": "layout_intelligence_4.0_production_promotion",
+  "timestamp": "2026-11-09T13:00:00Z",
+  "status": "PRODUCTION_DEFAULT_ENABLED",
+  "engine": "microsoft/trocr-small-handwritten",
+  "execution_mode": "local_cpu_only",
+  "configuration": {
+    "feature_flag": "LAYOUT_GUIDED_OCR_ENABLED",
+    "default_value": true,
+    "config_file": "backend/app/core/config.py",
+    "rollback_mechanism": "Set LAYOUT_GUIDED_OCR_ENABLED=false via environment variable or backend/.env"
+  },
+  "freeze_verification": {
+    "trocr_model": "microsoft/trocr-small-handwritten",
+    "model_frozen": true,
+    "ocr35_recovery_frozen": true,
+    "external_ai_apis_introduced": false,
+    "cloud_ocr_introduced": false,
+    "llm_ocr_rewrite_introduced": false
+  },
+  "document_13_targeted_results": {
+    "title": "Introduction to CSS Notes (Mixed Text + Flowchart Diagram)",
+    "baseline_ocr35": {
+      "cer": 0.4165,
+      "wer": 0.6981,
+      "word_accuracy": 30.19,
+      "lines_extracted": 20,
+      "text_lines": 15,
+      "diagram_slices": 5,
+      "contamination_rate": 0.25
+    },
+    "layout_guided_ocr40": {
+      "cer": 0.2205,
+      "wer": 0.4906,
+      "word_accuracy": 50.94,
+      "lines_extracted": 15,
+      "text_lines": 15,
+      "diagram_slices": 0,
+      "contamination_rate": 0.0
+    },
+    "delta": {
+      "delta_cer_pp": -19.60,
+      "delta_wer_pp": -20.75,
+      "delta_word_acc_pp": 20.75,
+      "diagram_slices_eliminated": 5,
+      "contamination_reduction_pct": 100.0
+    }
+  },
+  "corpus_14_samples_benchmark": {
+    "total_samples": 14,
+    "total_words": 1256,
+    "total_chars": 7838,
+    "baseline_overall_cer": 0.2189,
+    "layout_overall_cer": 0.2026,
+    "delta_cer_pp": -1.63,
+    "baseline_overall_wer": 0.4451,
+    "layout_overall_wer": 0.4275,
+    "delta_wer_pp": -1.76,
+    "baseline_word_accuracy": 55.49,
+    "layout_word_accuracy": 57.25,
+    "delta_word_accuracy_pp": 1.76,
+    "group_1_normal_academic_delta_wer_pp": 0.00,
+    "group_3_cursive_literature_delta_wer_pp": 0.00,
+    "group_4_math_delta_wer_pp": 0.00,
+    "negative_control_blank_lines": 0,
+    "technical_terms_f1": 0.7164,
+    "technical_terms_precision": 1.0,
+    "fallback_rate": 0.0
+  },
+  "e2e_production_workflow_tests": {
+    "total_tests": 6,
+    "passed_tests": 6,
+    "failed_tests": 0,
+    "details": {
+      "test_a_normal_handwriting": {
+        "status": "PASS",
+        "doc_id": 12,
+        "ocr_mode": "layout_guided_ocr35",
+        "lines_count": 23,
+        "technical_recovery": "TCP / SYN verified"
+      },
+      "test_b_diagram_isolation": {
+        "status": "PASS",
+        "doc_id": 13,
+        "ocr_mode": "layout_guided_ocr35",
+        "lines_count": 15,
+        "diagram_slices_suppressed": 5,
+        "downstream_phase3_verified": true
+      },
+      "test_c_blank_page": {
+        "status": "PASS",
+        "is_empty": true,
+        "total_lines": 0,
+        "full_text": ""
+      },
+      "test_d_manual_edit_protection": {
+        "status": "PASS",
+        "manual_edit_preserved": true,
+        "flag_retained": true
+      },
+      "test_e_tenant_isolation": {
+        "status": "PASS",
+        "unauthorized_blocked": true
+      },
+      "test_f_rollback_verification": {
+        "status": "PASS",
+        "disabled_mode": "ocr35_baseline",
+        "enabled_mode": "layout_guided_ocr35",
+        "rollback_functional": true
+      }
+    }
+  },
+  "regression_suite_results": {
+    "test_layout_guided_ocr_phase_b": "PASS (16/16)",
+    "test_layout_intelligence": "PASS (10/10)",
+    "test_manual_edit_protection": "PASS (1/1)",
+    "test_ocr35_recovery": "PASS (12/12)",
+    "test_ollama_connectivity": "PASS (10/10)",
+    "test_phase3_intelligence": "PASS (8/8)",
+    "test_advanced_quiz_flashcards": "PASS (10/10)",
+    "frontend_vite_build": "PASS (2496 modules, 0 errors)"
+  },
+  "final_decision": "PROMOTE_TO_PRODUCTION_DEFAULT"
+}
+
