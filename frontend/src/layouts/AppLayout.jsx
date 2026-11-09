@@ -7,6 +7,7 @@ import {
     Sparkles,
     Search,
     ArrowLeftRight,
+    Network,
     User,
     Info,
     LogOut,
@@ -206,6 +207,19 @@ function AppLayout({ children }) {
                         <span className="nav-label-with-badge">
                             <span>Compare</span>
                             <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }}>AI</span>
+                        </span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/mind-map"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                        <span className="nav-icon" aria-hidden="true">
+                            <Network size={18} />
+                        </span>
+                        <span className="nav-label-with-badge">
+                            <span>Mind Map</span>
+                            <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #8b5cf6, #0ea5e9)' }}>AI</span>
                         </span>
                     </NavLink>
 

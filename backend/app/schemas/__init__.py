@@ -8,6 +8,12 @@ from app.schemas.document_comparison import (
     AddedItem,
     RemovedItem
 )
+from app.schemas.document_mind_map import (
+    MindMapRequest,
+    MindMapResponse,
+    MindMapNode,
+    SourceEvidence
+)
 
 __all__ = [
     "ComparisonRequest",
@@ -17,6 +23,10 @@ __all__ = [
     "SimilarityItem",
     "ModifiedItem",
     "AddedItem",
-    "RemovedItem"
+    "RemovedItem",
+    "MindMapRequest",
+    "MindMapResponse",
+    "MindMapNode",
+    "SourceEvidence"
 ]
 

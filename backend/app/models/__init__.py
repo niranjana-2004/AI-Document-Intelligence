@@ -15,6 +15,7 @@ from app.models.handwritten_analysis import (
     HandwrittenChatMessage
 )
 from app.models.document_comparison import DocumentComparison, ensure_document_comparison_schema
+from app.models.document_mind_map import DocumentMindMap, ensure_mind_map_schema
 
 __all__ = [
     "User",
@@ -33,6 +34,8 @@ __all__ = [
     "HandwrittenChatSession",
     "HandwrittenChatMessage",
     "DocumentComparison",
-    "ensure_document_comparison_schema"
+    "ensure_document_comparison_schema",
+    "DocumentMindMap",
+    "ensure_mind_map_schema"
 ]
 

@@ -1,0 +1,102 @@
+{
+  "printed_document_benchmark": {
+    "document_id": 3,
+    "filename": "Project Report - LLM.docx",
+    "document_type": "DOCX",
+    "text_length": 13583,
+    "node_count": 22,
+    "topic_count": 9,
+    "generation_method": "ollama_llama3_2",
+    "latency_first_run_seconds": 229.76,
+    "latency_cached_ms": 10.62,
+    "speedup_factor": 21629.1,
+    "topics": [
+      {
+        "topic_name": "Optical Character Recognition (OCR)",
+        "concept_count": 3,
+        "relationship": "contains",
+        "sample_concept": "Definition of OCR"
+      },
+      {
+        "topic_name": "Large Language Model (LLM)",
+        "concept_count": 3,
+        "relationship": "contains",
+        "sample_concept": "Definition of LLM"
+      },
+      {
+        "topic_name": "Handwritten Notes Summarization",
+        "concept_count": 3,
+        "relationship": "contains",
+        "sample_concept": "Definition of Handwritten Notes Summarization"
+      },
+      {
+        "topic_name": "Natural Language Processing (NLP)",
+        "concept_count": 3,
+        "relationship": "contains",
+        "sample_concept": "Definition of NLP"
+      },
+      {
+        "topic_name": "Handwritten Document Digitization",
+        "concept_count": 0,
+        "relationship": "contains",
+        "sample_concept": null
+      },
+      {
+        "topic_name": "Adaptive Preprocessing",
+        "concept_count": 0,
+        "relationship": "contains",
+        "sample_concept": null
+      },
+      {
+        "topic_name": "Text-Line Segmentation",
+        "concept_count": 0,
+        "relationship": "contains",
+        "sample_concept": null
+      },
+      {
+        "topic_name": "Grounded Question Answering",
+        "concept_count": 0,
+        "relationship": "contains",
+        "sample_concept": null
+      },
+      {
+        "topic_name": "Writer-Independent Evaluation",
+        "concept_count": 0,
+        "relationship": "contains",
+        "sample_concept": null
+      }
+    ]
+  },
+  "handwritten_document_benchmark": {
+    "document_id": 13,
+    "filename": "Complete-PYhton-Handwritten-Notes-28-11.webp",
+    "is_handwritten": true,
+    "node_count": 14,
+    "topic_count": 3,
+    "generation_method": "deterministic_semantic_fallback",
+    "latency_uncached_seconds": 300.07,
+    "latency_cached_ms": 6.9,
+    "speedup_factor": 43510.5,
+    "page_traceability_verified": true,
+    "topics": [
+      {
+        "topic_name": "Web Presentation & Styles",
+        "concept_count": 3,
+        "relationship": "contains",
+        "sample_concept": "Cascading Style Sheets (CSS)"
+      },
+      {
+        "topic_name": "Foundational Concepts",
+        "concept_count": 6,
+        "relationship": "contains",
+        "sample_concept": "Separation of Concerns"
+      },
+      {
+        "topic_name": "Protocols & Addressing",
+        "concept_count": 1,
+        "relationship": "contains",
+        "sample_concept": "Design Principles"
+      }
+    ]
+  }
+}

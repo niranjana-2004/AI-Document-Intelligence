@@ -11,10 +11,10 @@ from app.models.document_chunk import DocumentChunk
 from app.services.search_service import semantic_search
 from app.services.question_service import answer_question, get_document_suggested_questions
 from app.schemas.question import QuestionRequest, SuggestedQuestionsRequest, SuggestedQuestionsResponse
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
-from typing import cast
+from typing import cast, Optional
 from app.services.llm_service import (
     generate_summary,
     LLMServiceError,
@@ -28,6 +28,8 @@ from app.models.activity import ActivityLog
 from app.models.conversation import Conversation, ConversationMessage
 from app.schemas.document_comparison import ComparisonRequest, ComparisonResponse
 from app.services.document_comparison_service import compare_documents_service
+from app.schemas.document_mind_map import MindMapRequest, MindMapResponse
+from app.services.document_mind_map_service import generate_document_mind_map_service
 
 router = APIRouter(
     prefix="/documents",
@@ -83,6 +85,26 @@ def compare_documents(
         user_id=current_user.id,
         db=db,
         force_refresh=payload.force_refresh
+    )
+
+
+@router.post("/{document_id}/mind-map", response_model=MindMapResponse)
+def generate_document_mind_map(
+    document_id: int,
+    payload: Optional[MindMapRequest] = Body(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate an interactive, source-grounded visual knowledge Mind Map
+    for the specified document.
+    """
+    force_refresh = payload.force_refresh if payload else False
+    return generate_document_mind_map_service(
+        document_id=document_id,
+        user_id=current_user.id,
+        db=db,
+        force_refresh=force_refresh
     )
 
 @router.get("/search")
