@@ -268,6 +268,21 @@
   background: rgba(99, 102, 241, 0.06);
 }
 
+.selector-doc-card:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+  border-color: #6366f1;
+}
+
+.filter-pill:focus-visible,
+.scope-chip-btn:focus-visible,
+.selected-chip-remove:focus-visible,
+.active-scope-edit-btn:focus-visible,
+.followup-chip:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
 .selector-doc-card.selected {
   border-color: #6366f1;
   background: rgba(99, 102, 241, 0.14);
@@ -541,4 +556,68 @@
 .followup-icon {
   color: #a5b4fc;
   flex-shrink: 0;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS (Desktop 1440px, Tablet 768px, Mobile 390px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .multi-doc-selector-panel {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .selector-docs-grid {
+    grid-template-columns: 1fr;
+    max-height: 200px;
+  }
+
+  .active-scope-banner {
+    padding: 8px 12px;
+    gap: 10px;
+  }
+
+  .active-scope-names {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .multi-doc-selector-panel {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .selector-filter-pills {
+    gap: 4px;
+  }
+
+  .filter-pill {
+    padding: 3px 8px;
+    font-size: 10.5px;
+  }
+
+  .selector-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .selector-footer-actions {
+    justify-content: flex-end;
+  }
+
+  .active-scope-banner {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .active-scope-names {
+    max-width: 180px;
+  }
+
+  .multi-doc-sources-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

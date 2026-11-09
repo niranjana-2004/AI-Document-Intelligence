@@ -492,6 +492,26 @@ def is_ambiguous_language_query(query: str) -> bool:
         or re.search(r"\blanguages does\b", query_lower)
     )
 
+
+def is_overview_or_summary_query(query: str) -> bool:
+    """
+    Detect document-level overview, summary, comparison, or description queries
+    (e.g., 'What is this document about?', 'Compare the main ideas in these two documents').
+    """
+    q = query.lower().strip()
+    patterns = [
+        r"what (is|are) (this|the|these|it) (document|documents|file|notes)?\s*about",
+        r"what does (this|the) document (discuss|say|cover|talk about)",
+        r"(summarize|summary of|overview of)\s*(the\s+)?(key\s+|main\s+)?(topics|concepts|notes|ideas|content)?",
+        r"(summarize|summary of|overview of) (this|the|these) (document|documents|file)?",
+        r"tell me about (this|the|these) document",
+        r"what (is|are) in (this|the|these) document",
+        r"compare (the\s+)?(main\s+|key\s+)?(ideas|concepts|topics|content|sections)?\s*(in|across|between|of)?\s*(these|the|all)?\s*(two|three|\d+)?\s*documents?",
+        r"compare (these|the) (documents|files|notes)",
+        r"what (is|are) the differences?\s+between (these|the) documents?",
+    ]
+    return any(re.search(p, q) for p in patterns)
+
 # --------------------------------------------------
 # BACKWARD COMPATIBILITY
 # --------------------------------------------------
@@ -715,6 +735,7 @@ def semantic_search(
     query_context = detect_query_context(query)
 
     ambiguous_language_query = is_ambiguous_language_query(query)
+    overview_query = is_overview_or_summary_query(query)
 
     # Ambiguous "languages" queries should search both
     # programming languages and spoken languages.
@@ -917,12 +938,19 @@ def semantic_search(
             chunk.content
         )
 
+        overview_boost = 0.0
+        if overview_query:
+            # Introductory and early chunks provide primary document overview
+            chunk_idx = getattr(chunk, "chunk_index", 0) or 0
+            overview_boost = 0.40 if chunk_idx <= 1 else 0.20
+
         # --------------------------------------------------
         # General relevance filtering
         # --------------------------------------------------
 
         if (
-            similarity < SIMILARITY_THRESHOLD
+            not overview_query
+            and similarity < SIMILARITY_THRESHOLD
             and keyword_score == 0
             and category_boost == 0
             and subsection_boost == 0
@@ -939,6 +967,7 @@ def semantic_search(
             + category_boost
             + subsection_boost
             + language_category_boost
+            + overview_boost
         )
 
         if final_score >= FINAL_SCORE_THRESHOLD:
