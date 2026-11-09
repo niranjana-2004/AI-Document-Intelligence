@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Layout Intelligence 4.0 Settings
+    LAYOUT_GUIDED_OCR_ENABLED: bool = True
+
     # Ollama LLM Settings
     # Default to 127.0.0.1 to avoid Windows IPv6 localhost (::1) resolution issues.
     OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"

@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Optional
 from PIL import Image
 import cv2
 
+from app.core.config import settings
 from app.services.handwriting.image_preprocessor import read_image_safe
 from app.services.handwriting.line_segmenter import segment_page_into_lines, LineCrop
 from app.services.handwriting.ocr_service import recognize_line_image
@@ -24,8 +25,31 @@ def transcribe_page_image(
     original_image_path: Optional[Path] = None,
     subject: Optional[str] = None,
     page_num: int = 1,
-    doc_index: Optional[Any] = None
+    doc_index: Optional[Any] = None,
+    force_layout_guided: bool = False
 ) -> Dict[str, Any]:
+    """
+    Execute complete handwriting recognition on a document page image.
+
+    If LAYOUT_GUIDED_OCR_ENABLED is enabled (or force_layout_guided=True),
+    delegates to Layout Intelligence 4.0 region-aware OCR with safety fallback.
+    Otherwise runs frozen production OCR 3.5 pipeline directly.
+    """
+    if force_layout_guided or getattr(settings, "LAYOUT_GUIDED_OCR_ENABLED", False):
+        try:
+            from app.services.handwriting.layout_guided_ocr_service import transcribe_page_image_layout_guided
+            return transcribe_page_image_layout_guided(
+                image_path=image_path,
+                original_image_path=original_image_path,
+                subject=subject,
+                page_num=page_num,
+                doc_index=doc_index
+            )
+        except Exception as layout_err:
+            logger.warning(
+                f"Layout-guided OCR encountered unhandled exception on {image_path.name}: {layout_err}. "
+                "Executing immediate safe fallback to baseline OCR 3.5."
+            )
     """
     Execute complete handwriting recognition on a document page image.
 
@@ -89,7 +113,15 @@ def transcribe_page_image(
                 "has_headings": False,
                 "has_lists": False,
                 "has_math": False
-            }
+            },
+            "technical_corrections": [],
+            "tokens": [],
+            "raw_text": "",
+            "recovered_text": "",
+            "ocr_mode": "ocr35_baseline",
+            "layout_enabled": False,
+            "fallback_used": False,
+            "fallback_reason": None
         }
 
     # 2. Extract line crops from the preprocessed image (high-contrast, shadow-free)
@@ -187,5 +219,9 @@ def transcribe_page_image(
         "lines": recognized_lines,
         "structured_layout": structure,
         "technical_corrections": technical_corrections,
-        "tokens": page_tokens
+        "tokens": page_tokens,
+        "ocr_mode": "ocr35_baseline",
+        "layout_enabled": False,
+        "fallback_used": False,
+        "fallback_reason": None
     }

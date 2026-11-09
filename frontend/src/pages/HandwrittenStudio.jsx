@@ -687,6 +687,11 @@ export default function HandwrittenStudio() {
                                             <span className="transcription-stat-pill">
                                                 {charCount} chars
                                             </span>
+                                            {currentPage?.ocr_metadata?.ocr_mode === 'layout_guided_ocr35' && (
+                                                <span className="transcription-stat-pill" style={{ color: '#c084fc', borderColor: 'rgba(192, 132, 252, 0.4)' }} title="Processed with Layout Intelligence 4.0 region-aware OCR">
+                                                    Layout OCR 4.0
+                                                </span>
+                                            )}
                                         </div>
 
                                         <div className="transcription-actions-group">

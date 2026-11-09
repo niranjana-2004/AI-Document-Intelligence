@@ -1,0 +1,771 @@
+{
+  "phase": "layout_intelligence_4.0_phase_b",
+  "benchmark_timestamp": "2026-11-09T07:56:43Z",
+  "engine": "microsoft/trocr-small-handwritten",
+  "feature_flag_default": false,
+  "corpus_stats": {
+    "total_samples": 14,
+    "total_ground_truth_lines": 199,
+    "total_ground_truth_chars": 7838,
+    "total_ground_truth_words": 1256,
+    "total_tech_terms": 43
+  },
+  "baseline_ocr35": {
+    "overall_cer": 0.2189,
+    "overall_wer": 0.4451,
+    "overall_word_accuracy": 55.49,
+    "technical_terms_f1": 0.7164,
+    "technical_terms_recall": 0.5581,
+    "omission_rate": 0.2197,
+    "contamination_rate": 0.0,
+    "total_latency_ms": 702400.7,
+    "avg_latency_ms_per_page": 50171.48
+  },
+  "layout_guided_ocr40": {
+    "overall_cer": 0.2026,
+    "overall_wer": 0.4275,
+    "overall_word_accuracy": 57.25,
+    "technical_terms_f1": 0.7164,
+    "technical_terms_recall": 0.5581,
+    "omission_rate": 0.2245,
+    "contamination_rate": 0.0,
+    "total_latency_ms": 660070.29,
+    "avg_latency_ms_per_page": 47147.88,
+    "fallback_rate": 0.0,
+    "fallbacks_count": 0
+  },
+  "overall_delta": {
+    "delta_cer_pct_points": -1.63,
+    "delta_wer_pct_points": -1.76,
+    "delta_word_acc_pct_points": 1.76,
+    "latency_overhead_pct": -6.03
+  },
+  "document_13_targeted_result": {
+    "sample_id": "web_p01",
+    "title": "Introduction to CSS Notes",
+    "subject": "Web Development",
+    "group": "group_2_diagram",
+    "ground_truth_stats": {
+      "chars": 653,
+      "words": 106
+    },
+    "baseline": {
+      "cer": 0.4165,
+      "wer": 0.6981,
+      "word_accuracy": 30.19,
+      "lines_count": 20,
+      "contaminated_lines": 0,
+      "omitted_words": 26,
+      "omission_rate": 0.2453,
+      "tech_f1": 0.6667,
+      "latency_ms": 61062.46
+    },
+    "layout_guided": {
+      "cer": 0.2205,
+      "wer": 0.4906,
+      "word_accuracy": 50.94,
+      "lines_count": 15,
+      "contaminated_lines": 0,
+      "omitted_words": 32,
+      "omission_rate": 0.3019,
+      "tech_f1": 0.6667,
+      "fallback_used": false,
+      "fallback_reason": null,
+      "regions_detected": 4,
+      "text_regions_used": 3,
+      "diagram_regions_preserved": 1,
+      "latency_ms": 41711.53
+    },
+    "delta": {
+      "delta_cer_pct_points": -19.6,
+      "delta_wer_pct_points": -20.75,
+      "delta_word_acc_pct_points": 20.75
+    }
+  },
+  "groups": {
+    "group_1_normal": {
+      "name": "Group 1: Normal Academic & Neat Print",
+      "sample_count": 10,
+      "sample_ids": [
+        "tcp_p01",
+        "tcp_p02",
+        "tcp_p03",
+        "tcp_p04",
+        "tcp_p05",
+        "tcp_p06",
+        "tcp_p07",
+        "phys_p01",
+        "lect_p01",
+        "lect_p02"
+      ],
+      "ground_truth_chars": 6801,
+      "ground_truth_words": 1079,
+      "baseline_cer": 0.2104,
+      "baseline_wer": 0.443,
+      "baseline_word_acc": 55.7,
+      "layout_cer": 0.2104,
+      "layout_wer": 0.443,
+      "layout_word_acc": 55.7,
+      "delta_cer_pp": 0.0,
+      "delta_wer_pp": 0.0
+    },
+    "group_2_diagram": {
+      "name": "Group 2: Mixed Text & Diagram (Doc #13)",
+      "sample_count": 1,
+      "sample_ids": [
+        "web_p01"
+      ],
+      "ground_truth_chars": 653,
+      "ground_truth_words": 106,
+      "baseline_cer": 0.4165,
+      "baseline_wer": 0.6981,
+      "baseline_word_acc": 30.19,
+      "layout_cer": 0.2205,
+      "layout_wer": 0.4906,
+      "layout_word_acc": 50.94,
+      "delta_cer_pp": -19.6,
+      "delta_wer_pp": -20.75
+    },
+    "group_3_cursive": {
+      "name": "Group 3: Cursive Literature (Doc #10)",
+      "sample_count": 1,
+      "sample_ids": [
+        "poem_p01"
+      ],
+      "ground_truth_chars": 362,
+      "ground_truth_words": 69,
+      "baseline_cer": 0.0359,
+      "baseline_wer": 0.1014,
+      "baseline_word_acc": 89.86,
+      "layout_cer": 0.0359,
+      "layout_wer": 0.1014,
+      "layout_word_acc": 89.86,
+      "delta_cer_pp": 0.0,
+      "delta_wer_pp": 0.0
+    },
+    "group_4_math": {
+      "name": "Group 4: Mathematical / Low Contrast (Root 3)",
+      "sample_count": 1,
+      "sample_ids": [
+        "math_p01"
+      ],
+      "ground_truth_chars": 22,
+      "ground_truth_words": 2,
+      "baseline_cer": 0.0,
+      "baseline_wer": 0.0,
+      "baseline_word_acc": 100.0,
+      "layout_cer": 0.0,
+      "layout_wer": 0.0,
+      "layout_word_acc": 100.0,
+      "delta_cer_pp": 0.0,
+      "delta_wer_pp": 0.0
+    },
+    "negative_control": {
+      "name": "Negative Control: Blank Page (Root 4)",
+      "sample_count": 1,
+      "sample_ids": [
+        "blank_p01"
+      ],
+      "ground_truth_chars": 0,
+      "ground_truth_words": 0,
+      "baseline_cer": 0.0,
+      "baseline_wer": 0.0,
+      "baseline_word_acc": 100.0,
+      "layout_cer": 0.0,
+      "layout_wer": 0.0,
+      "layout_word_acc": 100.0,
+      "delta_cer_pp": 0.0,
+      "delta_wer_pp": 0.0
+    }
+  },
+  "samples": [
+    {
+      "sample_id": "tcp_p01",
+      "title": "TCP Attacks & SYN Flood (P1)",
+      "subject": "Computer Networks",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 934,
+        "words": 156
+      },
+      "baseline": {
+        "cer": 0.1585,
+        "wer": 0.3205,
+        "word_accuracy": 67.95,
+        "lines_count": 23,
+        "contaminated_lines": 0,
+        "omitted_words": 29,
+        "omission_rate": 0.1859,
+        "tech_f1": 1.0,
+        "latency_ms": 118187.56
+      },
+      "layout_guided": {
+        "cer": 0.1585,
+        "wer": 0.3205,
+        "word_accuracy": 67.95,
+        "lines_count": 23,
+        "contaminated_lines": 0,
+        "omitted_words": 29,
+        "omission_rate": 0.1859,
+        "tech_f1": 1.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 65141.49
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "tcp_p02",
+      "title": "TCP Attacks: Queue Fills & Session Hijacking (P2)",
+      "subject": "Computer Networks",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 952,
+        "words": 147
+      },
+      "baseline": {
+        "cer": 0.1859,
+        "wer": 0.4626,
+        "word_accuracy": 53.74,
+        "lines_count": 23,
+        "contaminated_lines": 0,
+        "omitted_words": 27,
+        "omission_rate": 0.1915,
+        "tech_f1": 0.6667,
+        "latency_ms": 92809.02
+      },
+      "layout_guided": {
+        "cer": 0.1859,
+        "wer": 0.4626,
+        "word_accuracy": 53.74,
+        "lines_count": 23,
+        "contaminated_lines": 0,
+        "omitted_words": 27,
+        "omission_rate": 0.1915,
+        "tech_f1": 0.6667,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 118726.04
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "tcp_p03",
+      "title": "TCP Attacks: Sniff, Desync, Injection (P3)",
+      "subject": "Computer Networks",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 962,
+        "words": 152
+      },
+      "baseline": {
+        "cer": 0.238,
+        "wer": 0.5,
+        "word_accuracy": 50.0,
+        "lines_count": 25,
+        "contaminated_lines": 0,
+        "omitted_words": 30,
+        "omission_rate": 0.2,
+        "tech_f1": 0.0,
+        "latency_ms": 78664.79
+      },
+      "layout_guided": {
+        "cer": 0.238,
+        "wer": 0.5,
+        "word_accuracy": 50.0,
+        "lines_count": 25,
+        "contaminated_lines": 0,
+        "omitted_words": 30,
+        "omission_rate": 0.2,
+        "tech_f1": 0.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 79107.03
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "tcp_p04",
+      "title": "TCP Attacks: Mitigation & TCP RST Attack (P4)",
+      "subject": "Computer Networks",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 1001,
+        "words": 151
+      },
+      "baseline": {
+        "cer": 0.2957,
+        "wer": 0.5166,
+        "word_accuracy": 48.34,
+        "lines_count": 22,
+        "contaminated_lines": 0,
+        "omitted_words": 44,
+        "omission_rate": 0.2993,
+        "tech_f1": 0.3333,
+        "latency_ms": 89430.84
+      },
+      "layout_guided": {
+        "cer": 0.2957,
+        "wer": 0.5166,
+        "word_accuracy": 48.34,
+        "lines_count": 22,
+        "contaminated_lines": 0,
+        "omitted_words": 44,
+        "omission_rate": 0.2993,
+        "tech_f1": 0.3333,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 89703.56
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "tcp_p05",
+      "title": "TCP Attacks: Receiver Validation & RFC 5961 (P5)",
+      "subject": "Computer Networks",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 1159,
+        "words": 181
+      },
+      "baseline": {
+        "cer": 0.2355,
+        "wer": 0.5083,
+        "word_accuracy": 49.17,
+        "lines_count": 25,
+        "contaminated_lines": 0,
+        "omitted_words": 53,
+        "omission_rate": 0.3064,
+        "tech_f1": 0.4,
+        "latency_ms": 72453.11
+      },
+      "layout_guided": {
+        "cer": 0.2355,
+        "wer": 0.5083,
+        "word_accuracy": 49.17,
+        "lines_count": 25,
+        "contaminated_lines": 0,
+        "omitted_words": 53,
+        "omission_rate": 0.3064,
+        "tech_f1": 0.4,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 81355.18
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "tcp_p06",
+      "title": "TCP Attacks: TCP ACK Flood & Stateful Firewalls (P6)",
+      "subject": "Computer Networks",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 926,
+        "words": 164
+      },
+      "baseline": {
+        "cer": 0.1803,
+        "wer": 0.3659,
+        "word_accuracy": 63.41,
+        "lines_count": 22,
+        "contaminated_lines": 0,
+        "omitted_words": 37,
+        "omission_rate": 0.2256,
+        "tech_f1": 0.8,
+        "latency_ms": 108163.76
+      },
+      "layout_guided": {
+        "cer": 0.1803,
+        "wer": 0.3659,
+        "word_accuracy": 63.41,
+        "lines_count": 22,
+        "contaminated_lines": 0,
+        "omitted_words": 37,
+        "omission_rate": 0.2256,
+        "tech_f1": 0.8,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 102613.6
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "tcp_p07",
+      "title": "TCP Attacks: Lookup Load & SYN Defenses (P7)",
+      "subject": "Computer Networks",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 748,
+        "words": 114
+      },
+      "baseline": {
+        "cer": 0.1885,
+        "wer": 0.4737,
+        "word_accuracy": 52.63,
+        "lines_count": 18,
+        "contaminated_lines": 0,
+        "omitted_words": 25,
+        "omission_rate": 0.2315,
+        "tech_f1": 0.6667,
+        "latency_ms": 54712.77
+      },
+      "layout_guided": {
+        "cer": 0.1885,
+        "wer": 0.4737,
+        "word_accuracy": 52.63,
+        "lines_count": 18,
+        "contaminated_lines": 0,
+        "omitted_words": 25,
+        "omission_rate": 0.2315,
+        "tech_f1": 0.6667,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 54588.96
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "poem_p01",
+      "title": "Edge of Mind (Creative Writing Poem)",
+      "subject": "General Literature",
+      "group": "group_3_cursive",
+      "ground_truth_stats": {
+        "chars": 362,
+        "words": 69
+      },
+      "baseline": {
+        "cer": 0.0359,
+        "wer": 0.1014,
+        "word_accuracy": 89.86,
+        "lines_count": 15,
+        "contaminated_lines": 0,
+        "omitted_words": 5,
+        "omission_rate": 0.0725,
+        "tech_f1": 1.0,
+        "latency_ms": 20465.82
+      },
+      "layout_guided": {
+        "cer": 0.0359,
+        "wer": 0.1014,
+        "word_accuracy": 89.86,
+        "lines_count": 15,
+        "contaminated_lines": 0,
+        "omitted_words": 5,
+        "omission_rate": 0.0725,
+        "tech_f1": 1.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 20497.1
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "web_p01",
+      "title": "Introduction to CSS Notes",
+      "subject": "Web Development",
+      "group": "group_2_diagram",
+      "ground_truth_stats": {
+        "chars": 653,
+        "words": 106
+      },
+      "baseline": {
+        "cer": 0.4165,
+        "wer": 0.6981,
+        "word_accuracy": 30.19,
+        "lines_count": 20,
+        "contaminated_lines": 0,
+        "omitted_words": 26,
+        "omission_rate": 0.2453,
+        "tech_f1": 0.6667,
+        "latency_ms": 61062.46
+      },
+      "layout_guided": {
+        "cer": 0.2205,
+        "wer": 0.4906,
+        "word_accuracy": 50.94,
+        "lines_count": 15,
+        "contaminated_lines": 0,
+        "omitted_words": 32,
+        "omission_rate": 0.3019,
+        "tech_f1": 0.6667,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 4,
+        "text_regions_used": 3,
+        "diagram_regions_preserved": 1,
+        "latency_ms": 41711.53
+      },
+      "delta": {
+        "delta_cer_pct_points": -19.6,
+        "delta_wer_pct_points": -20.75,
+        "delta_word_acc_pct_points": 20.75
+      }
+    },
+    {
+      "sample_id": "phys_p01",
+      "title": "Physics Notes Title Block",
+      "subject": "Physics",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 50,
+        "words": 6
+      },
+      "baseline": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 2,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "latency_ms": 2027.14
+      },
+      "layout_guided": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 2,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 2017.71
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "lect_p01",
+      "title": "Multipage Lecture Notes (Page 1)",
+      "subject": "Physics",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 50,
+        "words": 6
+      },
+      "baseline": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 2,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "latency_ms": 2374.7
+      },
+      "layout_guided": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 2,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 2486.91
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "lect_p02",
+      "title": "Multipage Lecture Notes (Page 2)",
+      "subject": "Physics",
+      "group": "group_1_normal",
+      "ground_truth_stats": {
+        "chars": 19,
+        "words": 2
+      },
+      "baseline": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 1,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "latency_ms": 1175.38
+      },
+      "layout_guided": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 1,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 2,
+        "text_regions_used": 2,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 1267.7
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "math_p01",
+      "title": "Faint Math Equations Sample",
+      "subject": "Mathematics",
+      "group": "group_4_math",
+      "ground_truth_stats": {
+        "chars": 22,
+        "words": 2
+      },
+      "baseline": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 1,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "latency_ms": 864.9
+      },
+      "layout_guided": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 1,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 1,
+        "text_regions_used": 1,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 846.37
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    },
+    {
+      "sample_id": "blank_p01",
+      "title": "Blank Page Negative Control",
+      "subject": "Negative Control",
+      "group": "negative_control",
+      "ground_truth_stats": {
+        "chars": 0,
+        "words": 0
+      },
+      "baseline": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 0,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "latency_ms": 8.45
+      },
+      "layout_guided": {
+        "cer": 0.0,
+        "wer": 0.0,
+        "word_accuracy": 100.0,
+        "lines_count": 0,
+        "contaminated_lines": 0,
+        "omitted_words": 0,
+        "omission_rate": 0.0,
+        "tech_f1": 1.0,
+        "fallback_used": false,
+        "fallback_reason": null,
+        "regions_detected": 1,
+        "text_regions_used": 0,
+        "diagram_regions_preserved": 0,
+        "latency_ms": 7.11
+      },
+      "delta": {
+        "delta_cer_pct_points": 0.0,
+        "delta_wer_pct_points": 0.0,
+        "delta_word_acc_pct_points": 0.0
+      }
+    }
+  ]
+}

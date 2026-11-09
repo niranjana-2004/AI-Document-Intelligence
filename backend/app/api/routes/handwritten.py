@@ -299,7 +299,17 @@ def _run_ocr_for_document(document: Document, db: Session) -> Dict[str, Any]:
                 "tokens": ocr_res.get("tokens", []),
                 "is_manually_edited": is_manual,
                 "user_manual_transcription": user_manual_text,
-                "ai_recovered_transcription": ocr_res["full_text"]
+                "ai_recovered_transcription": ocr_res["full_text"],
+                "ocr_mode": ocr_res.get("ocr_mode", "ocr35_baseline"),
+                "layout_enabled": ocr_res.get("layout_enabled", False),
+                "layout_version": ocr_res.get("layout_version"),
+                "regions_detected": ocr_res.get("regions_detected"),
+                "text_regions_used": ocr_res.get("text_regions_used"),
+                "diagram_regions_preserved": ocr_res.get("diagram_regions_preserved"),
+                "formula_regions_preserved": ocr_res.get("formula_regions_preserved"),
+                "fallback_used": ocr_res.get("fallback_used", False),
+                "fallback_reason": ocr_res.get("fallback_reason"),
+                "layout_confidence": ocr_res.get("layout_confidence")
             }
             page.status = "transcribed"
             page.error_message = None
