@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
     Network,
@@ -22,9 +22,9 @@ import {
 import { apiRequest } from '../services/api'
 import {
     computeMindMapLayout,
-    computeFitTransform,
-    computeResetTransform,
-    clampView,
+    computeScrollLayout,
+    computeFitScroll,
+    computeResetScroll,
     MIN_ZOOM,
     MAX_ZOOM,
 } from '../utils/mindMapLayout'
@@ -48,24 +48,14 @@ export default function MindMap() {
     const [mindMapData, setMindMapData] = useState(null)
     const [errorMsg, setErrorMsg] = useState('')
 
-    // Atomic camera & collapse state ({ zoom, x, y, collapsedIds })
+    // Zoom, collapse, and scroll viewport sizing state
     const [graphState, setGraphState] = useState(() => ({
         zoom: 1.0,
-        x: 140,
-        y: 260,
         collapsedIds: new Set(),
     }))
-    const view = graphState
-    const collapsedIds = graphState.collapsedIds
-    const setView = useCallback((updater) => {
-        setGraphState(prev => {
-            const nextView = typeof updater === 'function' ? updater(prev) : updater
-            return { ...prev, zoom: nextView.zoom, x: nextView.x, y: nextView.y }
-        })
-    }, [])
-
+    const [viewportSize, setViewportSize] = useState({ width: 1000, height: 640 })
     const [isDragging, setIsDragging] = useState(false)
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+    const [dragStart, setDragStart] = useState({ clientX: 0, clientY: 0, scrollLeft: 0, scrollTop: 0 })
 
     // Node state
     const [selectedNode, setSelectedNode] = useState(null)
@@ -73,39 +63,49 @@ export default function MindMap() {
     const [typeFilter, setTypeFilter] = useState('ALL') // 'ALL' | 'TOPIC' | 'CONCEPT' | 'PROCESS' | 'DEFINITION' | 'EXAMPLE'
 
     const dropdownRef = useRef(null)
-    const canvasRef = useRef(null)
+    const viewportRef = useRef(null)
     const shouldAutoFitRef = useRef(false)
+    const pendingScrollRef = useRef(null)
 
     /* ========================================================
-       LAYOUT TREE COMPUTATION (X, Y COORDINATES & DYNAMIC BOUNDS)
+       LAYOUT TREE COMPUTATION & DYNAMIC SCROLL CONTENT DIMENSIONS
        ======================================================== */
     const layout = useMemo(
-        () => computeMindMapLayout(mindMapData, collapsedIds),
-        [mindMapData, collapsedIds]
+        () => computeMindMapLayout(mindMapData, graphState.collapsedIds),
+        [mindMapData, graphState.collapsedIds]
     )
 
-    const getViewportSize = useCallback(() => {
-        const el = canvasRef.current
-        if (!el) return { width: 1000, height: 640 }
-        const rect = el.getBoundingClientRect()
-        return {
-            width: rect.width || el.clientWidth || 1000,
-            height: rect.height || el.clientHeight || 640,
-        }
-    }, [])
+    const scrollContent = useMemo(
+        () => computeScrollLayout(layout.bounds, graphState.zoom, viewportSize.width, viewportSize.height),
+        [layout.bounds, graphState.zoom, viewportSize.width, viewportSize.height]
+    )
 
     const fitToScreen = useCallback(
-        (customBounds = null, { enforceReadableMobileFloor = false } = {}) => {
-            const activeBounds = customBounds || layout.bounds
-            if (!activeBounds || activeBounds.width <= 0 || !canvasRef.current) return
-            const { width, height } = getViewportSize()
-            const nextView = computeFitTransform(activeBounds, width, height, {
+        ({ enforceReadableMobileFloor = false } = {}) => {
+            const el = viewportRef.current
+            if (!el || !layout.bounds || layout.bounds.width <= 0) return
+            const vw = el.clientWidth || viewportSize.width
+            const vh = el.clientHeight || viewportSize.height
+            const { zoom, scrollLeft, scrollTop } = computeFitScroll(layout, vw, vh, {
                 enforceReadableMobileFloor,
             })
-            setView(nextView)
+            pendingScrollRef.current = { left: scrollLeft, top: scrollTop }
+            setGraphState(prev => ({ ...prev, zoom }))
         },
-        [layout.bounds, getViewportSize, setView]
+        [layout, viewportSize.width, viewportSize.height]
     )
+
+    /* ========================================================
+       SYNCHRONOUS SCROLL RESTORE AFTER SCROLL CONTENT RESIZES
+       ======================================================== */
+    useLayoutEffect(() => {
+        const el = viewportRef.current
+        const pending = pendingScrollRef.current
+        if (!el || !pending) return
+        pendingScrollRef.current = null
+        el.scrollLeft = Math.max(0, Math.round(pending.left))
+        el.scrollTop = Math.max(0, Math.round(pending.top))
+    }, [scrollContent.width, scrollContent.height, graphState.zoom, mindMapData, layout.bounds])
 
     /* ========================================================
        LOAD USER DOCUMENTS
@@ -167,71 +167,99 @@ export default function MindMap() {
     }, [isGenerating])
 
     /* ========================================================
-       AUTO-FIT VIEWPORT ON GENERATION & RESIZE SAFETY
+       VIEWPORT SIZE OBSERVER & AUTO-FIT ON INITIAL GENERATION
        ======================================================== */
+    useEffect(() => {
+        const el = viewportRef.current
+        if (!el || !mindMapData || isGenerating || typeof ResizeObserver === 'undefined') return
+
+        const updateSize = () => {
+            const w = el.clientWidth
+            const h = el.clientHeight
+            if (w > 0 && h > 0) {
+                setViewportSize(prev => (prev.width === w && prev.height === h ? prev : { width: w, height: h }))
+            }
+        }
+
+        const rafId = requestAnimationFrame(updateSize)
+        const observer = new ResizeObserver(updateSize)
+        observer.observe(el)
+        return () => {
+            cancelAnimationFrame(rafId)
+            observer.disconnect()
+        }
+    }, [mindMapData, isGenerating])
+
     useEffect(() => {
         if (!mindMapData || isGenerating || !shouldAutoFitRef.current) return
         const rafId = requestAnimationFrame(() => {
-            if (shouldAutoFitRef.current && canvasRef.current) {
+            const el = viewportRef.current
+            if (shouldAutoFitRef.current && el) {
                 shouldAutoFitRef.current = false
-                fitToScreen(layout.bounds, { enforceReadableMobileFloor: true })
+                const vw = el.clientWidth || 1000
+                const vh = el.clientHeight || 640
+                setViewportSize({ width: vw, height: vh })
+                const { zoom, scrollLeft, scrollTop } = computeFitScroll(layout, vw, vh, {
+                    enforceReadableMobileFloor: true,
+                })
+                pendingScrollRef.current = { left: scrollLeft, top: scrollTop }
+                setGraphState(prev => ({ ...prev, zoom }))
             }
         })
         return () => cancelAnimationFrame(rafId)
-    }, [mindMapData, isGenerating, layout.bounds, fitToScreen])
-
-    useEffect(() => {
-        const el = canvasRef.current
-        if (!el || !mindMapData || isGenerating || typeof ResizeObserver === 'undefined') return
-        const observer = new ResizeObserver((entries) => {
-            const entry = entries[0]
-            if (!entry) return
-            const { width, height } = entry.contentRect
-            if (width > 0 && height > 0) {
-                setView(prev => clampView(prev, layout.bounds, width, height))
-            }
-        })
-        observer.observe(el)
-        return () => observer.disconnect()
-    }, [mindMapData, isGenerating, layout.bounds, setView])
+    }, [mindMapData, isGenerating, layout])
 
     /* ========================================================
-       NON-PASSIVE WHEEL ZOOM TOWARD POINTER
+       POINTER-ANCHORED ZOOM (BUTTONS & CTRL/CMD+WHEEL PINCH)
        ======================================================== */
+    const zoomAtViewportPoint = useCallback((delta, anchorX, anchorY) => {
+        const el = viewportRef.current
+        if (!el || !layout.bounds || layout.bounds.width <= 0) return
+
+        const vw = el.clientWidth || viewportSize.width
+        const vh = el.clientHeight || viewportSize.height
+        const curScrollLeft = pendingScrollRef.current ? pendingScrollRef.current.left : el.scrollLeft
+        const curScrollTop = pendingScrollRef.current ? pendingScrollRef.current.top : el.scrollTop
+
+        setGraphState(prev => {
+            const nextZoom = Math.min(
+                Math.max(MIN_ZOOM, Number((prev.zoom + delta).toFixed(3))),
+                MAX_ZOOM
+            )
+            if (nextZoom === prev.zoom) return prev
+
+            const oldScroll = computeScrollLayout(layout.bounds, prev.zoom, vw, vh)
+            const newScroll = computeScrollLayout(layout.bounds, nextZoom, vw, vh)
+
+            const gx = (curScrollLeft + anchorX - oldScroll.offsetX) / prev.zoom
+            const gy = (curScrollTop + anchorY - oldScroll.offsetY) / prev.zoom
+
+            pendingScrollRef.current = {
+                left: gx * nextZoom + newScroll.offsetX - anchorX,
+                top: gy * nextZoom + newScroll.offsetY - anchorY,
+            }
+            return { ...prev, zoom: nextZoom }
+        })
+    }, [layout.bounds, viewportSize.width, viewportSize.height])
+
     useEffect(() => {
-        const el = canvasRef.current
+        const el = viewportRef.current
         if (!el || !mindMapData || isGenerating) return
 
         const onWheel = (e) => {
-            e.preventDefault()
-            const rect = el.getBoundingClientRect()
-            const anchorX = e.clientX - rect.left
-            const anchorY = e.clientY - rect.top
-            const zoomDelta = e.deltaY > 0 ? -0.09 : 0.09
-
-            setView(prev => {
-                const nextZoom = Math.min(
-                    Math.max(MIN_ZOOM, Number((prev.zoom + zoomDelta).toFixed(3))),
-                    MAX_ZOOM
-                )
-                if (nextZoom === prev.zoom) return prev
-                const ratio = nextZoom / prev.zoom
-                return clampView(
-                    {
-                        zoom: nextZoom,
-                        x: anchorX - (anchorX - prev.x) * ratio,
-                        y: anchorY - (anchorY - prev.y) * ratio,
-                    },
-                    layout.bounds,
-                    rect.width,
-                    rect.height
-                )
-            })
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault()
+                const rect = el.getBoundingClientRect()
+                const anchorX = e.clientX - rect.left
+                const anchorY = e.clientY - rect.top
+                const zoomDelta = e.deltaY > 0 ? -0.1 : 0.1
+                zoomAtViewportPoint(zoomDelta, anchorX, anchorY)
+            }
         }
 
         el.addEventListener('wheel', onWheel, { passive: false })
         return () => el.removeEventListener('wheel', onWheel)
-    }, [mindMapData, isGenerating, layout.bounds, setView])
+    }, [mindMapData, isGenerating, zoomAtViewportPoint])
 
     /* ========================================================
        GENERATE MIND MAP ACTION
@@ -264,14 +292,20 @@ export default function MindMap() {
     }
 
     /* ========================================================
-       COLLAPSE / EXPAND TOGGLE (ANCHORS CLICKED NODE ATOMICALLY)
+       COLLAPSE / EXPAND TOGGLE (RECALCULATES SCROLL BOUNDS & PINS NODE)
        ======================================================== */
     const toggleCollapse = (nodeId, e) => {
         e.stopPropagation()
-        const { width, height } = getViewportSize()
+        const el = viewportRef.current
+        const vw = el?.clientWidth || viewportSize.width
+        const vh = el?.clientHeight || viewportSize.height
+        const curScrollLeft = el ? (pendingScrollRef.current ? pendingScrollRef.current.left : el.scrollLeft) : 0
+        const curScrollTop = el ? (pendingScrollRef.current ? pendingScrollRef.current.top : el.scrollTop) : 0
+
         setGraphState(prev => {
             const oldLayout = computeMindMapLayout(mindMapData, prev.collapsedIds)
             const oldNode = oldLayout.nodes.find(n => n.id === nodeId)
+            const oldScroll = computeScrollLayout(oldLayout.bounds, prev.zoom, vw, vh)
 
             const nextSet = new Set(prev.collapsedIds)
             if (nextSet.has(nodeId)) {
@@ -282,29 +316,28 @@ export default function MindMap() {
 
             const nextLayout = computeMindMapLayout(mindMapData, nextSet)
             const newNode = nextLayout.nodes.find(n => n.id === nodeId)
+            const newScroll = computeScrollLayout(nextLayout.bounds, prev.zoom, vw, vh)
 
-            if (!oldNode || !newNode) {
-                return { ...prev, collapsedIds: nextSet }
+            if (oldNode && newNode && el) {
+                const screenX = oldNode.x * prev.zoom + oldScroll.offsetX - curScrollLeft
+                const screenY = oldNode.y * prev.zoom + oldScroll.offsetY - curScrollTop
+                const maxScrollX = Math.max(0, newScroll.width - vw)
+                const maxScrollY = Math.max(0, newScroll.height - vh)
+                pendingScrollRef.current = {
+                    left: Math.min(maxScrollX, Math.max(0, Math.round(newNode.x * prev.zoom + newScroll.offsetX - screenX))),
+                    top: Math.min(maxScrollY, Math.max(0, Math.round(newNode.y * prev.zoom + newScroll.offsetY - screenY))),
+                }
             }
 
-            const clamped = clampView(
-                {
-                    zoom: prev.zoom,
-                    x: prev.x + (oldNode.x - newNode.x) * prev.zoom,
-                    y: prev.y + (oldNode.y - newNode.y) * prev.zoom,
-                },
-                nextLayout.bounds,
-                width,
-                height
-            )
-            return { ...clamped, collapsedIds: nextSet }
+            return { ...prev, collapsedIds: nextSet }
         })
     }
 
     /* ========================================================
-       CANVAS PANNING & ZOOMING HANDLERS
+       DRAG-TO-PAN OVER NATIVE SCROLLBAR COEXISTENCE
        ======================================================== */
     const handleMouseDown = (e) => {
+        if (e.button !== 0) return
         if (
             e.target.closest('.mindmap-node') ||
             e.target.closest('.node-collapse-toggle') ||
@@ -312,87 +345,48 @@ export default function MindMap() {
         ) {
             return
         }
+        const el = viewportRef.current
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        if (e.clientX - rect.left >= el.clientWidth || e.clientY - rect.top >= el.clientHeight) {
+            return
+        }
         setIsDragging(true)
-        setDragStart({ x: e.clientX - view.x, y: e.clientY - view.y })
+        setDragStart({
+            clientX: e.clientX,
+            clientY: e.clientY,
+            scrollLeft: el.scrollLeft,
+            scrollTop: el.scrollTop,
+        })
     }
 
     const handleMouseMove = useCallback((e) => {
         if (!isDragging) return
-        const { width, height } = getViewportSize()
-        setView(prev => clampView(
-            {
-                ...prev,
-                x: e.clientX - dragStart.x,
-                y: e.clientY - dragStart.y,
-            },
-            layout.bounds,
-            width,
-            height
-        ))
-    }, [isDragging, dragStart, layout.bounds, getViewportSize, setView])
+        const el = viewportRef.current
+        if (!el) return
+        el.scrollLeft = dragStart.scrollLeft - (e.clientX - dragStart.clientX)
+        el.scrollTop = dragStart.scrollTop - (e.clientY - dragStart.clientY)
+    }, [isDragging, dragStart])
 
     const handleMouseUp = () => {
         setIsDragging(false)
     }
 
-    const handleTouchStart = (e) => {
-        if (e.touches.length !== 1) return
-        if (
-            e.target.closest('.mindmap-node') ||
-            e.target.closest('.node-collapse-toggle') ||
-            e.target.closest('.node-details-drawer')
-        ) {
-            return
-        }
-        const touch = e.touches[0]
-        setIsDragging(true)
-        setDragStart({ x: touch.clientX - view.x, y: touch.clientY - view.y })
-    }
-
-    const handleTouchMove = useCallback((e) => {
-        if (!isDragging || e.touches.length !== 1) return
-        const touch = e.touches[0]
-        const { width, height } = getViewportSize()
-        setView(prev => clampView(
-            {
-                ...prev,
-                x: touch.clientX - dragStart.x,
-                y: touch.clientY - dragStart.y,
-            },
-            layout.bounds,
-            width,
-            height
-        ))
-    }, [isDragging, dragStart, layout.bounds, getViewportSize, setView])
-
     const zoomBy = useCallback((delta) => {
-        const { width, height } = getViewportSize()
-        const anchorX = width / 2
-        const anchorY = height / 2
-        setView(prev => {
-            const nextZoom = Math.min(
-                Math.max(MIN_ZOOM, Number((prev.zoom + delta).toFixed(3))),
-                MAX_ZOOM
-            )
-            if (nextZoom === prev.zoom) return prev
-            const ratio = nextZoom / prev.zoom
-            return clampView(
-                {
-                    zoom: nextZoom,
-                    x: anchorX - (anchorX - prev.x) * ratio,
-                    y: anchorY - (anchorY - prev.y) * ratio,
-                },
-                layout.bounds,
-                width,
-                height
-            )
-        })
-    }, [layout.bounds, getViewportSize, setView])
+        const el = viewportRef.current
+        const vw = el?.clientWidth || viewportSize.width
+        const vh = el?.clientHeight || viewportSize.height
+        zoomAtViewportPoint(delta, vw / 2, vh / 2)
+    }, [zoomAtViewportPoint, viewportSize.width, viewportSize.height])
 
     const resetView = useCallback(() => {
-        const { width, height } = getViewportSize()
-        setView(computeResetTransform(layout, width, height))
-    }, [layout, getViewportSize, setView])
+        const el = viewportRef.current
+        const vw = el?.clientWidth || viewportSize.width
+        const vh = el?.clientHeight || viewportSize.height
+        const { zoom, scrollLeft, scrollTop } = computeResetScroll(layout, vw, vh)
+        pendingScrollRef.current = { left: scrollLeft, top: scrollTop }
+        setGraphState(prev => ({ ...prev, zoom }))
+    }, [layout, viewportSize.width, viewportSize.height])
 
     /* ========================================================
        NAVIGATE TO SOURCE DOCUMENT / PAGE
@@ -694,18 +688,18 @@ export default function MindMap() {
                             <button
                                 type="button"
                                 className="canvas-tool-btn"
-                                onClick={() => zoomBy(0.12)}
-                                title="Zoom In"
+                                onClick={() => zoomBy(0.15)}
+                                title="Zoom In (Ctrl + Scroll)"
                                 aria-label="Zoom In"
                             >
                                 <Plus size={16} />
                             </button>
-                            <span className="zoom-level-indicator">{Math.round(view.zoom * 100)}%</span>
+                            <span className="zoom-level-indicator">{Math.round(graphState.zoom * 100)}%</span>
                             <button
                                 type="button"
                                 className="canvas-tool-btn"
-                                onClick={() => zoomBy(-0.12)}
-                                title="Zoom Out"
+                                onClick={() => zoomBy(-0.15)}
+                                title="Zoom Out (Ctrl + Scroll)"
                                 aria-label="Zoom Out"
                             >
                                 <Minus size={16} />
@@ -713,7 +707,7 @@ export default function MindMap() {
                             <button
                                 type="button"
                                 className="canvas-tool-btn fit-screen-btn"
-                                onClick={() => fitToScreen(layout.bounds, { enforceReadableMobileFloor: false })}
+                                onClick={() => fitToScreen({ enforceReadableMobileFloor: false })}
                                 title="Fit complete mind map to screen"
                                 aria-label="Fit to Screen"
                             >
@@ -732,96 +726,106 @@ export default function MindMap() {
                         </div>
                     </div>
 
-                    {/* Interactive Canvas */}
-                    <div
-                        className={`mindmap-canvas-area ${isDragging ? 'dragging' : ''}`}
-                        ref={canvasRef}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleMouseUp}
-                        onTouchCancel={handleMouseUp}
-                    >
-                        {/* SVG Edge Connectors Layer */}
-                        <svg className="mindmap-svg-layer">
-                            <g transform={`translate(${view.x}, ${view.y}) scale(${view.zoom})`}>
-                                {layout.edges.map(edge => {
-                                    const dx = Math.abs(edge.x2 - edge.x1) * 0.5
-                                    const pathD = `M ${edge.x1} ${edge.y1} C ${edge.x1 + dx} ${edge.y1}, ${edge.x2 - dx} ${edge.y2}, ${edge.x2} ${edge.y2}`
-                                    const midX = (edge.x1 + edge.x2) / 2
-                                    const midY = (edge.y1 + edge.y2) / 2
-
-                                    return (
-                                        <g key={edge.id}>
-                                            <path d={pathD} className="connector-line" />
-                                            {edge.relationship && (
-                                                <text
-                                                    x={midX}
-                                                    y={midY - 5}
-                                                    className="rel-text-label"
-                                                >
-                                                    {edge.relationship}
-                                                </text>
-                                            )}
-                                        </g>
-                                    )
-                                })}
-                            </g>
-                        </svg>
-
-                        {/* HTML Nodes Overlay Layer */}
+                    {/* Interactive Canvas Container & Scrollable Viewport */}
+                    <div className="mindmap-canvas-area">
                         <div
-                            className="mindmap-nodes-layer"
-                            style={{
-                                width: `${Math.max(2000, Math.ceil((layout.bounds?.maxX || 0) + 400))}px`,
-                                height: `${Math.max(2000, Math.ceil((layout.bounds?.maxY || 0) + 400))}px`,
-                                transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`,
-                                transformOrigin: '0 0',
-                            }}
+                            className={`mindmap-scroll-viewport ${isDragging ? 'dragging' : ''}`}
+                            ref={viewportRef}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
                         >
-                            {layout.nodes.map(node => {
-                                const matched = isNodeMatched(node)
-                                const isVisible = isNodeVisibleByType(node)
-                                const isSelected = selectedNode?.id === node.id
+                            <div
+                                className="mindmap-scroll-content"
+                                style={{
+                                    width: `${scrollContent.width}px`,
+                                    height: `${scrollContent.height}px`,
+                                }}
+                            >
+                                {/* SVG Edge Connectors Layer */}
+                                <svg
+                                    className="mindmap-svg-layer"
+                                    width={scrollContent.width}
+                                    height={scrollContent.height}
+                                >
+                                    <g transform={`translate(${scrollContent.offsetX}, ${scrollContent.offsetY}) scale(${graphState.zoom})`}>
+                                        {layout.edges.map(edge => {
+                                            const dx = Math.abs(edge.x2 - edge.x1) * 0.5
+                                            const pathD = `M ${edge.x1} ${edge.y1} C ${edge.x1 + dx} ${edge.y1}, ${edge.x2 - dx} ${edge.y2}, ${edge.x2} ${edge.y2}`
+                                            const midX = (edge.x1 + edge.x2) / 2
+                                            const midY = (edge.y1 + edge.y2) / 2
 
-                                return (
-                                    <div
-                                        key={node.id}
-                                        className={`mindmap-node node-${node.type} ${isSelected ? 'selected' : ''} ${matched ? 'matched' : ''}`}
-                                        style={{
-                                            left: `${node.x}px`,
-                                            top: `${node.y}px`,
-                                            opacity: isVisible ? 1 : 0.35,
-                                        }}
-                                        onClick={() => setSelectedNode(node)}
-                                    >
-                                        <div className="node-header">
-                                            <span className="node-type-tag">{node.type}</span>
-                                            {node.relationship && (
-                                                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
-                                                    {node.relationship}
-                                                </span>
-                                            )}
-                                        </div>
+                                            return (
+                                                <g key={edge.id}>
+                                                    <path d={pathD} className="connector-line" />
+                                                    {edge.relationship && (
+                                                        <text
+                                                            x={midX}
+                                                            y={midY - 5}
+                                                            className="rel-text-label"
+                                                        >
+                                                            {edge.relationship}
+                                                        </text>
+                                                    )}
+                                                </g>
+                                            )
+                                        })}
+                                    </g>
+                                </svg>
 
-                                        <div className="node-title">{node.label}</div>
+                                {/* HTML Nodes Overlay Layer */}
+                                <div
+                                    className="mindmap-nodes-layer"
+                                    style={{
+                                        width: `${Math.max(1200, Math.ceil((layout.bounds?.maxX || 0) + 300))}px`,
+                                        height: `${Math.max(1200, Math.ceil((layout.bounds?.maxY || 0) + 300))}px`,
+                                        transform: `translate(${scrollContent.offsetX}px, ${scrollContent.offsetY}px) scale(${graphState.zoom})`,
+                                        transformOrigin: '0 0',
+                                    }}
+                                >
+                                    {layout.nodes.map(node => {
+                                        const matched = isNodeMatched(node)
+                                        const isVisible = isNodeVisibleByType(node)
+                                        const isSelected = selectedNode?.id === node.id
 
-                                        {node.hasChildren && (
-                                            <button
-                                                type="button"
-                                                className="node-collapse-toggle"
-                                                onClick={(e) => toggleCollapse(node.id, e)}
-                                                title={node.isCollapsed ? 'Expand branch' : 'Collapse branch'}
+                                        return (
+                                            <div
+                                                key={node.id}
+                                                className={`mindmap-node node-${node.type} ${isSelected ? 'selected' : ''} ${matched ? 'matched' : ''}`}
+                                                style={{
+                                                    left: `${node.x}px`,
+                                                    top: `${node.y}px`,
+                                                    opacity: isVisible ? 1 : 0.35,
+                                                }}
+                                                onClick={() => setSelectedNode(node)}
                                             >
-                                                {node.isCollapsed ? `+${node.childCount}` : '−'}
-                                            </button>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                                                <div className="node-header">
+                                                    <span className="node-type-tag">{node.type}</span>
+                                                    {node.relationship && (
+                                                        <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                                                            {node.relationship}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div className="node-title">{node.label}</div>
+
+                                                {node.hasChildren && (
+                                                    <button
+                                                        type="button"
+                                                        className="node-collapse-toggle"
+                                                        onClick={(e) => toggleCollapse(node.id, e)}
+                                                        title={node.isCollapsed ? 'Expand branch' : 'Collapse branch'}
+                                                    >
+                                                        {node.isCollapsed ? `+${node.childCount}` : '−'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Node Details Slide-Out Drawer */}

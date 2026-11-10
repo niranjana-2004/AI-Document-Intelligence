@@ -210,3 +210,124 @@ export function computeResetTransform(layout, viewportWidth, viewportHeight) {
         vh
     )
 }
+
+/**
+ * Computes scaled scrollable content dimensions and world-to-content offset
+ * so the graph is centered when smaller than the viewport, or cleanly
+ * fills [0..contentWidth] x [0..contentHeight] when zoomed past viewport size.
+ */
+export function computeScrollLayout(bounds, zoom, viewportWidth, viewportHeight) {
+    const vw = Math.max(240, viewportWidth || 1000)
+    const vh = Math.max(240, viewportHeight || 640)
+
+    if (!bounds || bounds.width <= 0 || bounds.height <= 0) {
+        return {
+            width: vw,
+            height: vh,
+            offsetX: vw / 2,
+            offsetY: vh / 2,
+            canScrollX: false,
+            canScrollY: false,
+        }
+    }
+
+    const scaledWidth = bounds.width * zoom
+    const scaledHeight = bounds.height * zoom
+
+    const canScrollX = Math.ceil(scaledWidth) > Math.floor(vw) + 1
+    const canScrollY = Math.ceil(scaledHeight) > Math.floor(vh) + 1
+
+    const width = canScrollX ? Math.ceil(scaledWidth) : vw
+    const height = canScrollY ? Math.ceil(scaledHeight) : vh
+
+    const offsetX = canScrollX
+        ? -bounds.minX * zoom
+        : (width - scaledWidth) / 2 - bounds.minX * zoom
+
+    const offsetY = canScrollY
+        ? -bounds.minY * zoom
+        : (height - scaledHeight) / 2 - bounds.minY * zoom
+
+    return {
+        width,
+        height,
+        offsetX,
+        offsetY,
+        canScrollX,
+        canScrollY,
+    }
+}
+
+/**
+ * Computes zoom and initial scroll position for Fit to Screen.
+ */
+export function computeFitScroll(
+    layout,
+    viewportWidth,
+    viewportHeight,
+    { enforceReadableMobileFloor = false } = {}
+) {
+    const bounds = layout?.bounds
+    const vw = Math.max(240, viewportWidth || 1000)
+    const vh = Math.max(240, viewportHeight || 640)
+
+    if (!bounds || bounds.width <= 0 || bounds.height <= 0) {
+        return { zoom: 1.0, scrollLeft: 0, scrollTop: 0 }
+    }
+
+    const scaleX = vw / bounds.width
+    const scaleY = vh / bounds.height
+    const rawFitScale = Math.min(scaleX, scaleY)
+
+    const floor = enforceReadableMobileFloor && vw < 640 ? 0.52 : MIN_ZOOM
+    const targetZoom = Number(Math.min(Math.max(rawFitScale, floor), 1.0).toFixed(3))
+
+    const scrollLayout = computeScrollLayout(bounds, targetZoom, vw, vh)
+    const maxScrollY = Math.max(0, scrollLayout.height - vh)
+
+    let scrollTop = 0
+    if (scrollLayout.canScrollY) {
+        const rootNode = layout?.nodes?.find(n => n.type === 'root' || n.depth === 0)
+        if (rootNode) {
+            const rootContentY = rootNode.y * targetZoom + scrollLayout.offsetY
+            scrollTop = Math.min(maxScrollY, Math.max(0, Math.round(rootContentY - vh / 2)))
+        }
+    }
+
+    return {
+        zoom: targetZoom,
+        scrollLeft: 0,
+        scrollTop,
+    }
+}
+
+/**
+ * Computes zoom (100%) and scroll offsets centering the Root node.
+ */
+export function computeResetScroll(layout, viewportWidth, viewportHeight) {
+    const targetZoom = 1.0
+    const vw = Math.max(240, viewportWidth || 1000)
+    const vh = Math.max(240, viewportHeight || 640)
+    const scrollLayout = computeScrollLayout(layout?.bounds, targetZoom, vw, vh)
+    const rootNode = layout?.nodes?.find(n => n.type === 'root' || n.depth === 0)
+
+    if (!rootNode) {
+        return { zoom: targetZoom, scrollLeft: 0, scrollTop: 0 }
+    }
+
+    const rootContentX = rootNode.x * targetZoom + scrollLayout.offsetX
+    const rootContentY = rootNode.y * targetZoom + scrollLayout.offsetY
+
+    const leftAnchor = Math.min(200, Math.round(vw * 0.25))
+    const rootHalfW = (rootNode.width || 240) / 2
+    const desiredAnchorX = Math.max(leftAnchor, rootHalfW + 32)
+
+    const maxScrollX = Math.max(0, scrollLayout.width - vw)
+    const maxScrollY = Math.max(0, scrollLayout.height - vh)
+
+    return {
+        zoom: targetZoom,
+        scrollLeft: Math.min(Math.max(0, Math.round(rootContentX - desiredAnchorX)), maxScrollX),
+        scrollTop: Math.min(Math.max(0, Math.round(rootContentY - vh / 2)), maxScrollY),
+    }
+}
