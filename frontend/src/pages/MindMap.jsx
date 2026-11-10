@@ -9,6 +9,7 @@ import {
     Plus,
     Minus,
     Maximize2,
+    RotateCcw,
     ChevronDown,
     Check,
     FileText,
@@ -19,6 +20,14 @@ import {
     AlertTriangle,
 } from 'lucide-react'
 import { apiRequest } from '../services/api'
+import {
+    computeMindMapLayout,
+    computeFitTransform,
+    computeResetTransform,
+    clampView,
+    MIN_ZOOM,
+    MAX_ZOOM,
+} from '../utils/mindMapLayout'
 import '../styles/mind-map.css'
 
 export default function MindMap() {
@@ -39,20 +48,64 @@ export default function MindMap() {
     const [mindMapData, setMindMapData] = useState(null)
     const [errorMsg, setErrorMsg] = useState('')
 
-    // Interactive canvas state
-    const [zoom, setZoom] = useState(1.0)
-    const [pan, setPan] = useState({ x: 60, y: 300 })
+    // Atomic camera & collapse state ({ zoom, x, y, collapsedIds })
+    const [graphState, setGraphState] = useState(() => ({
+        zoom: 1.0,
+        x: 140,
+        y: 260,
+        collapsedIds: new Set(),
+    }))
+    const view = graphState
+    const collapsedIds = graphState.collapsedIds
+    const setView = useCallback((updater) => {
+        setGraphState(prev => {
+            const nextView = typeof updater === 'function' ? updater(prev) : updater
+            return { ...prev, zoom: nextView.zoom, x: nextView.x, y: nextView.y }
+        })
+    }, [])
+
     const [isDragging, setIsDragging] = useState(false)
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
     // Node state
     const [selectedNode, setSelectedNode] = useState(null)
-    const [collapsedIds, setCollapsedIds] = useState(() => new Set())
     const [searchTerm, setSearchTerm] = useState('')
     const [typeFilter, setTypeFilter] = useState('ALL') // 'ALL' | 'TOPIC' | 'CONCEPT' | 'PROCESS' | 'DEFINITION' | 'EXAMPLE'
 
     const dropdownRef = useRef(null)
     const canvasRef = useRef(null)
+    const shouldAutoFitRef = useRef(false)
+
+    /* ========================================================
+       LAYOUT TREE COMPUTATION (X, Y COORDINATES & DYNAMIC BOUNDS)
+       ======================================================== */
+    const layout = useMemo(
+        () => computeMindMapLayout(mindMapData, collapsedIds),
+        [mindMapData, collapsedIds]
+    )
+
+    const getViewportSize = useCallback(() => {
+        const el = canvasRef.current
+        if (!el) return { width: 1000, height: 640 }
+        const rect = el.getBoundingClientRect()
+        return {
+            width: rect.width || el.clientWidth || 1000,
+            height: rect.height || el.clientHeight || 640,
+        }
+    }, [])
+
+    const fitToScreen = useCallback(
+        (customBounds = null, { enforceReadableMobileFloor = false } = {}) => {
+            const activeBounds = customBounds || layout.bounds
+            if (!activeBounds || activeBounds.width <= 0 || !canvasRef.current) return
+            const { width, height } = getViewportSize()
+            const nextView = computeFitTransform(activeBounds, width, height, {
+                enforceReadableMobileFloor,
+            })
+            setView(nextView)
+        },
+        [layout.bounds, getViewportSize, setView]
+    )
 
     /* ========================================================
        LOAD USER DOCUMENTS
@@ -114,6 +167,73 @@ export default function MindMap() {
     }, [isGenerating])
 
     /* ========================================================
+       AUTO-FIT VIEWPORT ON GENERATION & RESIZE SAFETY
+       ======================================================== */
+    useEffect(() => {
+        if (!mindMapData || isGenerating || !shouldAutoFitRef.current) return
+        const rafId = requestAnimationFrame(() => {
+            if (shouldAutoFitRef.current && canvasRef.current) {
+                shouldAutoFitRef.current = false
+                fitToScreen(layout.bounds, { enforceReadableMobileFloor: true })
+            }
+        })
+        return () => cancelAnimationFrame(rafId)
+    }, [mindMapData, isGenerating, layout.bounds, fitToScreen])
+
+    useEffect(() => {
+        const el = canvasRef.current
+        if (!el || !mindMapData || isGenerating || typeof ResizeObserver === 'undefined') return
+        const observer = new ResizeObserver((entries) => {
+            const entry = entries[0]
+            if (!entry) return
+            const { width, height } = entry.contentRect
+            if (width > 0 && height > 0) {
+                setView(prev => clampView(prev, layout.bounds, width, height))
+            }
+        })
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [mindMapData, isGenerating, layout.bounds, setView])
+
+    /* ========================================================
+       NON-PASSIVE WHEEL ZOOM TOWARD POINTER
+       ======================================================== */
+    useEffect(() => {
+        const el = canvasRef.current
+        if (!el || !mindMapData || isGenerating) return
+
+        const onWheel = (e) => {
+            e.preventDefault()
+            const rect = el.getBoundingClientRect()
+            const anchorX = e.clientX - rect.left
+            const anchorY = e.clientY - rect.top
+            const zoomDelta = e.deltaY > 0 ? -0.09 : 0.09
+
+            setView(prev => {
+                const nextZoom = Math.min(
+                    Math.max(MIN_ZOOM, Number((prev.zoom + zoomDelta).toFixed(3))),
+                    MAX_ZOOM
+                )
+                if (nextZoom === prev.zoom) return prev
+                const ratio = nextZoom / prev.zoom
+                return clampView(
+                    {
+                        zoom: nextZoom,
+                        x: anchorX - (anchorX - prev.x) * ratio,
+                        y: anchorY - (anchorY - prev.y) * ratio,
+                    },
+                    layout.bounds,
+                    rect.width,
+                    rect.height
+                )
+            })
+        }
+
+        el.addEventListener('wheel', onWheel, { passive: false })
+        return () => el.removeEventListener('wheel', onWheel)
+    }, [mindMapData, isGenerating, layout.bounds, setView])
+
+    /* ========================================================
        GENERATE MIND MAP ACTION
        ======================================================== */
     const handleGenerate = async () => {
@@ -127,17 +247,15 @@ export default function MindMap() {
             setIsGenerating(true)
             setErrorMsg('')
             setSelectedNode(null)
-            setCollapsedIds(new Set())
+            setGraphState(prev => ({ ...prev, collapsedIds: new Set() }))
 
             const result = await apiRequest(`/documents/${selectedDocId}/mind-map`, {
                 method: 'POST',
                 body: JSON.stringify({ force_refresh: forceRefresh }),
             })
 
+            shouldAutoFitRef.current = true
             setMindMapData(result)
-            // Center the root node in canvas
-            setPan({ x: 120, y: 320 })
-            setZoom(1.0)
         } catch (err) {
             setErrorMsg(err.message || 'Failed to generate mind map.')
         } finally {
@@ -146,18 +264,40 @@ export default function MindMap() {
     }
 
     /* ========================================================
-       COLLAPSE / EXPAND TOGGLE
+       COLLAPSE / EXPAND TOGGLE (ANCHORS CLICKED NODE ATOMICALLY)
        ======================================================== */
     const toggleCollapse = (nodeId, e) => {
         e.stopPropagation()
-        setCollapsedIds(prev => {
-            const next = new Set(prev)
-            if (next.has(nodeId)) {
-                next.delete(nodeId)
+        const { width, height } = getViewportSize()
+        setGraphState(prev => {
+            const oldLayout = computeMindMapLayout(mindMapData, prev.collapsedIds)
+            const oldNode = oldLayout.nodes.find(n => n.id === nodeId)
+
+            const nextSet = new Set(prev.collapsedIds)
+            if (nextSet.has(nodeId)) {
+                nextSet.delete(nodeId)
             } else {
-                next.add(nodeId)
+                nextSet.add(nodeId)
             }
-            return next
+
+            const nextLayout = computeMindMapLayout(mindMapData, nextSet)
+            const newNode = nextLayout.nodes.find(n => n.id === nodeId)
+
+            if (!oldNode || !newNode) {
+                return { ...prev, collapsedIds: nextSet }
+            }
+
+            const clamped = clampView(
+                {
+                    zoom: prev.zoom,
+                    x: prev.x + (oldNode.x - newNode.x) * prev.zoom,
+                    y: prev.y + (oldNode.y - newNode.y) * prev.zoom,
+                },
+                nextLayout.bounds,
+                width,
+                height
+            )
+            return { ...clamped, collapsedIds: nextSet }
         })
     }
 
@@ -165,98 +305,94 @@ export default function MindMap() {
        CANVAS PANNING & ZOOMING HANDLERS
        ======================================================== */
     const handleMouseDown = (e) => {
-        if (e.target.closest('.mindmap-node') || e.target.closest('.node-collapse-toggle')) {
+        if (
+            e.target.closest('.mindmap-node') ||
+            e.target.closest('.node-collapse-toggle') ||
+            e.target.closest('.node-details-drawer')
+        ) {
             return
         }
         setIsDragging(true)
-        setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+        setDragStart({ x: e.clientX - view.x, y: e.clientY - view.y })
     }
 
     const handleMouseMove = useCallback((e) => {
         if (!isDragging) return
-        setPan({
-            x: e.clientX - dragStart.x,
-            y: e.clientY - dragStart.y,
-        })
-    }, [isDragging, dragStart])
+        const { width, height } = getViewportSize()
+        setView(prev => clampView(
+            {
+                ...prev,
+                x: e.clientX - dragStart.x,
+                y: e.clientY - dragStart.y,
+            },
+            layout.bounds,
+            width,
+            height
+        ))
+    }, [isDragging, dragStart, layout.bounds, getViewportSize, setView])
 
     const handleMouseUp = () => {
         setIsDragging(false)
     }
 
-    const handleWheel = (e) => {
-        e.preventDefault()
-        const zoomDelta = e.deltaY > 0 ? -0.08 : 0.08
-        setZoom(prev => Math.min(Math.max(0.4, prev + zoomDelta), 1.8))
+    const handleTouchStart = (e) => {
+        if (e.touches.length !== 1) return
+        if (
+            e.target.closest('.mindmap-node') ||
+            e.target.closest('.node-collapse-toggle') ||
+            e.target.closest('.node-details-drawer')
+        ) {
+            return
+        }
+        const touch = e.touches[0]
+        setIsDragging(true)
+        setDragStart({ x: touch.clientX - view.x, y: touch.clientY - view.y })
     }
 
-    const resetView = () => {
-        setZoom(1.0)
-        setPan({ x: 120, y: 320 })
-    }
+    const handleTouchMove = useCallback((e) => {
+        if (!isDragging || e.touches.length !== 1) return
+        const touch = e.touches[0]
+        const { width, height } = getViewportSize()
+        setView(prev => clampView(
+            {
+                ...prev,
+                x: touch.clientX - dragStart.x,
+                y: touch.clientY - dragStart.y,
+            },
+            layout.bounds,
+            width,
+            height
+        ))
+    }, [isDragging, dragStart, layout.bounds, getViewportSize, setView])
 
-    /* ========================================================
-       LAYOUT TREE COMPUTATION (X, Y COORDINATES)
-       ======================================================== */
-    const layout = useMemo(() => {
-        if (!mindMapData || !mindMapData.root) return { nodes: [], edges: [] }
+    const zoomBy = useCallback((delta) => {
+        const { width, height } = getViewportSize()
+        const anchorX = width / 2
+        const anchorY = height / 2
+        setView(prev => {
+            const nextZoom = Math.min(
+                Math.max(MIN_ZOOM, Number((prev.zoom + delta).toFixed(3))),
+                MAX_ZOOM
+            )
+            if (nextZoom === prev.zoom) return prev
+            const ratio = nextZoom / prev.zoom
+            return clampView(
+                {
+                    zoom: nextZoom,
+                    x: anchorX - (anchorX - prev.x) * ratio,
+                    y: anchorY - (anchorY - prev.y) * ratio,
+                },
+                layout.bounds,
+                width,
+                height
+            )
+        })
+    }, [layout.bounds, getViewportSize, setView])
 
-        const nodes = []
-        const edges = []
-        const HORIZONTAL_GAP = 320
-        const VERTICAL_GAP = 90
-
-        // Helper: compute leaf count for vertical space allocation
-        function getLeafCount(node) {
-            if (!node.children || node.children.length === 0 || collapsedIds.has(node.id)) {
-                return 1
-            }
-            return node.children.reduce((acc, child) => acc + getLeafCount(child), 0)
-        }
-
-        // Recursive tree layout
-        function assignCoordinates(node, depth, topY) {
-            const totalLeaves = getLeafCount(node)
-            const height = totalLeaves * VERTICAL_GAP
-            const nodeX = depth * HORIZONTAL_GAP
-            const nodeY = topY + height / 2
-
-            nodes.push({
-                ...node,
-                x: nodeX,
-                y: nodeY,
-                depth,
-                isCollapsed: collapsedIds.has(node.id),
-                hasChildren: Boolean(node.children && node.children.length > 0),
-                childCount: node.children ? node.children.length : 0,
-            })
-
-            if (node.children && !collapsedIds.has(node.id)) {
-                let currentY = topY
-                for (const child of node.children) {
-                    const childLeaves = getLeafCount(child)
-                    const childHeight = childLeaves * VERTICAL_GAP
-                    const childPos = assignCoordinates(child, depth + 1, currentY)
-
-                    edges.push({
-                        id: `${node.id}->${child.id}`,
-                        x1: nodeX + 90,
-                        y1: nodeY,
-                        x2: childPos.x - 90,
-                        y2: childPos.y,
-                        relationship: child.relationship || 'contains',
-                    })
-
-                    currentY += childHeight
-                }
-            }
-
-            return { x: nodeX, y: nodeY }
-        }
-
-        assignCoordinates(mindMapData.root, 0, 0)
-        return { nodes, edges }
-    }, [mindMapData, collapsedIds])
+    const resetView = useCallback(() => {
+        const { width, height } = getViewportSize()
+        setView(computeResetTransform(layout, width, height))
+    }, [layout, getViewportSize, setView])
 
     /* ========================================================
        NAVIGATE TO SOURCE DOCUMENT / PAGE
@@ -519,13 +655,25 @@ export default function MindMap() {
                     <div className="mindmap-toolbar">
                         <div className="toolbar-left">
                             <div className="mindmap-search-wrap">
-                                <Search size={14} className="search-icon-pos" />
+                                <Search size={14} className="search-icon-pos" aria-hidden="true" />
                                 <input
                                     type="text"
                                     placeholder="Search concepts..."
+                                    aria-label="Search concepts in mind map"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
                                 />
+                                {searchTerm && (
+                                    <button
+                                        type="button"
+                                        className="mindmap-search-clear"
+                                        onClick={() => setSearchTerm('')}
+                                        title="Clear concept search"
+                                        aria-label="Clear concept search"
+                                    >
+                                        <X size={13} />
+                                    </button>
+                                )}
                             </div>
 
                             <div className="type-filter-group">
@@ -546,27 +694,40 @@ export default function MindMap() {
                             <button
                                 type="button"
                                 className="canvas-tool-btn"
-                                onClick={() => setZoom(prev => Math.min(1.8, prev + 0.1))}
+                                onClick={() => zoomBy(0.12)}
                                 title="Zoom In"
+                                aria-label="Zoom In"
                             >
                                 <Plus size={16} />
                             </button>
-                            <span className="zoom-level-indicator">{Math.round(zoom * 100)}%</span>
+                            <span className="zoom-level-indicator">{Math.round(view.zoom * 100)}%</span>
                             <button
                                 type="button"
                                 className="canvas-tool-btn"
-                                onClick={() => setZoom(prev => Math.max(0.4, prev - 0.1))}
+                                onClick={() => zoomBy(-0.12)}
                                 title="Zoom Out"
+                                aria-label="Zoom Out"
                             >
                                 <Minus size={16} />
                             </button>
                             <button
                                 type="button"
+                                className="canvas-tool-btn fit-screen-btn"
+                                onClick={() => fitToScreen(layout.bounds, { enforceReadableMobileFloor: false })}
+                                title="Fit complete mind map to screen"
+                                aria-label="Fit to Screen"
+                            >
+                                <Maximize2 size={14} />
+                                <span>Fit to Screen</span>
+                            </button>
+                            <button
+                                type="button"
                                 className="canvas-tool-btn"
                                 onClick={resetView}
-                                title="Reset View"
+                                title="Reset View (100% centered on root)"
+                                aria-label="Reset View"
                             >
-                                <Maximize2 size={15} />
+                                <RotateCcw size={15} />
                             </button>
                         </div>
                     </div>
@@ -579,11 +740,14 @@ export default function MindMap() {
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
-                        onWheel={handleWheel}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleMouseUp}
+                        onTouchCancel={handleMouseUp}
                     >
                         {/* SVG Edge Connectors Layer */}
                         <svg className="mindmap-svg-layer">
-                            <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+                            <g transform={`translate(${view.x}, ${view.y}) scale(${view.zoom})`}>
                                 {layout.edges.map(edge => {
                                     const dx = Math.abs(edge.x2 - edge.x1) * 0.5
                                     const pathD = `M ${edge.x1} ${edge.y1} C ${edge.x1 + dx} ${edge.y1}, ${edge.x2 - dx} ${edge.y2}, ${edge.x2} ${edge.y2}`
@@ -612,7 +776,9 @@ export default function MindMap() {
                         <div
                             className="mindmap-nodes-layer"
                             style={{
-                                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                                width: `${Math.max(2000, Math.ceil((layout.bounds?.maxX || 0) + 400))}px`,
+                                height: `${Math.max(2000, Math.ceil((layout.bounds?.maxY || 0) + 400))}px`,
+                                transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`,
                                 transformOrigin: '0 0',
                             }}
                         >
