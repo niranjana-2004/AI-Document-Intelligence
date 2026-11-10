@@ -215,7 +215,7 @@ export default function DocumentComparison() {
             <div className="comparison-header">
                 <div className="comparison-header-content">
                     <h1>
-                        <FileDiff size={28} style={{ color: '#0ea5e9' }} />
+                        <FileDiff size={28} style={{ color: 'var(--cyan-ink)' }} />
                         Document Comparison
                     </h1>
                     <p>
@@ -577,7 +577,7 @@ export default function DocumentComparison() {
                         <div className="ai-summary-card">
                             <div className="ai-summary-header">
                                 <div className="ai-summary-title">
-                                    <Sparkles size={20} style={{ color: '#818cf8' }} />
+                                    <Sparkles size={20} style={{ color: 'var(--violet-ink)' }} />
                                     <span>AI Comparison Synthesis & Analysis</span>
                                 </div>
                                 <span className="ai-badge">

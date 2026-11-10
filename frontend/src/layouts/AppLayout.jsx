@@ -99,8 +99,8 @@ function AppLayout({ children }) {
             currentTheme ||
             'ocean'
 
-        // If current active theme is Ocean, switch to Dark; otherwise switch to Ocean.
-        const nextTheme = activeTheme === 'ocean' ? 'dark' : 'ocean'
+        // Toggle cleanly between dark theme and default Ocean Teal light theme.
+        const nextTheme = activeTheme === 'dark' ? 'ocean' : 'dark'
         setCurrentTheme(nextTheme)
         localStorage.setItem('app_theme', nextTheme)
         document.documentElement.dataset.theme = nextTheme
@@ -193,7 +193,7 @@ function AppLayout({ children }) {
                         </span>
                         <span className="nav-label-with-badge">
                             <span>Handwritten</span>
-                            <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #8b5cf6, #38bdf8)' }}>OCR</span>
+                            <span className="nav-badge-ai badge-ocr">OCR</span>
                         </span>
                     </NavLink>
 
@@ -206,7 +206,7 @@ function AppLayout({ children }) {
                         </span>
                         <span className="nav-label-with-badge">
                             <span>Compare</span>
-                            <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #0ea5e9, #6366f1)' }}>AI</span>
+                            <span className="nav-badge-ai badge-compare">AI</span>
                         </span>
                     </NavLink>
 
@@ -219,7 +219,7 @@ function AppLayout({ children }) {
                         </span>
                         <span className="nav-label-with-badge">
                             <span>Mind Map</span>
-                            <span className="nav-badge-ai" style={{ background: 'linear-gradient(135deg, #8b5cf6, #0ea5e9)' }}>AI</span>
+                            <span className="nav-badge-ai badge-mindmap">AI</span>
                         </span>
                     </NavLink>
 
@@ -232,7 +232,7 @@ function AppLayout({ children }) {
                         </span>
                         <span className="nav-label-with-badge">
                             <span>Ask AI</span>
-                            <span className="nav-badge-ai">AI</span>
+                            <span className="nav-badge-ai badge-ask">AI</span>
                         </span>
                     </NavLink>
 
@@ -320,7 +320,7 @@ function AppLayout({ children }) {
                             type="button"
                             className="theme-toggle-btn"
                             onClick={toggleTheme}
-                            title={currentTheme === 'ocean' ? 'Switch to Dark appearance' : 'Switch to Ocean Teal appearance'}
+                            title={currentTheme === 'dark' ? 'Switch to Ocean Teal appearance' : 'Switch to Dark appearance'}
                             aria-label={`Toggle appearance. Currently ${THEME_NAMES[currentTheme] || currentTheme}.`}
                         >
                             <span className="theme-toggle-icon" aria-hidden="true">

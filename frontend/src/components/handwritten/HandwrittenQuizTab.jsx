@@ -679,7 +679,7 @@ export default function HandwrittenQuizTab({ documentId, transcriptionUpdated })
                 <div className="submit-confirm-overlay" role="dialog" aria-modal="true">
                     <div className="submit-confirm-card">
                         <div className="confirm-icon-wrap">
-                            <AlertTriangle size={24} style={{ color: '#fbbf24' }} />
+                            <AlertTriangle size={24} style={{ color: 'var(--warning-ink)' }} />
                         </div>
                         <h4>Unanswered Questions Remaining</h4>
                         <p>
@@ -712,7 +712,7 @@ export default function HandwrittenQuizTab({ documentId, transcriptionUpdated })
                     {/* Score Hero Card */}
                     <div className="score-hero-card">
                         <div className="score-award-icon">
-                            <Award size={36} style={{ color: submittedFeedback.score_percentage >= 75 ? '#34d399' : '#fbbf24' }} />
+                            <Award size={36} style={{ color: submittedFeedback.score_percentage >= 75 ? 'var(--success-ink)' : 'var(--warning-ink)' }} />
                         </div>
                         <h3 className="score-percentage-title">{submittedFeedback.score_percentage}%</h3>
                         <p className="score-subtitle">{submittedFeedback.performance_summary}</p>

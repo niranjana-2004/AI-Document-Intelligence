@@ -332,7 +332,7 @@ function Dashboard() {
           >
             <div className="stat-card-header">
               <span className="stat-label">Documents</span>
-              <div className="stat-icon-wrap" style={{ color: '#38bdf8' }}>
+              <div className="stat-icon-wrap" style={{ color: 'var(--cyan-ink)' }}>
                 <FileText size={18} />
               </div>
             </div>
@@ -351,7 +351,7 @@ function Dashboard() {
           >
             <div className="stat-card-header">
               <span className="stat-label">AI Questions</span>
-              <div className="stat-icon-wrap" style={{ color: '#c084fc' }}>
+              <div className="stat-icon-wrap" style={{ color: 'var(--violet-ink)' }}>
                 <MessageSquare size={18} />
               </div>
             </div>
@@ -370,7 +370,7 @@ function Dashboard() {
           >
             <div className="stat-card-header">
               <span className="stat-label">AI Summaries</span>
-              <div className="stat-icon-wrap" style={{ color: '#2dd4bf' }}>
+              <div className="stat-icon-wrap" style={{ color: 'var(--success-ink)' }}>
                 <Layers size={18} />
               </div>
             </div>
@@ -389,7 +389,7 @@ function Dashboard() {
           >
             <div className="stat-card-header">
               <span className="stat-label">Supported Formats</span>
-              <div className="stat-icon-wrap" style={{ color: '#f59e0b' }}>
+              <div className="stat-icon-wrap" style={{ color: 'var(--warning-ink)' }}>
                 <FileCheck size={18} />
               </div>
             </div>
@@ -537,8 +537,8 @@ function Dashboard() {
                 <div
                   className="activity-icon"
                   style={{
-                    background: 'rgba(192, 132, 252, 0.15)',
-                    color: '#c084fc',
+                    background: 'var(--badge-ocr-bg)',
+                    color: 'var(--violet-ink)',
                   }}
                 >
                   <MessageSquare size={18} />
@@ -558,8 +558,8 @@ function Dashboard() {
                 <div
                   className="activity-icon"
                   style={{
-                    background: 'rgba(56, 189, 248, 0.15)',
-                    color: '#38bdf8',
+                    background: 'var(--badge-info-bg)',
+                    color: 'var(--cyan-ink)',
                   }}
                 >
                   <Search size={18} />
@@ -579,8 +579,8 @@ function Dashboard() {
                 <div
                   className="activity-icon"
                   style={{
-                    background: 'rgba(45, 212, 191, 0.15)',
-                    color: '#2dd4bf',
+                    background: 'var(--badge-success-bg)',
+                    color: 'var(--success-ink)',
                   }}
                 >
                   <Layers size={18} />
@@ -600,8 +600,8 @@ function Dashboard() {
                 <div
                   className="activity-icon"
                   style={{
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    color: '#f59e0b',
+                    background: 'var(--badge-warning-bg)',
+                    color: 'var(--warning-ink)',
                   }}
                 >
                   <Zap size={18} />

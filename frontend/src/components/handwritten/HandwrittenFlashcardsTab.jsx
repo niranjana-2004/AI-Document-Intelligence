@@ -483,7 +483,7 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
             {generating && (
                 <div className="intel-generating-card">
                     <div className="intel-spinner-orb">
-                        <Layers size={28} className="spin-icon" style={{ color: '#c084fc' }} />
+                        <Layers size={28} className="spin-icon" style={{ color: 'var(--violet-ink)' }} />
                     </div>
                     <h4>Generating Active Recall Flashcards...</h4>
                     <p>Creating question-answers, definitions, formulas, problem-solutions, and comparison cards across your notes with Llama 3.2.</p>
@@ -496,8 +496,8 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
             {/* Empty State */}
             {!generating && decks.length === 0 && (
                 <div className="intel-empty-card">
-                    <div className="empty-icon-wrap" style={{ background: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.3)' }}>
-                        <Layers size={40} style={{ color: '#a855f7' }} />
+                    <div className="empty-icon-wrap" style={{ background: 'var(--badge-mindmap-bg)', borderColor: 'var(--badge-mindmap-border)' }}>
+                        <Layers size={40} style={{ color: 'var(--violet-ink)' }} />
                     </div>
                     <h3>Active Recall 3D Flashcards</h3>
                     <p>
@@ -508,7 +508,6 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
                         type="button"
                         className="btn-intel-primary"
                         onClick={() => setShowConfig(true)}
-                        style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}
                     >
                         <Sparkles size={16} />
                         <span>Generate First Deck</span>
@@ -520,7 +519,7 @@ export default function HandwrittenFlashcardsTab({ documentId, transcriptionUpda
             {!generating && isSessionCompleted && (
                 <div className="session-complete-card">
                     <div className="complete-award-icon">
-                        <Award size={40} style={{ color: '#38bdf8' }} />
+                        <Award size={40} style={{ color: 'var(--cyan-ink)' }} />
                     </div>
                     <h3>Study Session Completed!</h3>
                     <p className="complete-desc">You have reviewed all {totalActive} cards in this set.</p>

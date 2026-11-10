@@ -426,7 +426,7 @@ export default function MindMap() {
             <div className="mindmap-header">
                 <div className="mindmap-header-content">
                     <h1>
-                        <Network size={28} style={{ color: '#8b5cf6' }} />
+                        <Network size={28} style={{ color: 'var(--violet-ink)' }} />
                         AI Mind Map Generator
                     </h1>
                     <p>
@@ -571,11 +571,11 @@ export default function MindMap() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
                             <span>Total Nodes: <strong style={{ color: 'var(--text-primary)' }}>{mindMapData.node_count}</strong></span>
                             <span>•</span>
-                            <span>Engine: <strong style={{ color: '#c084fc' }}>{mindMapData.generation_method === 'ollama_llama3_2' ? 'Ollama Llama 3.2' : 'Deterministic Semantic Engine'}</strong></span>
+                            <span>Engine: <strong style={{ color: 'var(--violet-ink)' }}>{mindMapData.generation_method === 'ollama_llama3_2' ? 'Ollama Llama 3.2' : 'Deterministic Semantic Engine'}</strong></span>
                             {mindMapData.cached && (
                                 <>
                                     <span>•</span>
-                                    <span style={{ color: '#10b981', fontWeight: 600 }}>(Cached)</span>
+                                    <span style={{ color: 'var(--success-ink)', fontWeight: 600 }}>(Cached)</span>
                                 </>
                             )}
                         </div>

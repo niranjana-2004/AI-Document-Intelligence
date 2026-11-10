@@ -206,7 +206,7 @@ export default function HandwrittenConceptsTab({ documentId, transcriptionUpdate
             {extracting && (
                 <div className="intel-generating-card">
                     <div className="intel-spinner-orb">
-                        <BrainCircuit size={28} className="spin-icon" style={{ color: '#c084fc' }} />
+                        <BrainCircuit size={28} className="spin-icon" style={{ color: 'var(--violet-ink)' }} />
                     </div>
                     <h4>Mining Key Concepts with Llama 3.2...</h4>
                     <p>Detecting central themes, definitions, supporting quotes, and interconnected terminology across your handwritten pages.</p>
@@ -219,8 +219,8 @@ export default function HandwrittenConceptsTab({ documentId, transcriptionUpdate
             {/* Empty State */}
             {!extracting && !loading && concepts.length === 0 && (
                 <div className="intel-empty-card">
-                    <div className="empty-icon-wrap" style={{ background: 'rgba(192, 132, 252, 0.15)', borderColor: 'rgba(192, 132, 252, 0.3)' }}>
-                        <BrainCircuit size={40} style={{ color: '#c084fc' }} />
+                    <div className="empty-icon-wrap" style={{ background: 'var(--badge-mindmap-bg)', borderColor: 'var(--badge-mindmap-border)' }}>
+                        <BrainCircuit size={40} style={{ color: 'var(--violet-ink)' }} />
                     </div>
                     <h3>Build an Interactive Knowledge Glossary</h3>
                     <p>
@@ -231,7 +231,6 @@ export default function HandwrittenConceptsTab({ documentId, transcriptionUpdate
                         type="button"
                         className="btn-intel-primary"
                         onClick={handleExtract}
-                        style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)' }}
                     >
                         <Sparkles size={16} />
                         <span>Extract Key Concepts</span>
@@ -261,7 +260,7 @@ export default function HandwrittenConceptsTab({ documentId, transcriptionUpdate
                                             onClick={() => handleCopy(concept.definition, concept.id)}
                                             title="Copy definition"
                                         >
-                                            {copiedId === concept.id ? <Check size={13} style={{ color: '#34d399' }} /> : <Copy size={13} />}
+                                            {copiedId === concept.id ? <Check size={13} style={{ color: 'var(--success-ink)' }} /> : <Copy size={13} />}
                                         </button>
                                         <button
                                             type="button"
@@ -272,7 +271,7 @@ export default function HandwrittenConceptsTab({ documentId, transcriptionUpdate
                                             <Star
                                                 size={15}
                                                 fill={concept.is_bookmarked ? '#f59e0b' : 'none'}
-                                                color={concept.is_bookmarked ? '#f59e0b' : '#94a3b8'}
+                                                color={concept.is_bookmarked ? '#f59e0b' : 'var(--text-muted)'}
                                             />
                                         </button>
                                     </div>

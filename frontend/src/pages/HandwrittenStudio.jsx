@@ -337,7 +337,7 @@ export default function HandwrittenStudio() {
 
     if (error || !document) {
         return (
-            <div style={{ textAlign: 'center', padding: '100px 24px', color: '#f87171' }}>
+            <div style={{ textAlign: 'center', padding: '100px 24px', color: 'var(--danger-ink)' }}>
                 <p>{error || 'Document not found.'}</p>
                 <Link to="/handwritten" className="btn-open-studio" style={{ marginTop: '16px' }}>
                     <ArrowLeft size={16} />
@@ -369,7 +369,7 @@ export default function HandwrittenStudio() {
                                 onClick={() => setSubjectDropdownOpen(!subjectDropdownOpen)}
                                 title="Click to view or change academic discipline"
                             >
-                                <GraduationCap size={14} style={{ color: '#c084fc' }} />
+                                <GraduationCap size={14} style={{ color: 'var(--violet-ink)' }} />
                                 <span>{document.subject || 'Humanities & General'}</span>
                                 <ChevronDown size={13} style={{ opacity: 0.7 }} />
                             </button>
@@ -382,7 +382,7 @@ export default function HandwrittenStudio() {
                                             type="button"
                                             onClick={handleDetectSubject}
                                             disabled={isDetectingSubject}
-                                            style={{ background: 'transparent', border: 'none', color: '#c084fc', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--violet-ink)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 600 }}
                                             title="Auto-detect subject with AI"
                                         >
                                             <Sparkles size={11} className={isDetectingSubject ? 'spin-icon' : ''} />
@@ -406,7 +406,7 @@ export default function HandwrittenStudio() {
                                             onClick={() => handleSelectSubject(subj)}
                                         >
                                             <span>{subj}</span>
-                                            {document.subject === subj && <Check size={13} style={{ color: '#c084fc' }} />}
+                                            {document.subject === subj && <Check size={13} style={{ color: 'var(--violet-ink)' }} />}
                                         </button>
                                     ))}
                                 </div>
@@ -501,9 +501,9 @@ export default function HandwrittenStudio() {
                                     onClick={() => setShowHeatmap(!showHeatmap)}
                                     title="Toggle Token Confidence Heatmap"
                                     style={{
-                                        background: showHeatmap ? 'rgba(168, 85, 247, 0.25)' : undefined,
-                                        color: showHeatmap ? '#d8b4fe' : undefined,
-                                        borderColor: showHeatmap ? 'rgba(168, 85, 247, 0.5)' : undefined,
+                                        background: showHeatmap ? 'var(--badge-mindmap-bg)' : undefined,
+                                        color: showHeatmap ? 'var(--badge-mindmap-text)' : undefined,
+                                        borderColor: showHeatmap ? 'var(--badge-mindmap-border)' : undefined,
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '4px'
@@ -514,14 +514,14 @@ export default function HandwrittenStudio() {
                                 </button>
                             </div>
 
-                            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                                 Zoom: {Math.round(zoomLevel * 100)}%
                             </span>
                         </div>
 
                         <div className="viewer-canvas-scroll">
                             {loadingImage ? (
-                                <p style={{ color: '#64748b', fontSize: '13px' }}>Rendering page image...</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Rendering page image...</p>
                             ) : imageBlobUrl ? (
                                 <div
                                     className="viewer-image-wrapper"
@@ -580,7 +580,7 @@ export default function HandwrittenStudio() {
                                     )}
                                 </div>
                             ) : (
-                                <p style={{ color: '#64748b', fontSize: '13px' }}>No image preview available</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No image preview available</p>
                             )}
                         </div>
                     </div>
@@ -688,7 +688,7 @@ export default function HandwrittenStudio() {
                                                 {charCount} chars
                                             </span>
                                             {currentPage?.ocr_metadata?.ocr_mode === 'layout_guided_ocr35' && (
-                                                <span className="transcription-stat-pill" style={{ color: '#c084fc', borderColor: 'rgba(192, 132, 252, 0.4)' }} title="Processed with Layout Intelligence 4.0 region-aware OCR">
+                                                <span className="transcription-stat-pill" style={{ color: 'var(--violet-ink)', borderColor: 'var(--badge-mindmap-border)', background: 'var(--badge-mindmap-bg)' }} title="Processed with Layout Intelligence 4.0 region-aware OCR">
                                                     Layout OCR 4.0
                                                 </span>
                                             )}
@@ -696,10 +696,10 @@ export default function HandwrittenStudio() {
 
                                         <div className="transcription-actions-group">
                                             {/* Formatted vs Editor Mode Toggle */}
-                                            <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.7)', padding: '2px', borderRadius: '7px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                                            <div style={{ display: 'flex', background: 'var(--surface-secondary)', padding: '2px', borderRadius: '7px', border: '1px solid var(--border)' }}>
                                                 <button
                                                     type="button"
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 9px', fontSize: '11px', fontWeight: 600, background: transcriptionDisplayMode === 'formatted' ? 'rgba(168, 85, 247, 0.25)' : 'transparent', color: transcriptionDisplayMode === 'formatted' ? '#d8b4fe' : '#94a3b8', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 9px', fontSize: '11px', fontWeight: 600, background: transcriptionDisplayMode === 'formatted' ? 'var(--badge-mindmap-bg)' : 'transparent', color: transcriptionDisplayMode === 'formatted' ? 'var(--badge-mindmap-text)' : 'var(--text-secondary)', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
                                                     onClick={() => setTranscriptionDisplayMode('formatted')}
                                                     title="View formatted academic layout"
                                                 >
@@ -708,7 +708,7 @@ export default function HandwrittenStudio() {
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 9px', fontSize: '11px', fontWeight: 600, background: transcriptionDisplayMode === 'editor' ? 'rgba(168, 85, 247, 0.25)' : 'transparent', color: transcriptionDisplayMode === 'editor' ? '#d8b4fe' : '#94a3b8', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 9px', fontSize: '11px', fontWeight: 600, background: transcriptionDisplayMode === 'editor' ? 'var(--badge-mindmap-bg)' : 'transparent', color: transcriptionDisplayMode === 'editor' ? 'var(--badge-mindmap-text)' : 'var(--text-secondary)', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
                                                     onClick={() => setTranscriptionDisplayMode('editor')}
                                                     title="Edit transcription text"
                                                 >
@@ -735,7 +735,7 @@ export default function HandwrittenStudio() {
                                                 disabled={!transcriptionText}
                                                 title="Copy transcription text"
                                             >
-                                                {copied ? <Check size={13} style={{ color: '#34d399' }} /> : <Copy size={13} />}
+                                                {copied ? <Check size={13} style={{ color: 'var(--success-ink)' }} /> : <Copy size={13} />}
                                                 <span>{copied ? 'Copied!' : 'Copy'}</span>
                                             </button>
 
@@ -769,7 +769,7 @@ export default function HandwrittenStudio() {
                                                 title="Click to toggle Technical Terminology Review"
                                             >
                                                 <div className="technical-recovery-title">
-                                                    <Sparkles size={14} style={{ color: '#c084fc' }} />
+                                                    <Sparkles size={14} style={{ color: 'var(--violet-ink)' }} />
                                                     <span>Technical Terminology Recovery</span>
                                                     <span className="recovery-badge-count">
                                                         {technicalCorrections.length} {technicalCorrections.length === 1 ? 'term' : 'terms'}
@@ -777,10 +777,10 @@ export default function HandwrittenStudio() {
                                                     </span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                                                         {reviewOpen ? 'Hide' : 'Review Terms'}
                                                     </span>
-                                                    {reviewOpen ? <ChevronUp size={14} color="#94a3b8" /> : <ChevronDown size={14} color="#94a3b8" />}
+                                                    {reviewOpen ? <ChevronUp size={14} style={{ color: 'var(--text-secondary)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />}
                                                 </div>
                                             </div>
 
@@ -920,7 +920,7 @@ export default function HandwrittenStudio() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowLineBreakdown(!showLineBreakdown)}
-                                                    style={{ background: 'transparent', border: 'none', color: '#c084fc', fontSize: '12px', cursor: 'pointer' }}
+                                                    style={{ background: 'transparent', border: 'none', color: 'var(--violet-ink)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                                                 >
                                                     {showLineBreakdown ? 'Hide Details' : 'Show Line Confidences'}
                                                 </button>
@@ -939,7 +939,7 @@ export default function HandwrittenStudio() {
                                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                                 <span className="line-text-display">{line.text || '(empty stroke)'}</span>
                                                                 {line.bbox && (
-                                                                    <span style={{ display: 'block', fontSize: '10px', color: '#64748b', marginTop: '2px', fontFamily: 'monospace' }}>
+                                                                    <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', fontFamily: 'monospace' }}>
                                                                         [x:{line.bbox[0]}, y:{line.bbox[1]}, {line.bbox[2]}×{line.bbox[3]}px]
                                                                     </span>
                                                                 )}
@@ -948,8 +948,8 @@ export default function HandwrittenStudio() {
                                                                 <span
                                                                     className="line-conf-badge"
                                                                     style={{
-                                                                        background: line.confidence >= 80 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                                                                        color: line.confidence >= 80 ? '#34d399' : '#fbbf24'
+                                                                        background: line.confidence >= 80 ? 'var(--badge-success-bg)' : 'var(--badge-warning-bg)',
+                                                                        color: line.confidence >= 80 ? 'var(--badge-success-text)' : 'var(--badge-warning-text)'
                                                                     }}
                                                                 >
                                                                     {line.confidence}%
@@ -960,10 +960,10 @@ export default function HandwrittenStudio() {
                                                                     disabled={reprocessingLineId === line.line_index}
                                                                     title="Reprocess this line with TrOCR"
                                                                     style={{
-                                                                        background: 'rgba(255,255,255,0.06)',
-                                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                                        background: 'var(--surface-secondary)',
+                                                                        border: '1px solid var(--border)',
                                                                         borderRadius: '4px',
-                                                                        color: '#c084fc',
+                                                                        color: 'var(--violet-ink)',
                                                                         padding: '4px 6px',
                                                                         cursor: 'pointer',
                                                                         display: 'flex',
@@ -1051,7 +1051,7 @@ export default function HandwrittenStudio() {
                         <div className="token-popover-card" onClick={e => e.stopPropagation()}>
                             <div className="token-popover-header">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Sparkles size={16} color="#c084fc" />
+                                    <Sparkles size={16} style={{ color: 'var(--violet-ink)' }} />
                                     <h4>Token Inspector (Line {selectedToken.line_number})</h4>
                                 </div>
                                 <button type="button" className="btn-close-popover" onClick={() => setSelectedToken(null)}>
@@ -1082,15 +1082,15 @@ export default function HandwrittenStudio() {
                                 </div>
 
                                 {/* Preprocessing Variant & Character Ambiguity (3.3) */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(30, 41, 59, 0.4)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'var(--surface-secondary)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
                                         <span>Preprocessing Variant:</span>
-                                        <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{prepVariant}</span>
+                                        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{prepVariant}</span>
                                     </div>
                                     {charAmbiguity && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
                                             <span>Character Ambiguity:</span>
-                                            <span style={{ color: '#fbbf24', fontWeight: 500 }}>{charAmbiguity}</span>
+                                            <span style={{ color: 'var(--warning-ink)', fontWeight: 500 }}>{charAmbiguity}</span>
                                         </div>
                                     )}
                                 </div>
@@ -1101,10 +1101,10 @@ export default function HandwrittenStudio() {
                                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '8px' }}
                                         onClick={() => setShowDetailedEvidence(prev => !prev)}
                                     >
-                                        <h5 style={{ margin: 0, fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        <h5 style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                             Multi-Signal Evidence Breakdown
                                         </h5>
-                                        <span style={{ fontSize: '11px', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span style={{ fontSize: '11px', color: 'var(--violet-ink)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             {showDetailedEvidence ? 'Collapse' : 'Expand Details'}
                                             {showDetailedEvidence ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                                         </span>
@@ -1138,7 +1138,7 @@ export default function HandwrittenStudio() {
                                             </div>
                                             <div className="signal-item">
                                                 <span>Final Corroboration Confidence:</span>
-                                                <strong style={{ color: '#38bdf8' }}>
+                                                <strong style={{ color: 'var(--cyan-ink)' }}>
                                                     {selectedToken.candidate_signals?.final_confidence != null
                                                         ? `${Math.round(selectedToken.candidate_signals.final_confidence * 100)}%`
                                                         : (matchingCorr?.confidence ? `${Math.round(matchingCorr.confidence * 100)}%` : `${selectedToken.token_confidence}%`)}

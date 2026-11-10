@@ -210,7 +210,7 @@ export default function HandwrittenSummaryTab({ documentId, transcriptionUpdated
             {generating && (
                 <div className="intel-generating-card">
                     <div className="intel-spinner-orb">
-                        <Sparkles size={28} className="spin-icon" style={{ color: '#38bdf8' }} />
+                        <Sparkles size={28} className="spin-icon" style={{ color: 'var(--cyan-ink)' }} />
                     </div>
                     <h4>Synthesizing Handwritten Notes...</h4>
                     <p>Ollama Llama 3.2 is analyzing your transcribed pages, cross-referencing citations, and building a structured {summaryType.replace('_', ' ')} study guide.</p>
@@ -224,7 +224,7 @@ export default function HandwrittenSummaryTab({ documentId, transcriptionUpdated
             {!summary && !generating && !loading && (
                 <div className="intel-empty-card">
                     <div className="empty-icon-wrap">
-                        <FileText size={40} style={{ color: '#8b5cf6' }} />
+                        <FileText size={40} style={{ color: 'var(--violet-ink)' }} />
                     </div>
                     <h3>Transform Handwritten Notes into Study Guides</h3>
                     <p>
@@ -233,15 +233,15 @@ export default function HandwrittenSummaryTab({ documentId, transcriptionUpdated
                     </p>
                     <div className="empty-features-grid">
                         <div className="empty-feat-item">
-                            <Zap size={16} style={{ color: '#38bdf8' }} />
+                            <Zap size={16} style={{ color: 'var(--cyan-ink)' }} />
                             <span><strong>Quick Summary:</strong> Rapid 2-minute overview for pre-class review.</span>
                         </div>
                         <div className="empty-feat-item">
-                            <BookOpen size={16} style={{ color: '#a855f7' }} />
+                            <BookOpen size={16} style={{ color: 'var(--violet-ink)' }} />
                             <span><strong>Detailed Notes:</strong> Full hierarchical breakdown with source citations.</span>
                         </div>
                         <div className="empty-feat-item">
-                            <Target size={16} style={{ color: '#ec4899' }} />
+                            <Target size={16} style={{ color: 'var(--pink-ink)' }} />
                             <span><strong>Exam Revision:</strong> High-yield formulas, definitions, and memory checklist.</span>
                         </div>
                     </div>

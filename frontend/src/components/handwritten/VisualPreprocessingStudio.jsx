@@ -230,7 +230,7 @@ export default function VisualPreprocessingStudio({ documentId, pageNumber }) {
     if (loading) {
         return (
             <div className="stages-loading-state">
-                <RefreshCw size={28} className="spin-icon" style={{ color: '#c084fc', marginBottom: '16px' }} />
+                <RefreshCw size={28} className="spin-icon" style={{ color: 'var(--violet-ink)', marginBottom: '16px' }} />
                 <h4>Analyzing Image Preprocessing Stages...</h4>
                 <p>Generating intermediate OpenCV deskewing, normalization, and CLAHE outputs.</p>
             </div>
@@ -240,7 +240,7 @@ export default function VisualPreprocessingStudio({ documentId, pageNumber }) {
     if (error || !stagesData) {
         return (
             <div className="stages-error-state">
-                <Info size={28} style={{ color: '#f87171', marginBottom: '12px' }} />
+                <Info size={28} style={{ color: 'var(--danger-ink)', marginBottom: '12px' }} />
                 <h4>Preprocessing Visualization Unavailable</h4>
                 <p>{error || 'Unable to fetch stage outputs for this document page.'}</p>
             </div>
@@ -257,7 +257,7 @@ export default function VisualPreprocessingStudio({ documentId, pageNumber }) {
             <div className="stages-header-toolbar">
                 <div className="stages-title-meta">
                     <div className="stages-badge">
-                        <Sparkles size={13} style={{ color: '#38bdf8' }} />
+                        <Sparkles size={13} style={{ color: 'var(--cyan-ink)' }} />
                         <span>OpenCV Computer Vision Studio</span>
                     </div>
                     <h3 className="stages-main-title">Page {pageNumber} Processing Transformation</h3>
@@ -534,7 +534,7 @@ export default function VisualPreprocessingStudio({ documentId, pageNumber }) {
                     <div className="stage-detail-grid">
                         <div className="stage-detail-main">
                             <div className="stage-badge-inline">
-                                <CheckCircle2 size={15} style={{ color: '#34d399' }} />
+                                <CheckCircle2 size={15} style={{ color: 'var(--success-ink)' }} />
                                 <span>{currentStage.subtitle}</span>
                             </div>
                             <h4 className="stage-detail-title">{currentStage.title}</h4>
@@ -548,7 +548,7 @@ export default function VisualPreprocessingStudio({ documentId, pageNumber }) {
                         {/* Real Mathematical Metrics */}
                         <div className="stage-metrics-card">
                             <h5 className="metrics-card-title">
-                                <Activity size={14} style={{ color: '#c084fc' }} />
+                                <Activity size={14} style={{ color: 'var(--violet-ink)' }} />
                                 <span>Stage Operational Metrics</span>
                             </h5>
 

@@ -153,11 +153,11 @@
     color: var(--text-primary);
     font-weight: 600;
     border-left-color: var(--accent);
-    box-shadow: inset 0 0 18px rgba(139, 92, 246, 0.15), 0 2px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: inset 0 0 18px var(--accent-soft), 0 2px 10px var(--shadow-color);
 }
 
 .nav-item.active .nav-icon {
-    color: var(--accent);
+    color: var(--accent-ink, var(--accent));
     filter: drop-shadow(0 0 8px var(--cogni-violet-glow));
 }
 
@@ -178,26 +178,60 @@
 }
 
 .nav-item:hover .nav-icon {
-    color: var(--accent);
+    color: var(--accent-ink, var(--accent));
 }
 
 .nav-label-with-badge {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     width: 100%;
+    min-width: 0;
 }
 
 .nav-badge-ai {
     font-size: 10px;
     font-weight: 700;
-    padding: 2px 7px;
+    padding: 2px 8px;
     border-radius: 9999px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(56, 189, 248, 0.25) 100%);
-    border: 1px solid rgba(139, 92, 246, 0.4);
-    color: #c084fc;
+    background: var(--badge-ai-bg);
+    border: 1px solid var(--badge-ai-border);
+    color: var(--badge-ai-text);
     letter-spacing: 0.5px;
     text-transform: uppercase;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.nav-badge-ai.badge-ocr {
+    background: var(--badge-ocr-bg);
+    border-color: var(--badge-ocr-border);
+    color: var(--badge-ocr-text);
+}
+
+.nav-badge-ai.badge-compare {
+    background: var(--badge-compare-bg);
+    border-color: var(--badge-compare-border);
+    color: var(--badge-compare-text);
+}
+
+.nav-badge-ai.badge-mindmap {
+    background: var(--badge-mindmap-bg);
+    border-color: var(--badge-mindmap-border);
+    color: var(--badge-mindmap-text);
+}
+
+.nav-badge-ai.badge-ask {
+    background: var(--badge-ask-bg);
+    border-color: var(--badge-ask-border);
+    color: var(--badge-ask-text);
+}
+
+.nav-item:hover .nav-badge-ai,
+.nav-item.active .nav-badge-ai {
+    box-shadow: 0 2px 8px var(--shadow-color);
+    filter: saturate(1.1);
 }
 
 /* ========================================
@@ -305,19 +339,19 @@
     gap: 8px;
     padding: 5px 14px;
     border-radius: 9999px;
-    background: rgba(45, 212, 191, 0.08);
-    border: 1px solid rgba(45, 212, 191, 0.22);
+    background: var(--badge-ask-bg);
+    border: 1px solid var(--badge-ask-border);
     font-size: 11.5px;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--badge-ask-text);
 }
 
 .topbar-status-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #2dd4bf;
-    box-shadow: 0 0 10px #2dd4bf;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--cogni-teal-glow);
     animation: cogniPulse 2s ease-in-out infinite;
 }
 
@@ -402,8 +436,8 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #38bdf8;
-    box-shadow: 0 0 8px #38bdf8;
+    background: var(--cyan-ink);
+    box-shadow: 0 0 8px var(--cogni-cyan-glow);
 }
 
 /* Profile button */

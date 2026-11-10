@@ -261,7 +261,7 @@ export default function HandwrittenNotes() {
                     </AnimatePresence>
 
                     {error && (
-                        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: '#f87171', fontSize: '13px' }}>
+                        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger-ink)', fontSize: '13px' }}>
                             <AlertCircle size={16} />
                             <span>{error}</span>
                         </div>

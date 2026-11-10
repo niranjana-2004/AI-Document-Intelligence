@@ -161,7 +161,7 @@ export default function HandwrittenChatTab({ documentId, transcriptionUpdated })
                 {messages.length === 0 && !loading && (
                     <div className="chat-starter-container">
                         <div className="chat-starter-orb">
-                            <Bot size={36} style={{ color: '#38bdf8' }} />
+                            <Bot size={36} style={{ color: 'var(--cyan-ink)' }} />
                         </div>
                         <h3>Ask Questions About Your Notes</h3>
                         <p>

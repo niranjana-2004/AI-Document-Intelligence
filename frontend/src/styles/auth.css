@@ -532,9 +532,9 @@
     height: 64px;
     margin: 0 auto 20px;
     border-radius: 50%;
-    background: rgba(45, 212, 191, 0.12);
-    border: 1px solid rgba(45, 212, 191, 0.35);
-    color: #2dd4bf;
+    background: var(--badge-success-bg);
+    border: 1px solid var(--badge-success-border);
+    color: var(--success-ink);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -585,9 +585,9 @@
     height: 56px;
     margin: 0 auto 18px;
     border-radius: 50%;
-    background: rgba(45, 212, 191, 0.12);
-    border: 1px solid rgba(45, 212, 191, 0.35);
-    color: #2dd4bf;
+    background: var(--badge-success-bg);
+    border: 1px solid var(--badge-success-border);
+    color: var(--success-ink);
     display: flex;
     align-items: center;
     justify-content: center;

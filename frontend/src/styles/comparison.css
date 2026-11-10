@@ -59,9 +59,9 @@
 }
 
 .comparison-badge.local-ai {
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15));
-    border-color: rgba(99, 102, 241, 0.35);
-    color: #818cf8;
+    background: var(--badge-compare-bg);
+    border-color: var(--badge-compare-border);
+    color: var(--badge-compare-text);
 }
 
 /* --- Document Selector Card --- */
@@ -70,7 +70,7 @@
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 30px var(--shadow-color);
     position: relative;
     overflow: visible;
 }
@@ -236,9 +236,9 @@
 }
 
 .doc-type-pill.ocr {
-    background: rgba(139, 92, 246, 0.18);
-    color: #a855f7;
-    border: 1px solid rgba(139, 92, 246, 0.35);
+    background: var(--badge-ocr-bg);
+    color: var(--badge-ocr-text);
+    border: 1px solid var(--badge-ocr-border);
 }
 
 .placeholder-text {
@@ -364,9 +364,9 @@
     gap: 10px;
     padding: 10px 16px;
     border-radius: 10px;
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    color: #f59e0b;
+    background: var(--badge-warning-bg);
+    border: 1px solid var(--badge-warning-border);
+    color: var(--badge-warning-text);
     font-size: 13px;
     font-weight: 500;
     margin-top: 16px;
@@ -378,9 +378,9 @@
     gap: 10px;
     padding: 12px 18px;
     border-radius: 10px;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #ef4444;
+    background: var(--badge-danger-bg);
+    border: 1px solid var(--badge-danger-border);
+    color: var(--badge-danger-text);
     font-size: 13px;
     font-weight: 500;
     margin-top: 16px;
@@ -623,9 +623,9 @@
     font-weight: 700;
     padding: 3px 9px;
     border-radius: 9999px;
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(99, 102, 241, 0.18));
-    border: 1px solid rgba(99, 102, 241, 0.4);
-    color: #818cf8;
+    background: var(--badge-ai-bg);
+    border: 1px solid var(--badge-ai-border);
+    color: var(--badge-ai-text);
 }
 
 .ai-summary-prose {
@@ -695,7 +695,7 @@
     flex-wrap: wrap;
 }
 
-.filter-pill {
+.comparison-filter-bar .filter-pill {
     padding: 8px 14px;
     border-radius: 10px;
     font-size: 12.5px;
@@ -707,14 +707,14 @@
     transition: all 0.2s ease;
 }
 
-.filter-pill:hover {
+.comparison-filter-bar .filter-pill:hover {
     background: var(--surface-secondary);
     color: var(--text-primary);
 }
 
-.filter-pill.active {
+.comparison-filter-bar .filter-pill.active {
     background: var(--accent);
-    color: #ffffff;
+    color: var(--on-accent);
     border-color: var(--accent);
 }
 
@@ -809,27 +809,27 @@
 }
 
 .type-status-badge.modified {
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    color: #f59e0b;
+    background: var(--badge-warning-bg);
+    border: 1px solid var(--badge-warning-border);
+    color: var(--badge-warning-text);
 }
 
 .type-status-badge.added {
-    background: rgba(14, 165, 233, 0.15);
-    border: 1px solid rgba(14, 165, 233, 0.35);
-    color: #0ea5e9;
+    background: var(--badge-info-bg);
+    border: 1px solid var(--badge-info-border);
+    color: var(--badge-info-text);
 }
 
 .type-status-badge.removed {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #ef4444;
+    background: var(--badge-danger-bg);
+    border: 1px solid var(--badge-danger-border);
+    color: var(--badge-danger-text);
 }
 
 .type-status-badge.similar {
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #10b981;
+    background: var(--badge-success-bg);
+    border: 1px solid var(--badge-success-border);
+    color: var(--badge-success-text);
 }
 
 /* Side-by-side Layout for MODIFIED items */
@@ -896,10 +896,10 @@
     gap: 8px;
     padding: 8px 12px;
     border-radius: 8px;
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    background: var(--badge-warning-bg);
+    border: 1px solid var(--badge-warning-border);
     font-size: 12px;
-    color: #d97706;
+    color: var(--badge-warning-text);
     margin-top: 10px;
 }
 
