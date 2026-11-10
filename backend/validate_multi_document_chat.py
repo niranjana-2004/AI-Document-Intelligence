@@ -12,15 +12,16 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.services.question_service import answer_question
 from app.services.handwriting.handwritten_source_service import sync_handwritten_chunks_and_embeddings
+from test_db_isolation import isolated_test_db
 
 
 def run_real_document_validation():
     print("=================================================================")
     print("COGNIDOCS MULTI-DOCUMENT CHAT — REAL DOCUMENT VALIDATION RUNNER")
+    print("[ISOLATION] Running against isolated temporary SQLite snapshot (dev DB untouched)")
     print("=================================================================")
 
-    db = SessionLocal()
-    try:
+    with isolated_test_db() as (db, _, _):
         user = db.query(User).filter(User.id == 4).first()
         assert user is not None, "Primary test user #4 not found"
         print(f"Authenticated Test User: {user.email} (ID #{user.id})")
@@ -177,9 +178,6 @@ def run_real_document_validation():
 
         print(f"\nSaved real validation metrics to: {json_path}")
         print("REAL DOCUMENT VALIDATION COMPLETE!")
-
-    finally:
-        db.close()
 
 
 if __name__ == "__main__":

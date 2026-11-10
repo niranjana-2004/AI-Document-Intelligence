@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi.testclient import TestClient
 from app.main import app
+from test_db_isolation import isolated_test_db
 from app.core.database import SessionLocal
 from app.models.user import User
 from app.models.document import Document
@@ -25,10 +26,10 @@ client = TestClient(app)
 
 
 def run_comparison_tests():
-    db = SessionLocal()
-    try:
+    with isolated_test_db() as (db, _, _):
         print("=========================================================")
         print("COGNIDOCS DOCUMENT COMPARISON — VERIFICATION TEST SUITE")
+        print("[ISOLATION] Running against isolated temporary SQLite snapshot (dev DB untouched)")
         print("=========================================================")
 
         # Find or use test user
@@ -369,9 +370,6 @@ def run_comparison_tests():
         print("\n=========================================================")
         print("ALL 10 DOCUMENT COMPARISON TESTS PASSED WITH ZERO FAILURES!")
         print("=========================================================")
-
-    finally:
-        db.close()
 
 
 if __name__ == "__main__":

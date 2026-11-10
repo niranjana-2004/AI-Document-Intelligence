@@ -509,6 +509,60 @@ class TestGroundedPageCitations(unittest.TestCase):
             self.assertEqual(data["sources"][0]["page_number"], 2)
             self.assertEqual(data["sources"][0]["document_name"], "consensus-notes.pdf")
 
+    def test_isolated_test_db_does_not_pollute_dev_database(self):
+        """Synthetic documents created inside isolated_test_db never persist to dev SessionLocal."""
+        from app.core.database import SessionLocal as DevSessionLocal
+        from test_db_isolation import isolated_test_db
+
+        dev_before = DevSessionLocal()
+        try:
+            doc_count_before = dev_before.query(Document).count()
+            conv_count_before = dev_before.query(Conversation).count()
+        finally:
+            dev_before.close()
+
+        synthetic_name = "__isolated_smoke_test_synthetic_doc__.txt"
+        with isolated_test_db(clone_dev_db=True) as (iso_db, _, iso_path):
+            self.assertTrue(iso_path.exists())
+            user = iso_db.query(User).first()
+            if not user:
+                user = User(
+                    email="iso_smoke@example.com",
+                    full_name="Isolated Smoke User",
+                    password_hash=hash_password("Pass123!"),
+                    is_verified=True,
+                )
+                iso_db.add(user)
+                iso_db.commit()
+                iso_db.refresh(user)
+
+            iso_db.add(
+                Document(
+                    user_id=user.id,
+                    filename=synthetic_name,
+                    document_type="TXT",
+                    file_path=f"uploads/{synthetic_name}",
+                    extracted_text="Synthetic text only inside isolated temporary SQLite snapshot.",
+                    text_length=60,
+                    processing_status="ready",
+                    processing_progress=100,
+                )
+            )
+            iso_db.commit()
+            self.assertIsNotNone(
+                iso_db.query(Document).filter(Document.filename == synthetic_name).first()
+            )
+
+        dev_after = DevSessionLocal()
+        try:
+            self.assertEqual(dev_after.query(Document).count(), doc_count_before)
+            self.assertEqual(dev_after.query(Conversation).count(), conv_count_before)
+            self.assertIsNone(
+                dev_after.query(Document).filter(Document.filename == synthetic_name).first()
+            )
+        finally:
+            dev_after.close()
+
 
 if __name__ == "__main__":
     unittest.main()

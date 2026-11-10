@@ -1,7 +1,7 @@
 {
   "case_a": {
     "status": "PASS",
-    "latency": 23.52,
+    "latency": 0.01,
     "result_count": 6,
     "sources": [
       {
@@ -38,7 +38,7 @@
   },
   "case_b": {
     "status": "PASS",
-    "latency": 12.39,
+    "latency": 0.01,
     "source_types": [
       "printed",
       "handwritten"
@@ -78,7 +78,7 @@
   },
   "case_c": {
     "status": "PASS",
-    "latency": 7.96,
+    "latency": 0.01,
     "result_count": 6,
     "sources": [
       {
@@ -115,12 +115,12 @@
   },
   "case_d": {
     "status": "PASS",
-    "latency": 0.13,
+    "latency": 20.62,
     "answer": "I couldn't find enough information in the uploaded document to answer that question."
   },
   "case_e": {
     "status": "PASS",
-    "latency": 3.94,
+    "latency": 0.01,
     "attributed_document_id": 13,
     "attributed_page": 1
   }

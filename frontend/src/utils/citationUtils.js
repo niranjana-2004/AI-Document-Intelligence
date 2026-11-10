@@ -173,3 +173,13 @@ export function splitHighlightedText(text, query) {
         after: text.slice(range.end),
     }
 }
+
+/**
+ * Pure functional updater helper for toggling a document ID in multi-document selection.
+ */
+export function toggleDocumentSelection(prevIds, docId) {
+    const current = Array.isArray(prevIds) ? prevIds : []
+    return current.includes(docId)
+        ? current.filter((id) => id !== docId)
+        : [...current, docId]
+}

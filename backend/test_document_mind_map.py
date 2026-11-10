@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 from fastapi.testclient import TestClient
+from test_db_isolation import isolated_test_db
 
 # Ensure backend root is on sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -25,11 +26,10 @@ from app.schemas.document_mind_map import MindMapNode
 
 def run_mind_map_tests():
     client = TestClient(app)
-    db = SessionLocal()
-
-    try:
+    with isolated_test_db() as (db, _, _):
         print("=========================================================")
         print("COGNIDOCS MIND MAP GENERATOR — VERIFICATION TEST SUITE")
+        print("[ISOLATION] Running against isolated temporary SQLite snapshot (dev DB untouched)")
         print("=========================================================")
 
         # Find or use test user
@@ -280,9 +280,6 @@ def run_mind_map_tests():
         print("\n=========================================================")
         print("ALL 10 MIND MAP VERIFICATION TESTS PASSED WITH ZERO FAILURES!")
         print("=========================================================")
-
-    finally:
-        db.close()
 
 
 if __name__ == "__main__":

@@ -13,7 +13,8 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.chat_cache import ChatQueryCache, compute_multi_doc_cache_key
-from app.core.security import create_access_token
+from app.core.security import create_access_token, hash_password
+from test_db_isolation import isolated_test_db
 from app.services.embedding_services import generate_embedding
 from app.services.search_service import semantic_search, balance_cross_document_diversity
 from app.services.context_service import build_context
@@ -30,16 +31,37 @@ client = TestClient(app)
 
 
 def run_tests():
-    db = SessionLocal()
-    try:
+    with isolated_test_db() as (db, _, _):
         print("=========================================================")
         print("COGNIDOCS MULTI-DOCUMENT CHAT — 18 TEST VERIFICATION SUITE")
+        print("[ISOLATION] Running against isolated temporary SQLite snapshot (dev DB untouched)")
         print("=========================================================")
 
         user4 = db.query(User).filter(User.id == 4).first()
+        if not user4:
+            user4 = User(
+                id=4,
+                email="nivivini0602@gmail.com",
+                full_name="Test User 4",
+                password_hash=hash_password("TestPass123!"),
+                is_verified=True,
+            )
+            db.add(user4)
+            db.commit()
+            db.refresh(user4)
+
         user1 = db.query(User).filter(User.id == 1).first()
-        assert user4 is not None, "Primary test user #4 not found"
-        assert user1 is not None, "Isolated test user #1 not found"
+        if not user1:
+            user1 = User(
+                id=1,
+                email="niranjana051104@gmail.com",
+                full_name="Test User 1",
+                password_hash=hash_password("TestPass123!"),
+                is_verified=True,
+            )
+            db.add(user1)
+            db.commit()
+            db.refresh(user1)
 
         token4 = create_access_token(data={"sub": str(user4.id)})
         token1 = create_access_token(data={"sub": str(user1.id)})
@@ -409,9 +431,6 @@ def run_tests():
         print("\n=========================================================")
         print("ALL 18 MULTI-DOCUMENT CHAT TESTS PASSED WITH ZERO FAILURES!")
         print("=========================================================")
-
-    finally:
-        db.close()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ Executes Acceptance Tests A through L as requested in:
 COGNIDOCS — MULTI-DOCUMENT CHAT: PHASE 4 ACCEPTANCE TEST + PRODUCTION HARDENING
 """
 
+import contextlib
 import sys
 import os
 import json
@@ -21,13 +22,14 @@ from app.models.conversation import Conversation, ConversationMessage
 from app.core.security import create_access_token
 from fastapi.testclient import TestClient
 from app.main import app
+from test_db_isolation import isolated_test_db
 
-def run_acceptance_tests():
+
+def _run_acceptance_body(db):
     print("=" * 70)
     print("COGNIDOCS MULTI-DOCUMENT CHAT — PHASE 4 ACCEPTANCE TESTS (A - L)")
+    print("[ISOLATION] Running against isolated temporary SQLite snapshot (dev DB untouched)")
     print("=" * 70)
-
-    db = SessionLocal()
     # Primary user #4
     user4 = db.query(User).filter(User.email == "nivivini0602@gmail.com").first()
     assert user4 is not None, "Primary test user #4 not found"
@@ -386,6 +388,12 @@ def run_acceptance_tests():
         print(f"[{res['status']}] {test_name}: {res['evidence']}")
 
     return results
+
+
+def run_acceptance_tests():
+    with isolated_test_db() as (db, _, _):
+        return _run_acceptance_body(db)
+
 
 if __name__ == "__main__":
     run_acceptance_tests()

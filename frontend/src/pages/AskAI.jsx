@@ -19,7 +19,11 @@ import {
 import NeuralWaveform from '../components/motion/NeuralWaveform'
 import MultiDocumentSelector from '../components/MultiDocumentSelector'
 import { apiRequest } from '../services/api'
-import { buildSourceNavigationUrl, isInsufficientEvidenceText } from '../utils/citationUtils'
+import {
+    buildSourceNavigationUrl,
+    isInsufficientEvidenceText,
+    toggleDocumentSelection,
+} from '../utils/citationUtils'
 import '../App.css'
 import '../styles/multi-document-chat.css'
 
@@ -199,6 +203,7 @@ function AskAI() {
     const messagesEndRef = useRef(null)
     const activeRequestIdRef = useRef(0)
     const abortControllerRef = useRef(null)
+    const pendingScopeSyncConvIdRef = useRef(null)
 
     // Document-aware suggested questions states & cancellation guards
     const [suggestedQuestions, setSuggestedQuestions] = useState([])
@@ -359,7 +364,8 @@ function AskAI() {
             }))
             setMessages(restoredMessages)
 
-            // Restore document scope
+            // Restore document scope without triggering a redundant PATCH sync
+            pendingScopeSyncConvIdRef.current = null
             const restoredMode = data.scope_mode === 'specific' ? 'specific' : 'all'
             setScopeMode(restoredMode)
             if (restoredMode === 'specific' && Array.isArray(data.selected_doc_ids)) {
@@ -553,6 +559,20 @@ function AskAI() {
         }
     }
 
+    // Persist user-triggered document scope changes after batched state updates settle
+    useEffect(() => {
+        const convId = pendingScopeSyncConvIdRef.current
+        if (!convId || convId !== activeConversationId) {
+            pendingScopeSyncConvIdRef.current = null
+            return
+        }
+        pendingScopeSyncConvIdRef.current = null
+        apiRequest(`/conversations/${convId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ selected_doc_ids: selectedDocIds }),
+        }).catch(() => {})
+    }, [selectedDocIds, activeConversationId])
+
     const handleToggleDoc = (docId) => {
         activeRequestIdRef.current++
         if (abortControllerRef.current) {
@@ -562,15 +582,9 @@ function AskAI() {
         setLoading(false)
         setError('')
         setSuggestedQuestions([])
-        const nextIds = selectedDocIds.includes(docId)
-            ? selectedDocIds.filter((id) => id !== docId)
-            : [...selectedDocIds, docId]
-        setSelectedDocIds(nextIds)
+        setSelectedDocIds((prev) => toggleDocumentSelection(prev, docId))
         if (activeConversationId) {
-            apiRequest(`/conversations/${activeConversationId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ selected_doc_ids: nextIds }),
-            }).catch(() => {})
+            pendingScopeSyncConvIdRef.current = activeConversationId
         }
     }
 
@@ -586,10 +600,7 @@ function AskAI() {
         const allIds = documents.map((d) => d.id)
         setSelectedDocIds(allIds)
         if (activeConversationId) {
-            apiRequest(`/conversations/${activeConversationId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ selected_doc_ids: allIds }),
-            }).catch(() => {})
+            pendingScopeSyncConvIdRef.current = activeConversationId
         }
     }
 
@@ -604,15 +615,13 @@ function AskAI() {
         setSuggestedQuestions([])
         setSelectedDocIds([])
         if (activeConversationId) {
-            apiRequest(`/conversations/${activeConversationId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ selected_doc_ids: [] }),
-            }).catch(() => {})
+            pendingScopeSyncConvIdRef.current = activeConversationId
         }
     }
 
     // New Chat handler: cancels pending requests, resets active conversation, preserves document scope
     const handleNewChat = () => {
+        pendingScopeSyncConvIdRef.current = null
         activeRequestIdRef.current++
         if (abortControllerRef.current) {
             abortControllerRef.current.abort()
