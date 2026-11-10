@@ -1,13 +1,17 @@
 from app.core import database
 from dns import asyncquery
 from app.core import database
+from collections import OrderedDict
 from pathlib import Path
 
 # pyrefly: ignore [missing-import]
 from app.services.document_service import process_document
+from app.services.pdf_service import extract_pages_from_pdf
+from app.services.text_processing_service import clean_text, detect_chunk_category
 from app.core.database import get_db
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
+from app.models.handwritten_page import HandwrittenPage
 from app.services.search_service import semantic_search
 from app.services.question_service import answer_question, get_document_suggested_questions
 from app.schemas.question import QuestionRequest, SuggestedQuestionsRequest, SuggestedQuestionsResponse
@@ -264,7 +268,7 @@ def ask_question(
             conversation_id=conversation.id,
             role="assistant",
             content=answer.get("answer", ""),
-            sources=answer.get("results", [])
+            sources=answer.get("sources", [])
         )
         db.add(assistant_message)
         db.flush()
@@ -496,6 +500,106 @@ def regenerate_document_summary(
     )
 
 
+_PDF_PAGES_CACHE: OrderedDict[tuple[str, int], list[dict]] = OrderedDict()
+_MAX_PDF_CACHE_ENTRIES = 16
+
+
+def _merge_page_chunks(parts: list[str]) -> str:
+    """Reassemble ordered chunks from a single page while stripping sliding-window overlaps."""
+    if not parts:
+        return ""
+    merged = parts[0]
+    for nxt in parts[1:]:
+        max_ov = min(len(merged), len(nxt), 350)
+        ov = 0
+        for k in range(max_ov, 15, -1):
+            if merged.endswith(nxt[:k]):
+                ov = k
+                break
+        if ov > 0:
+            tail = nxt[ov:]
+            if tail:
+                merged += tail
+        else:
+            merged += "\n\n" + nxt
+    return merged
+
+
+def _build_document_pages(document: Document, db: Session) -> list[dict]:
+    """Build ordered 1-based page list for handwritten or PDF documents without failing on missing disk files."""
+    if document.is_handwritten:
+        hw_pages = (
+            db.query(HandwrittenPage)
+            .filter(HandwrittenPage.document_id == document.id)
+            .order_by(HandwrittenPage.page_number.asc())
+            .all()
+        )
+        return [
+            {
+                "page_number": p.page_number,
+                "text": clean_text((p.edited_transcription or p.raw_transcription or "").strip()),
+            }
+            for p in hw_pages
+        ]
+
+    if (document.document_type or "").upper() == "PDF":
+        # Fast path: reconstruct already-indexed paginated chunks in milliseconds without re-parsing large PDFs
+        chunk_rows = (
+            db.query(DocumentChunk)
+            .filter(
+                DocumentChunk.document_id == document.id,
+                DocumentChunk.page_number.isnot(None),
+            )
+            .order_by(DocumentChunk.page_number.asc(), DocumentChunk.chunk_index.asc())
+            .all()
+        )
+        if chunk_rows:
+            grouped: dict[int, list[str]] = {}
+            for c in chunk_rows:
+                if c.page_number is not None and (c.content or "").strip():
+                    grouped.setdefault(int(c.page_number), []).append(c.content.strip())
+            if grouped:
+                return [
+                    {"page_number": pnum, "text": _merge_page_chunks(parts)}
+                    for pnum, parts in sorted(grouped.items())
+                ]
+
+        candidate_paths = []
+        if document.file_path:
+            raw_path = Path(str(document.file_path))
+            candidate_paths.append(raw_path)
+            backend_root = Path(__file__).resolve().parents[3]
+            candidate_paths.append(backend_root / raw_path)
+
+        for path_obj in candidate_paths:
+            if path_obj.exists() and path_obj.is_file():
+                try:
+                    mtime_ns = path_obj.stat().st_mtime_ns
+                    cache_key = (str(path_obj.resolve()), mtime_ns)
+                    cached = _PDF_PAGES_CACHE.get(cache_key)
+                    if cached is not None:
+                        _PDF_PAGES_CACHE.move_to_end(cache_key)
+                        return cached
+
+                    raw_pages = extract_pages_from_pdf(path_obj)
+                    parsed = [
+                        {
+                            "page_number": p["page"],
+                            "text": clean_text(p.get("text") or ""),
+                        }
+                        for p in raw_pages
+                        if clean_text(p.get("text") or "")
+                    ]
+                    _PDF_PAGES_CACHE[cache_key] = parsed
+                    if len(_PDF_PAGES_CACHE) > _MAX_PDF_CACHE_ENTRIES:
+                        _PDF_PAGES_CACHE.popitem(last=False)
+                    return parsed
+                except Exception:
+                    break
+
+    return []
+
+
 @router.get("/{document_id}")
 def get_document(
     document_id: int,
@@ -503,19 +607,21 @@ def get_document(
     current_user: User = Depends(get_current_user)
 ):
     document = (
-    db.query(Document)
-    .filter(
-        Document.id == document_id,
-        Document.user_id == current_user.id
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.user_id == current_user.id
+        )
+        .first()
     )
-    .first()
-)
 
     if not document:
         raise HTTPException(
             status_code=404,
             detail="Document not found."
         )
+
+    pages = _build_document_pages(document, db)
 
     return {
         "id": document.id,
@@ -524,6 +630,9 @@ def get_document(
         "file_path": document.file_path,
         "text_length": document.text_length,
         "extracted_text": document.extracted_text,
+        "is_handwritten": bool(document.is_handwritten),
+        "pages": pages,
+        "page_count": len(pages) if pages else None,
         "created_at": document.created_at
     }
 
@@ -577,6 +686,7 @@ async def upload_document(
     extracted_text = processed_document["text"]
     chunks = processed_document["chunks"]
     embeddings = processed_document["embeddings"]
+    page_numbers = processed_document.get("page_numbers", [])
 
     
 # Generate document summary
@@ -614,13 +724,17 @@ async def upload_document(
     for index, chunk in enumerate(chunks):
 
         category = detect_chunk_category(chunk)
+        page_num = getattr(chunk, "page_number", None)
+        if page_num is None and index < len(page_numbers):
+            page_num = page_numbers[index]
 
         document_chunk = DocumentChunk(
             document_id=document.id,
             chunk_index=index,
             category=category,
-            content=chunk,
-            embedding=embeddings[index]
+            content=str(chunk),
+            embedding=embeddings[index],
+            page_number=page_num
         )
 
         db.add(document_chunk)

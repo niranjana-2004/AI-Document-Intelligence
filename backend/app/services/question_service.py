@@ -9,7 +9,14 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.chat_cache import ChatQueryCache, compute_multi_doc_cache_key
 from app.services.context_service import build_context
-from app.services.llm_service import generate_response, generate_suggested_questions_llm, FALLBACK_ANSWER, LLMServiceError
+from app.services.llm_service import (
+    generate_response,
+    generate_suggested_questions_llm,
+    FALLBACK_ANSWER,
+    LLMServiceError,
+    is_insufficient_evidence_answer,
+)
+from app.services.text_processing_service import extract_relevant_excerpt
 from app.services.handwriting.handwritten_source_service import get_document_transcription_source
 
 logger = logging.getLogger(__name__)
@@ -60,14 +67,71 @@ def generate_deterministic_grounded_answer(query: str, results: list[dict], is_m
         for c in chunks:
             cite = c.get("citation_index", 1)
             content = c.get("content", "").strip()
-            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', content) if len(s.strip()) > 15]
-            summary_snippet = " ".join(sentences[:2]) if sentences else content[:160]
-            page = c.get("page", 1)
-            doc_lines.append(f"- {summary_snippet} [{cite}] (p. {page})")
+            summary_snippet = extract_relevant_excerpt(content, query, max_chars=200)
+            page = c.get("page_number") if c.get("page_number") is not None else c.get("page")
+            page_suffix = f" (p. {page})" if page is not None else ""
+            doc_lines.append(f"- {summary_snippet} [{cite}]{page_suffix}")
         sections.append(f"### {doc_title}\n" + "\n".join(doc_lines))
 
     header = "Based on the retrieved document evidence:\n\n"
     return header + "\n\n".join(sections)
+
+
+def build_structured_sources(
+    results: list[dict],
+    answer_text: str,
+    query: str
+) -> list[dict]:
+    """
+    Construct traceable, deduplicated structured source citations directly
+    from retrieved document chunks without delegating metadata invention to the LLM.
+    """
+    if not results or is_insufficient_evidence_answer(answer_text):
+        return []
+
+    cited_indices: set[int] = set()
+    for match in re.findall(r"\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]", answer_text or ""):
+        for part in match.split(","):
+            part_s = part.strip()
+            if part_s.isdigit():
+                cited_indices.add(int(part_s))
+
+    structured: list[dict] = []
+    seen_keys: set[tuple] = set()
+
+    for idx, r in enumerate(results, start=1):
+        cite_idx = r.get("citation_index") or idx
+        doc_id = r.get("document_id")
+        doc_name = r.get("document_name") or r.get("filename") or r.get("document_title") or "Document"
+        page_num = r.get("page_number")
+        raw_content = (r.get("source_text") or r.get("content") or "").strip()
+        excerpt = extract_relevant_excerpt(raw_content, query, max_chars=240) if raw_content else (r.get("excerpt") or "")
+
+        dedup_key = (doc_id, page_num, excerpt[:120].lower())
+        # Preserve entries explicitly cited inline even if excerpts are adjacent on the same page
+        if dedup_key in seen_keys and cite_idx not in cited_indices:
+            continue
+        seen_keys.add(dedup_key)
+
+        structured.append({
+            "document_id": doc_id,
+            "document_name": doc_name,
+            "document_title": r.get("document_title") or clean_document_title(doc_name),
+            "filename": r.get("filename") or doc_name,
+            "document_type": r.get("document_type"),
+            "source_type": r.get("source_type") or "printed",
+            "chunk_id": r.get("chunk_id"),
+            "page_number": page_num,
+            "page": page_num,
+            "citation_index": cite_idx,
+            "excerpt": excerpt,
+            "content": raw_content or excerpt,
+            "source_text": raw_content or excerpt,
+            "retrieval_score": r.get("retrieval_score", r.get("final_score")),
+            "similarity": r.get("similarity"),
+        })
+
+    return structured
 
 
 def generate_grounded_follow_up_questions(
@@ -79,7 +143,7 @@ def generate_grounded_follow_up_questions(
     Generate 2-3 relevant, evidence-grounded follow-up questions.
     Returns empty list if evidence is weak or fallback answer was triggered.
     """
-    if not results or FALLBACK_ANSWER in answer_text:
+    if not results or is_insufficient_evidence_answer(answer_text):
         return []
 
     doc_titles = list(dict.fromkeys(
@@ -376,6 +440,16 @@ def answer_question(
             if cached_entry and cached_entry.response_json:
                 resp = dict(cached_entry.response_json)
                 resp["cached"] = True
+                if is_insufficient_evidence_answer(resp.get("answer")):
+                    resp["sources"] = []
+                    resp["results"] = []
+                    resp["result_count"] = 0
+                elif "sources" not in resp or resp["sources"] is None:
+                    resp["sources"] = build_structured_sources(
+                        resp.get("results", []),
+                        resp.get("answer", ""),
+                        original_query,
+                    )
                 return resp
         except Exception as e:
             logger.warning(f"Cache check error: {e}")
@@ -412,6 +486,7 @@ def answer_question(
             "answer": FALLBACK_ANSWER,
             "result_count": 0,
             "results": [],
+            "sources": [],
             "follow_up_questions": [],
             "selected_document_ids": effective_ids,
             "cached": False
@@ -456,22 +531,37 @@ def answer_question(
             logger.warning(f"Ollama generation failed: {e}. Using deterministic fallback...")
             answer = generate_deterministic_grounded_answer(original_query, context_data["results"], is_multi)
 
-    follow_up_questions = generate_grounded_follow_up_questions(
-        original_query, context_data["results"], answer
-    )
+    insufficient = is_insufficient_evidence_answer(answer)
+    if insufficient:
+        structured_sources = []
+        exposed_results = []
+        exposed_result_count = 0
+        follow_up_questions = []
+    else:
+        structured_sources = build_structured_sources(
+            context_data["results"],
+            answer,
+            original_query,
+        )
+        exposed_results = context_data["results"]
+        exposed_result_count = context_data["result_count"]
+        follow_up_questions = generate_grounded_follow_up_questions(
+            original_query, context_data["results"], answer
+        )
 
     response_payload = {
         "query": original_query,
         "answer": answer,
-        "result_count": context_data["result_count"],
-        "results": context_data["results"],
+        "result_count": exposed_result_count,
+        "results": exposed_results,
+        "sources": structured_sources,
         "follow_up_questions": follow_up_questions,
         "selected_document_ids": effective_ids,
         "cached": False
     }
 
     # Store in persistent cache
-    if user_id is not None and cache_key and not conversation_history and context_data["result_count"] > 0 and FALLBACK_ANSWER not in answer:
+    if user_id is not None and cache_key and not conversation_history and not insufficient and context_data["result_count"] > 0:
         try:
             doc_str = ",".join(str(d) for d in sorted(effective_ids)) if effective_ids else "all"
             new_cache = ChatQueryCache(

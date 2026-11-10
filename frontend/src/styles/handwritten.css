@@ -6096,6 +6096,7 @@
 
 /* Technical OCR Recovery & Review Panel */
 .technical-recovery-panel {
+    flex-shrink: 0;
     background: var(--studio-card-bg);
     border: 1px solid rgba(139, 92, 246, 0.25);
     border-radius: 9px;

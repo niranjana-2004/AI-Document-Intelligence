@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
     UploadCloud,
@@ -12,12 +13,18 @@ import {
     Sparkles,
     AlertTriangle,
     Eye,
+    ChevronLeft,
+    ChevronRight,
+    BookOpen,
 } from 'lucide-react'
 import { apiRequest } from '../services/api'
+import { splitHighlightedText } from '../utils/citationUtils'
 import '../App.css'
 
 function Documents() {
     const fileInputRef = useRef(null)
+    const highlightMarkRef = useRef(null)
+    const [searchParams, setSearchParams] = useSearchParams()
 
     const [documents, setDocuments] = useState([])
     const [loading, setLoading] = useState(true)
@@ -31,6 +38,8 @@ function Documents() {
 
     const [selectedDocument, setSelectedDocument] = useState(null)
     const [documentLoading, setDocumentLoading] = useState(false)
+    const [viewerPage, setViewerPage] = useState(1) // 1-based page number or 'all'
+    const [viewerHighlight, setViewerHighlight] = useState('')
 
     const [summary, setSummary] = useState('')
     const [summaryLoading, setSummaryLoading] = useState(false)
@@ -188,7 +197,7 @@ function Documents() {
        OPEN DOCUMENT
     ======================================== */
 
-    const handleOpenDocument = async (documentId) => {
+    const handleOpenDocument = async (documentId, options = {}) => {
         try {
             setDocumentLoading(true)
             setSelectedDocument(null)
@@ -196,6 +205,18 @@ function Documents() {
             setCopiedDocText(false)
 
             const data = await apiRequest(`/documents/${documentId}`)
+            const docPages = Array.isArray(data?.pages) ? data.pages : []
+            const requestedPage = options?.page != null ? parseInt(options.page, 10) : null
+            let initialPage = 'all'
+            if (docPages.length > 0) {
+                if (requestedPage && docPages.some((p) => p.page_number === requestedPage)) {
+                    initialPage = requestedPage
+                } else {
+                    initialPage = docPages[0].page_number
+                }
+            }
+            setViewerPage(initialPage)
+            setViewerHighlight(options?.highlight || '')
             setSelectedDocument(data)
         } catch (err) {
             console.error('Open document error:', err)
@@ -204,6 +225,62 @@ function Documents() {
             setDocumentLoading(false)
         }
     }
+
+    const deepLinkDoc = searchParams.get('doc')
+    const deepLinkPage = searchParams.get('page')
+    const deepLinkHighlight = searchParams.get('highlight') || ''
+
+    useEffect(() => {
+        if (!deepLinkDoc) return
+        const docId = parseInt(deepLinkDoc, 10)
+        if (isNaN(docId)) return
+
+        let ignore = false
+        const loadDeepLinkedDoc = async () => {
+            setDocumentLoading(true)
+            setSelectedDocument(null)
+            try {
+                const data = await apiRequest(`/documents/${docId}`)
+                if (ignore) return
+                const docPages = Array.isArray(data?.pages) ? data.pages : []
+                const requestedPage = deepLinkPage != null ? parseInt(deepLinkPage, 10) : null
+                let initialPage = 'all'
+                if (docPages.length > 0) {
+                    if (requestedPage && docPages.some((p) => p.page_number === requestedPage)) {
+                        initialPage = requestedPage
+                    } else {
+                        initialPage = docPages[0].page_number
+                    }
+                }
+                setViewerPage(initialPage)
+                setViewerHighlight(deepLinkHighlight || '')
+                setSelectedDocument(data)
+            } catch (err) {
+                if (!ignore) {
+                    console.error('Open document error:', err)
+                    setError(err.message || 'Failed to open document.')
+                }
+            } finally {
+                if (!ignore) {
+                    setDocumentLoading(false)
+                }
+            }
+        }
+        loadDeepLinkedDoc()
+
+        return () => {
+            ignore = true
+        }
+    }, [deepLinkDoc, deepLinkPage, deepLinkHighlight])
+
+    useEffect(() => {
+        if (selectedDocument && viewerHighlight && highlightMarkRef.current) {
+            const timer = setTimeout(() => {
+                highlightMarkRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 80)
+            return () => clearTimeout(timer)
+        }
+    }, [selectedDocument, viewerPage, viewerHighlight])
 
     /* ========================================
        SUMMARY
@@ -319,6 +396,11 @@ function Documents() {
     const closeDocument = () => {
         setSelectedDocument(null)
         setCopiedDocText(false)
+        setViewerPage(1)
+        setViewerHighlight('')
+        if (searchParams.has('doc') || searchParams.has('page') || searchParams.has('highlight')) {
+            setSearchParams({}, { replace: true })
+        }
     }
 
     const closeSummary = () => {
@@ -725,7 +807,11 @@ function Documents() {
 
                             <div className="modal-body">
                                 <div className="modal-content-toolbar">
-                                    <h3>Extracted Text Content</h3>
+                                    <h3>
+                                        {Array.isArray(selectedDocument.pages) && selectedDocument.pages.length > 0 && viewerPage !== 'all'
+                                            ? `Page ${viewerPage} of ${selectedDocument.pages.length}`
+                                            : 'Extracted Text Content'}
+                                    </h3>
                                     <button
                                         type="button"
                                         className="modal-copy-btn"
@@ -746,10 +832,120 @@ function Documents() {
                                     </button>
                                 </div>
 
+                                {Array.isArray(selectedDocument.pages) && selectedDocument.pages.length > 0 && (
+                                    <div className="viewer-page-nav" role="navigation" aria-label="Document Page Navigation">
+                                        <div className="viewer-page-controls">
+                                            <button
+                                                type="button"
+                                                className="viewer-page-btn"
+                                                disabled={viewerPage === 'all' || viewerPage <= selectedDocument.pages[0].page_number}
+                                                onClick={() => {
+                                                    const idx = selectedDocument.pages.findIndex((p) => p.page_number === viewerPage)
+                                                    if (idx > 0) setViewerPage(selectedDocument.pages[idx - 1].page_number)
+                                                }}
+                                            >
+                                                <ChevronLeft size={14} />
+                                                <span>Prev</span>
+                                            </button>
+
+                                            <label className="viewer-page-select-wrap">
+                                                <span>Page</span>
+                                                <select
+                                                    className="viewer-page-select"
+                                                    value={String(viewerPage)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value
+                                                        setViewerPage(val === 'all' ? 'all' : parseInt(val, 10))
+                                                    }}
+                                                    aria-label="Select document page"
+                                                >
+                                                    {selectedDocument.pages.map((p) => (
+                                                        <option key={p.page_number} value={String(p.page_number)}>
+                                                            Page {p.page_number}
+                                                        </option>
+                                                    ))}
+                                                    <option value="all">All Pages ({selectedDocument.pages.length})</option>
+                                                </select>
+                                            </label>
+
+                                            <button
+                                                type="button"
+                                                className="viewer-page-btn"
+                                                disabled={
+                                                    viewerPage === 'all' ||
+                                                    viewerPage >= selectedDocument.pages[selectedDocument.pages.length - 1].page_number
+                                                }
+                                                onClick={() => {
+                                                    const idx = selectedDocument.pages.findIndex((p) => p.page_number === viewerPage)
+                                                    if (idx >= 0 && idx < selectedDocument.pages.length - 1) {
+                                                        setViewerPage(selectedDocument.pages[idx + 1].page_number)
+                                                    }
+                                                }}
+                                            >
+                                                <span>Next</span>
+                                                <ChevronRight size={14} />
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            className={`viewer-page-btn ${viewerPage === 'all' ? 'active' : ''}`}
+                                            onClick={() =>
+                                                setViewerPage(
+                                                    viewerPage === 'all'
+                                                        ? selectedDocument.pages[0].page_number
+                                                        : 'all'
+                                                )
+                                            }
+                                        >
+                                            {viewerPage === 'all' ? 'Single Page View' : 'Show All Pages'}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {viewerHighlight && (
+                                    <div className="viewer-citation-banner" role="status">
+                                        <span className="viewer-citation-label">
+                                            <BookOpen size={14} />
+                                            <span>
+                                                Highlighting cited passage
+                                                {viewerPage !== 'all' ? ` on Page ${viewerPage}` : ''}
+                                            </span>
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className="viewer-clear-highlight-btn"
+                                            onClick={() => setViewerHighlight('')}
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="document-text">
-                                    {documentLoading
-                                        ? 'Loading document...'
-                                        : selectedDocument.extracted_text || 'No text content available.'}
+                                    {documentLoading ? (
+                                        'Loading document...'
+                                    ) : (() => {
+                                        const hasPages = Array.isArray(selectedDocument.pages) && selectedDocument.pages.length > 0
+                                        let activeText = selectedDocument.extracted_text || 'No text content available.'
+                                        if (hasPages && viewerPage !== 'all') {
+                                            const activePageObj = selectedDocument.pages.find((p) => p.page_number === viewerPage)
+                                            if (activePageObj) {
+                                                activeText = activePageObj.text || 'No readable text on this page.'
+                                            }
+                                        }
+                                        const split = viewerHighlight ? splitHighlightedText(activeText, viewerHighlight) : null
+                                        if (!split) return activeText
+                                        return (
+                                            <>
+                                                {split.before}
+                                                <mark ref={highlightMarkRef} className="viewer-highlight-mark">
+                                                    {split.match}
+                                                </mark>
+                                                {split.after}
+                                            </>
+                                        )
+                                    })()}
                                 </div>
                             </div>
                         </motion.div>

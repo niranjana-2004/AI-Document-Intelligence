@@ -44,22 +44,22 @@ def build_context(
     for idx, result in enumerate(results, start=1):
         result["citation_index"] = idx
 
+        doc_name = result.get("document_name") or result.get("filename") or result.get("document_title") or "Unknown Document"
         doc_title = result.get("document_title") or result.get("filename") or "Unknown Document"
         source_type = (result.get("source_type") or "printed").title()
         chunk_id = result.get("chunk_id", "N/A")
-        page_val = result.get("page") or result.get("page_number")
-        page_str = str(page_val) if page_val is not None else "N/A"
+        page_val = result.get("page_number") if result.get("page_number") is not None else result.get("page")
+        page_str = str(page_val) if page_val is not None else "Unpaginated"
         content = (result.get("content") or "").strip()
 
         if is_multi:
             context_parts.append(
-                f"[Source {idx} | Document: {doc_title} | Type: {source_type} | Page: {page_str} | Chunk: {chunk_id}]\n"
+                f"[Source {idx} | Document: {doc_title} | File: {doc_name} | Type: {source_type} | Page: {page_str} | Chunk: {chunk_id}]\n"
                 f"{content}"
             )
         else:
-            filename = result.get("filename") or "Unknown Document"
             context_parts.append(
-                f"[Source {idx} | Document: {filename} | Page: {page_str}]\n"
+                f"[Source {idx} | Document: {doc_name} | Page: {page_str} | Chunk: {chunk_id}]\n"
                 f"{content}"
             )
 

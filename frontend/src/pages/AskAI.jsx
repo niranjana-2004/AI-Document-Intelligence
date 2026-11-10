@@ -19,6 +19,7 @@ import {
 import NeuralWaveform from '../components/motion/NeuralWaveform'
 import MultiDocumentSelector from '../components/MultiDocumentSelector'
 import { apiRequest } from '../services/api'
+import { buildSourceNavigationUrl, isInsufficientEvidenceText } from '../utils/citationUtils'
 import '../App.css'
 import '../styles/multi-document-chat.css'
 
@@ -709,7 +710,10 @@ function AskAI() {
                 data?.result ||
                 'No answer returned.'
 
-            const sourcesList = Array.isArray(data?.results) ? data.results : []
+            const rawSources = Array.isArray(data?.sources)
+                ? data.sources
+                : (Array.isArray(data?.results) ? data.results : [])
+            const sourcesList = isInsufficientEvidenceText(aiAnswer) ? [] : rawSources
             const followUpQuestions = Array.isArray(data?.follow_up_questions)
                 ? data.follow_up_questions
                 : []
@@ -784,10 +788,13 @@ function AskAI() {
     }
 
     const toggleSourcesDrawer = (msgId) => {
-        setExpandedSourcesDrawers((prev) => ({
-            ...prev,
-            [msgId]: !prev[msgId],
-        }))
+        setExpandedSourcesDrawers((prev) => {
+            const currentlyExpanded = prev[msgId] !== false
+            return {
+                ...prev,
+                [msgId]: !currentlyExpanded,
+            }
+        })
     }
 
     const toggleSourceExcerpt = (msgId, citationIndex) => {
@@ -1345,13 +1352,14 @@ function AskAI() {
                             }
 
                             // Assistant message
-                            const sortedSources = Array.isArray(msg.sources)
+                            const isInsufficient = isInsufficientEvidenceText(msg.content)
+                            const sortedSources = !isInsufficient && Array.isArray(msg.sources)
                                 ? [...msg.sources].sort(
                                       (a, b) => (Number(a.citation_index) || 0) - (Number(b.citation_index) || 0)
                                   )
                                 : []
 
-                            const isDrawerExpanded = Boolean(expandedSourcesDrawers[msg.id])
+                            const isDrawerExpanded = expandedSourcesDrawers[msg.id] !== false
 
                             return (
                                 <motion.div
@@ -1411,9 +1419,9 @@ function AskAI() {
                                             </div>
                                         </article>
 
-                                        {/* UNIFIED COMPACT SOURCES DRAWER */}
+                                        {/* GROUNDED CITATION SOURCES SECTION */}
                                         {sortedSources.length > 0 && (
-                                            <div className="chat-sources-container">
+                                            <div className="chat-sources-container" aria-label="Answer sources">
                                                 <button
                                                     type="button"
                                                     className={`sources-drawer-btn ${isDrawerExpanded ? 'expanded' : ''}`}
@@ -1425,17 +1433,16 @@ function AskAI() {
                                                         <BookOpen size={15} />
                                                     </span>
                                                     <span className="sources-drawer-label">
-                                                        {sortedSources.length}{' '}
-                                                        {sortedSources.length === 1 ? 'Source referenced' : 'Sources referenced'}
+                                                        Sources ({sortedSources.length})
                                                     </span>
                                                     <span className="sources-drawer-arrow" aria-hidden="true">
-                                                        {isDrawerExpanded ? '▴ Hide' : '▾ View details'}
+                                                        {isDrawerExpanded ? '▴ Hide' : '▾ Show'}
                                                     </span>
                                                 </button>
 
                                                 {isDrawerExpanded && (
                                                     <div className="sources-cards-list">
-                                                        {/* Multi-document evidence summary */}
+                                                        {/* Multi-document / page evidence summary */}
                                                         {(() => {
                                                             const distinctDocIds = new Set(
                                                                 sortedSources.map((s) => s.document_id).filter((id) => id != null)
@@ -1444,7 +1451,7 @@ function AskAI() {
                                                             return (
                                                                 <div className="multi-doc-sources-summary">
                                                                     <span className="sources-summary-title">
-                                                                        Cross-Document Evidence: {docCount} {docCount === 1 ? 'document' : 'documents'} · {sortedSources.length} {sortedSources.length === 1 ? 'passage' : 'passages'}
+                                                                        Grounded Evidence: {docCount} {docCount === 1 ? 'document' : 'documents'} · {sortedSources.length} {sortedSources.length === 1 ? 'citation' : 'citations'}
                                                                     </span>
                                                                 </div>
                                                             )
@@ -1459,7 +1466,8 @@ function AskAI() {
                                                             const excerptKey = `${msg.id}-${citeNum}`
                                                             const isExpanded = Boolean(expandedSourceExcerpts[excerptKey])
 
-                                                            const docTitle =
+                                                            const docName =
+                                                                source.document_name ||
                                                                 source.document_title ||
                                                                 source.filename ||
                                                                 `Document #${source.document_id || citeNum}`
@@ -1467,24 +1475,30 @@ function AskAI() {
                                                                 source.source_type === 'handwritten' ||
                                                                 (source.document_type && source.document_type.toLowerCase().includes('handwritten')) ||
                                                                 (source.filename && source.filename.toLowerCase().includes('handwritten'))
-                                                            const pageLabel =
-                                                                source.page_number != null
-                                                                    ? `Page ${source.page_number}`
-                                                                    : 'Page N/A'
-                                                            const contentText =
-                                                                source.content || source.text || source.excerpt || 'No text excerpt available.'
-                                                            const needsTruncation = contentText.length > 220
-                                                            const displayText =
-                                                                !needsTruncation || isExpanded
-                                                                    ? contentText
-                                                                    : `${contentText.slice(0, 220)}...`
+                                                            const hasPage = source.page_number != null
+                                                            const pageLabel = hasPage
+                                                                ? `Page ${source.page_number}`
+                                                                : 'Full Document'
+                                                            const rawExcerpt =
+                                                                source.excerpt || source.content || source.source_text || 'No text excerpt available.'
+                                                            const fullContent =
+                                                                source.content || source.source_text || rawExcerpt
+                                                            const canExpand =
+                                                                fullContent.length > rawExcerpt.length + 25 || rawExcerpt.length > 220
+                                                            const displayText = isExpanded
+                                                                ? fullContent
+                                                                : rawExcerpt.length > 240
+                                                                ? `${rawExcerpt.slice(0, 240)}...`
+                                                                : rawExcerpt
+                                                            const navUrl = buildSourceNavigationUrl(source)
 
-                                                            const similarityScore =
+                                                            const rawScore =
                                                                 typeof source.similarity === 'number' && !isNaN(source.similarity)
-                                                                    ? Math.round(source.similarity * 100)
-                                                                    : typeof source.score === 'number' && !isNaN(source.score)
-                                                                    ? Math.round(source.score * 100)
+                                                                    ? source.similarity
+                                                                    : typeof source.retrieval_score === 'number' && !isNaN(source.retrieval_score)
+                                                                    ? source.retrieval_score
                                                                     : null
+                                                            const similarityScore = rawScore !== null ? Math.min(100, Math.round(rawScore * 100)) : null
 
                                                             return (
                                                                 <article
@@ -1494,16 +1508,16 @@ function AskAI() {
                                                                         isHighlighted ? 'source-card-highlighted' : ''
                                                                     }`}
                                                                     tabIndex={0}
-                                                                    aria-label={`Source ${citeNum}: ${docTitle}, ${pageLabel}`}
+                                                                    aria-label={`Source ${citeNum}: ${docName}, ${pageLabel}`}
                                                                 >
                                                                     <div className="source-card-topbar">
                                                                         <div className="source-meta-group">
                                                                             <span className="source-idx-pill">
                                                                                 [{citeNum}]
                                                                             </span>
-                                                                            <span className="source-name" title={docTitle}>
+                                                                            <span className="source-name" title={docName}>
                                                                                 {isHw ? '✍️ ' : '📄 '}
-                                                                                {docTitle}
+                                                                                {docName}
                                                                             </span>
                                                                             <span className={`source-type-pill ${isHw ? 'hw' : 'printed'}`}>
                                                                                 {isHw ? 'HANDWRITTEN' : 'PRINTED'}
@@ -1522,28 +1536,27 @@ function AskAI() {
                                                                         </div>
 
                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                                                                            {source.document_id && (
-                                                                                isHw ? (
-                                                                                    <Link
-                                                                                        to={`/handwritten/${source.document_id}`}
-                                                                                        className="source-nav-link"
-                                                                                        title="Open in Handwritten Studio"
-                                                                                        onClick={(e) => e.stopPropagation()}
-                                                                                    >
-                                                                                        Studio ↗
-                                                                                    </Link>
-                                                                                ) : (
-                                                                                    <Link
-                                                                                        to="/documents"
-                                                                                        className="source-nav-link"
-                                                                                        title="Open in Documents Library"
-                                                                                        onClick={(e) => e.stopPropagation()}
-                                                                                    >
-                                                                                        Doc ↗
-                                                                                    </Link>
-                                                                                )
+                                                                            {navUrl && (
+                                                                                <Link
+                                                                                    to={navUrl}
+                                                                                    className="source-nav-link"
+                                                                                    title={
+                                                                                        isHw
+                                                                                            ? `Open handwritten ${pageLabel} in Studio`
+                                                                                            : hasPage
+                                                                                            ? `Open ${docName} at ${pageLabel}`
+                                                                                            : `Open ${docName}`
+                                                                                    }
+                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                >
+                                                                                    {isHw
+                                                                                        ? `Studio ${hasPage ? `p.${source.page_number} ` : ''}↗`
+                                                                                        : hasPage
+                                                                                        ? `Open Page ${source.page_number} ↗`
+                                                                                        : 'Open Doc ↗'}
+                                                                                </Link>
                                                                             )}
-                                                                            {needsTruncation && (
+                                                                            {canExpand && (
                                                                                 <button
                                                                                     type="button"
                                                                                     className="source-expand-btn"
@@ -1556,9 +1569,9 @@ function AskAI() {
                                                                         </div>
                                                                     </div>
 
-                                                                    <p className="source-excerpt-text">
-                                                                        {displayText}
-                                                                    </p>
+                                                                    <blockquote className="source-excerpt-quote">
+                                                                        &ldquo;{displayText}&rdquo;
+                                                                    </blockquote>
                                                                 </article>
                                                             )
                                                         })}

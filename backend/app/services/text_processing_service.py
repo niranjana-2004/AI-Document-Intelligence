@@ -256,3 +256,126 @@ def chunk_text(
             chunks.extend(section_chunks)
 
     return chunks
+
+
+_EXCERPT_STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "been", "by", "can", "could",
+    "did", "do", "does", "for", "from", "had", "has", "have", "how", "i",
+    "in", "is", "it", "its", "me", "of", "on", "or", "that", "the", "their",
+    "them", "there", "these", "they", "this", "to", "was", "we", "were",
+    "what", "when", "where", "which", "who", "why", "will", "with", "would",
+    "you", "your"
+}
+
+
+def extract_relevant_excerpt(
+    text: str,
+    query: str = "",
+    max_chars: int = 240
+) -> str:
+    """
+    Deterministically select a concise, readable supporting excerpt from a chunk
+    by scoring sentences or sliding text windows against meaningful query terms.
+    Preserves original wording without relying on LLM generation.
+    """
+    if not text:
+        return ""
+
+    # Strip redundant OCR page banner headers if present and collapse extra newlines
+    cleaned = re.sub(r"---\s*Page\s+\d+\s*---\s*", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+
+    if not cleaned:
+        return ""
+
+    if len(cleaned) <= max_chars:
+        return cleaned
+
+    query_tokens = [
+        t for t in re.findall(r"[a-zA-Z0-9]{2,}", (query or "").lower())
+        if t not in _EXCERPT_STOPWORDS
+    ]
+    unique_tokens = list(dict.fromkeys(query_tokens))
+    query_phrase = " ".join(unique_tokens[:4])
+
+    # Split into sentence-like segments first
+    sentences = [
+        s.strip()
+        for s in re.split(r"(?<=[.!?])\s+", cleaned)
+        if s.strip()
+    ]
+
+    def score_segment(seg: str) -> float:
+        seg_lower = seg.lower()
+        seg_words = set(re.findall(r"[a-zA-Z0-9]{2,}", seg_lower))
+        if not unique_tokens:
+            return 0.0
+        unique_hits = sum(1 for tok in unique_tokens if tok in seg_words)
+        partial_hits = sum(
+            1 for tok in unique_tokens
+            if tok not in seg_words and tok in seg_lower
+        )
+        phrase_bonus = 3.0 if (len(unique_tokens) >= 2 and query_phrase in seg_lower) else 0.0
+        return unique_hits * 3.0 + partial_hits * 1.0 + phrase_bonus
+
+    best_idx = 0
+    best_score = -1.0
+
+    if len(sentences) > 1 and unique_tokens:
+        for idx, sent in enumerate(sentences):
+            window = sent
+            if idx + 1 < len(sentences) and len(sent) + len(sentences[idx + 1]) + 1 <= max_chars:
+                window = f"{sent} {sentences[idx + 1]}"
+            sc = score_segment(window)
+            if sc > best_score:
+                best_score = sc
+                best_idx = idx
+
+        # Assemble 1-2 sentences around best_idx within max_chars
+        selected = sentences[best_idx]
+        if best_idx + 1 < len(sentences):
+            combined = f"{selected} {sentences[best_idx + 1]}"
+            if len(combined) <= max_chars:
+                selected = combined
+        prefix = "... " if best_idx > 0 else ""
+        if len(selected) <= max_chars:
+            suffix = " ..." if len(cleaned) > len(selected) and not selected.endswith((".", "!", "?")) else ""
+            result = f"{prefix}{selected}{suffix}".strip()
+            if len(result) <= max_chars + 8:
+                return result
+    else:
+        selected = cleaned
+
+    # Single long sentence/OCR block: center window on highest-density query match
+    anchor = 0
+    if unique_tokens:
+        words_iter = list(re.finditer(r"[a-zA-Z0-9]{2,}", cleaned.lower()))
+        best_pos_score = -1.0
+        token_set = set(unique_tokens)
+        for m in words_iter:
+            pos = m.start()
+            window_end = min(len(cleaned), pos + max_chars)
+            sub_lower = cleaned[max(0, pos - 40):window_end].lower()
+            sub_words = set(re.findall(r"[a-zA-Z0-9]{2,}", sub_lower))
+            sc = float(len(token_set & sub_words))
+            if sc > best_pos_score:
+                best_pos_score = sc
+                anchor = max(0, pos - 45)
+
+    # Align window start and end to word boundaries
+    if anchor > 0:
+        space_after = cleaned.find(" ", anchor)
+        if 0 < space_after < anchor + 25:
+            anchor = space_after + 1
+
+    slice_end = min(len(cleaned), anchor + max_chars)
+    snippet = cleaned[anchor:slice_end]
+    if slice_end < len(cleaned):
+        last_space = snippet.rfind(" ")
+        if last_space > max_chars // 2:
+            snippet = snippet[:last_space]
+        snippet = snippet.rstrip(" ,;:-") + "..."
+    if anchor > 0:
+        snippet = "..." + snippet.lstrip(" ,;:-")
+
+    return snippet.strip()

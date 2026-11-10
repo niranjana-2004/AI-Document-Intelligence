@@ -5,6 +5,7 @@ from typing import cast
 from app.models.document import Document
 from app.services.embedding_services import generate_embedding
 from app.services.similarity_service import cosine_similarity
+from app.services.text_processing_service import extract_relevant_excerpt
 from app.models.document_chunk import DocumentChunk
 
 
@@ -603,9 +604,26 @@ def calculate_keyword_score(
     if not meaningful_words:
         return 0.0
 
-    matched_words = meaningful_words.intersection(
-        content_words
-    )
+    def _stem_variants(word: str) -> set[str]:
+        variants = {word}
+        if len(word) > 4:
+            if word.endswith("ies"):
+                variants.add(word[:-3] + "y")
+            elif word.endswith("es"):
+                variants.add(word[:-2])
+                variants.add(word[:-1])
+            elif word.endswith("s"):
+                variants.add(word[:-1])
+        return variants
+
+    content_expanded = set(content_words)
+    for cw in content_words:
+        content_expanded.update(_stem_variants(cw))
+
+    matched_words = {
+        w for w in meaningful_words
+        if _stem_variants(w).intersection(content_expanded)
+    }
 
     # Abbreviation/full-form matching
     for abbreviation, full_form in QUERY_EXPANSIONS.items():
@@ -981,16 +999,19 @@ def semantic_search(
             results.append({
                 "chunk_id": chunk.id,
                 "document_id": chunk.document_id,
+                "document_name": fname,
                 "document_title": doc_title,
                 "filename": fname,
                 "document_type": doc_type,
                 "source_type": "handwritten" if is_hw else "printed",
                 "page_number": page_num,
-                "page": page_num or 1,
+                "page": page_num,
                 "chunk_index": chunk.chunk_index,
                 "content": chunk.content,
-                "excerpt": (chunk.content[:220] + "...") if len(chunk.content) > 220 else chunk.content,
+                "source_text": chunk.content,
+                "excerpt": extract_relevant_excerpt(chunk.content, query, max_chars=240),
                 "similarity": round(similarity, 4),
+                "retrieval_score": round(final_score, 4),
                 "keyword_score": round(keyword_score, 4),
                 "category": category,
                 "query_intent": intent,
@@ -1004,15 +1025,18 @@ def semantic_search(
         reverse=True
     )
 
+    is_multi = (document_ids is not None and len(document_ids) > 1)
+
     # Relative drop-off filter:
-    # Retain chunks within 60% of the top-ranking chunk's score,
-    # filtering out low-scoring noise from unrelated documents.
+    # Retain chunks within 60% of the top score (50% in multi-document mode so
+    # relevant documents covering a second sub-topic are not starved prior to
+    # cross-document diversity balancing), filtering out unrelated noise.
     if results:
         top_score = cast(float, results[0]["final_score"])
+        dropoff_factor = 0.50 if is_multi else 0.60
         results = [
             r for r in results
-            if cast(float, r["final_score"]) >= top_score * 0.60
+            if cast(float, r["final_score"]) >= top_score * dropoff_factor
         ]
 
-    is_multi = (document_ids is not None and len(document_ids) > 1)
     return balance_cross_document_diversity(results, top_k=top_k, is_multi_document=is_multi)

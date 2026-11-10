@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import {
     ArrowLeft,
     ChevronLeft,
@@ -33,6 +33,7 @@ import {
     Info
 } from 'lucide-react'
 import { apiRequest, API_BASE_URL } from '../services/api'
+import { splitHighlightedText } from '../utils/citationUtils'
 import PageTransition from '../components/motion/PageTransition'
 import VisualPreprocessingStudio from '../components/handwritten/VisualPreprocessingStudio'
 import HandwrittenSummaryTab from '../components/handwritten/HandwrittenSummaryTab'
@@ -45,6 +46,10 @@ import '../styles/handwritten.css'
 
 export default function HandwrittenStudio() {
     const { documentId } = useParams()
+    const [searchParams, setSearchParams] = useSearchParams()
+    const targetPageParam = searchParams.get('page')
+    const highlightQuery = searchParams.get('highlight') || ''
+    const highlightRef = useRef(null)
 
     const [document, setDocument] = useState(null)
     const [pages, setPages] = useState([])
@@ -93,8 +98,19 @@ export default function HandwrittenStudio() {
             const docPages = docData?.pages || []
             setPages(docPages)
 
-            if (docPages.length > 0 && docPages[currentPageIndex]) {
-                const current = docPages[currentPageIndex]
+            let targetIdx = currentPageIndex
+            if (targetPageParam && docPages.length > 0) {
+                const targetNum = parseInt(targetPageParam, 10)
+                const foundIdx = docPages.findIndex((p) => Number(p.page_number) === targetNum)
+                if (foundIdx >= 0) {
+                    targetIdx = foundIdx
+                    setCurrentPageIndex(foundIdx)
+                    setActiveTab('transcription')
+                }
+            }
+
+            if (docPages.length > 0 && docPages[targetIdx]) {
+                const current = docPages[targetIdx]
                 setTranscriptionText(current.edited_transcription || current.raw_transcription || '')
             }
             setError(null)
@@ -108,6 +124,28 @@ export default function HandwrittenStudio() {
     useEffect(() => {
         fetchDetails()
     }, [documentId])
+
+    useEffect(() => {
+        if (!targetPageParam || pages.length === 0) return
+        const targetNum = parseInt(targetPageParam, 10)
+        const foundIdx = pages.findIndex((p) => Number(p.page_number) === targetNum)
+        if (foundIdx >= 0) {
+            const timer = setTimeout(() => {
+                setCurrentPageIndex(foundIdx)
+                setActiveTab('transcription')
+            }, 0)
+            return () => clearTimeout(timer)
+        }
+    }, [targetPageParam, pages])
+
+    useEffect(() => {
+        if (highlightQuery && highlightRef.current) {
+            const timer = setTimeout(() => {
+                highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 100)
+            return () => clearTimeout(timer)
+        }
+    }, [highlightQuery, currentPageIndex, activeTab])
 
     // 2. Synchronize transcription text when active page changes
     const currentPage = pages[currentPageIndex] || null
@@ -652,7 +690,7 @@ export default function HandwrittenStudio() {
                                 <div className="transcription-editor-box">
                                     {showHeatmap && (
                                         <div className="heatmap-legend-bar">
-                                            <span style={{ fontWeight: 600, color: '#f8fafc' }}>Heatmap Legend:</span>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Heatmap Legend:</span>
                                             <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                                 <span className="legend-dot high"></span> High (≥80%)
                                             </span>
@@ -846,55 +884,97 @@ export default function HandwrittenStudio() {
                                         </div>
                                     )}
 
+                                    {highlightQuery && (
+                                        <div className="viewer-citation-banner" role="status" style={{ marginBottom: '12px' }}>
+                                            <span className="viewer-citation-label">
+                                                <Sparkles size={14} />
+                                                <span>
+                                                    Navigated to Page {currentPage?.page_number || 1} citation:{' '}
+                                                    <em>&ldquo;{highlightQuery.length > 90 ? `${highlightQuery.slice(0, 90)}...` : highlightQuery}&rdquo;</em>
+                                                </span>
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className="viewer-clear-highlight-btn"
+                                                onClick={() => setSearchParams({}, { replace: true })}
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                    )}
+
                                     {/* Content View: Formatted Layout View vs Raw Editor View */}
                                     {transcriptionDisplayMode === 'formatted' && currentPage?.ocr_metadata?.structured_layout?.blocks?.length > 0 ? (
                                         <div className="structured-doc-view">
-                                            {currentPage.ocr_metadata.structured_layout.blocks.map((block) => (
-                                                <div key={block.id} className="structured-block">
-                                                    {block.type === 'title' && (
-                                                        <h3 className="structured-block-title">
-                                                            {block.text}
-                                                            {block.confidence && (
-                                                                <span className="uncertainty-pill" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', borderColor: 'rgba(168, 85, 247, 0.3)' }}>
-                                                                    {block.confidence}%
-                                                                </span>
-                                                            )}
-                                                        </h3>
-                                                    )}
-                                                    {block.type === 'heading' && (
-                                                        <h4 className="structured-block-heading">
-                                                            {block.text}
-                                                            {block.confidence && (
-                                                                <span className="uncertainty-pill" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
-                                                                    {block.confidence}%
-                                                                </span>
-                                                            )}
-                                                        </h4>
-                                                    )}
-                                                    {block.type === 'list' && (
-                                                        <ul className="structured-block-list">
-                                                            {(block.items || []).map((item, itemIdx) => (
-                                                                <li key={itemIdx}>{item}</li>
-                                                            ))}
-                                                        </ul>
-                                                    )}
-                                                    {block.type === 'math' && (
-                                                        <div className="structured-block-math">
-                                                            {block.text}
-                                                        </div>
-                                                    )}
-                                                    {block.type === 'paragraph' && (
-                                                        <p className="structured-block-paragraph">
-                                                            {block.text}
-                                                            {block.confidence < 65 && (
-                                                                <span className="uncertainty-pill" title="Low OCR confidence on this line">
-                                                                    Uncertain ({block.confidence}%)
-                                                                </span>
-                                                            )}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ))}
+                                            {(() => {
+                                                let assignedFirstMark = false
+                                                const renderTextWithHighlight = (txt) => {
+                                                    if (!highlightQuery || !txt) return txt
+                                                    const sp = splitHighlightedText(txt, highlightQuery)
+                                                    if (!sp) return txt
+                                                    const attachRef = !assignedFirstMark
+                                                    assignedFirstMark = true
+                                                    return (
+                                                        <>
+                                                            {sp.before}
+                                                            <mark
+                                                                ref={attachRef ? highlightRef : undefined}
+                                                                className="viewer-highlight-mark"
+                                                            >
+                                                                {sp.match}
+                                                            </mark>
+                                                            {sp.after}
+                                                        </>
+                                                    )
+                                                }
+
+                                                return currentPage.ocr_metadata.structured_layout.blocks.map((block) => (
+                                                    <div key={block.id} className="structured-block">
+                                                        {block.type === 'title' && (
+                                                            <h3 className="structured-block-title">
+                                                                {renderTextWithHighlight(block.text)}
+                                                                {block.confidence && (
+                                                                    <span className="uncertainty-pill" style={{ background: 'var(--badge-mindmap-bg)', color: 'var(--violet-ink)', borderColor: 'var(--badge-mindmap-border)' }}>
+                                                                        {block.confidence}%
+                                                                    </span>
+                                                                )}
+                                                            </h3>
+                                                        )}
+                                                        {block.type === 'heading' && (
+                                                            <h4 className="structured-block-heading">
+                                                                {renderTextWithHighlight(block.text)}
+                                                                {block.confidence && (
+                                                                    <span className="uncertainty-pill" style={{ background: 'var(--badge-info-bg)', color: 'var(--cyan-ink)', borderColor: 'var(--badge-info-border)' }}>
+                                                                        {block.confidence}%
+                                                                    </span>
+                                                                )}
+                                                            </h4>
+                                                        )}
+                                                        {block.type === 'list' && (
+                                                            <ul className="structured-block-list">
+                                                                {(block.items || []).map((item, itemIdx) => (
+                                                                    <li key={itemIdx}>{renderTextWithHighlight(item)}</li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                        {block.type === 'math' && (
+                                                            <div className="structured-block-math">
+                                                                {renderTextWithHighlight(block.text)}
+                                                            </div>
+                                                        )}
+                                                        {block.type === 'paragraph' && (
+                                                            <p className="structured-block-paragraph">
+                                                                {renderTextWithHighlight(block.text)}
+                                                                {block.confidence < 65 && (
+                                                                    <span className="uncertainty-pill" title="Low OCR confidence on this line">
+                                                                        Uncertain ({block.confidence}%)
+                                                                    </span>
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            })()}
                                         </div>
                                     ) : (
                                         <textarea

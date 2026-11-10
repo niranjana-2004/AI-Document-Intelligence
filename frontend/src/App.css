@@ -4138,24 +4138,26 @@
 
 .source-page-badge {
   font-size: 11px;
-  color: var(--text-muted);
-  background: var(--surface-secondary);
-  padding: 1px 6px;
-  border-radius: 4px;
+  font-weight: 700;
+  color: var(--badge-info-text);
+  background: var(--badge-info-bg);
+  border: 1px solid var(--badge-info-border);
+  padding: 2px 7px;
+  border-radius: 5px;
 }
 
 .source-sim-chip {
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-ink);
   background: var(--accent-soft);
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
 }
 
 .source-expand-btn {
   font-size: 11px;
-  color: var(--accent);
+  color: var(--accent-ink);
   background: none;
   border: none;
   cursor: pointer;
@@ -4164,10 +4166,15 @@
   padding: 0;
 }
 
-.source-excerpt-text {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
+.source-excerpt-text,
+.source-excerpt-quote {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-secondary);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.55;
   color: var(--text-secondary);
   white-space: pre-wrap;
   word-break: break-word;
@@ -6829,4 +6836,137 @@
   font-size: 11px;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* ========================================
+   DOCUMENT VIEWER PAGE NAVIGATION & CITATION HIGHLIGHT
+   ======================================== */
+.viewer-page-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+}
+
+.viewer-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewer-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.viewer-page-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
+.viewer-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.viewer-page-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.viewer-page-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.viewer-page-select {
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.viewer-citation-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border-radius: 9px;
+  background: var(--badge-warning-bg);
+  border: 1px solid var(--badge-warning-border);
+  color: var(--badge-warning-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.viewer-citation-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.viewer-citation-label em {
+  font-style: italic;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.viewer-clear-highlight-btn {
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--badge-warning-border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.viewer-clear-highlight-btn:hover {
+  background: var(--surface-hover);
+}
+
+.viewer-highlight-mark {
+  background: var(--badge-warning-bg);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--warning-ink);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--badge-warning-border);
 }

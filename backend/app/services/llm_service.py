@@ -6,8 +6,51 @@ OLLAMA_URL = settings.ollama_generate_url
 MODEL_NAME = settings.OLLAMA_MODEL
 
 FALLBACK_ANSWER = (
-    "The provided documents do not contain sufficient information to answer this question."
+    "I couldn't find enough information in the uploaded document to answer that question."
 )
+
+INSUFFICIENT_EVIDENCE_PHRASES = (
+    "couldn't find enough information",
+    "could not find enough information",
+    "do not contain sufficient information",
+    "does not contain sufficient information",
+    "insufficient information to answer",
+    "not enough information in the uploaded",
+    "cannot find the answer in the provided",
+    "not mentioned in the provided",
+    "no information in the uploaded",
+)
+
+REFUSAL_START_PREFIXES = (
+    "i couldn't find",
+    "i could not find",
+    "i cannot find",
+    "there is not enough information",
+    "there isn't enough information",
+    "the provided sources do not",
+    "the uploaded document does not",
+    "the uploaded documents do not",
+    "based on the provided sources, there is no",
+    "unfortunately, i couldn't find",
+    "sorry, i couldn't find",
+)
+
+
+def is_insufficient_evidence_answer(answer: str | None) -> bool:
+    """Detect whether an answer states that supplied evidence does not support the question."""
+    if not answer or not str(answer).strip():
+        return True
+    normalized = re.sub(r"\s+", " ", str(answer).strip().lower())
+    if len(normalized) <= 320 and FALLBACK_ANSWER.lower() in normalized:
+        return True
+    if any(normalized.startswith(prefix) for prefix in REFUSAL_START_PREFIXES) and len(normalized) <= 320:
+        return True
+    has_inline_citation = bool(re.search(r"\[(?:source\s*)?\d+\b", normalized))
+    if not has_inline_citation and len(normalized) <= 280 and any(
+        phrase in normalized for phrase in INSUFFICIENT_EVIDENCE_PHRASES
+    ):
+        return True
+    return False
 
 
 class LLMServiceError(RuntimeError):
