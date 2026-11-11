@@ -31,6 +31,15 @@ class Settings(BaseSettings):
     OLLAMA_REQUEST_TIMEOUT: int = 300
     OLLAMA_HEALTH_CACHE_TTL: int = 20
 
+    # Local Voice Assistant (STT + TTS) Settings
+    VOICE_STT_MODEL: str = "base.en"
+    VOICE_STT_COMPUTE_TYPE: str = "int8"
+    VOICE_MAX_AUDIO_BYTES: int = 10 * 1024 * 1024  # 10 MB
+    VOICE_MAX_DURATION_SECONDS: float = 90.0
+    VOICE_TTS_MODEL: str = "en_US-lessac-medium"
+    VOICE_TTS_MAX_CHARS: int = 4000
+    VOICE_MODELS_DIR: str = str(BASE_DIR / "models" / "voice")
+
     @property
     def normalized_ollama_base_url(self) -> str:
         """Return Ollama base URL stripped of whitespace and trailing slashes."""

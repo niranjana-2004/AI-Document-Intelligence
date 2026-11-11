@@ -31,10 +31,61 @@ export async function apiRequest(endpoint, options = {}) {
             localStorage.removeItem('user')
         }
 
-        throw new Error(
+        const error = new Error(
             data?.detail || 'Something went wrong. Please try again.'
         )
+        error.status = response.status
+        throw error
     }
 
     return data
+}
+
+export async function transcribeVoiceAudio(audioBlob, filename = 'recording.webm', options = {}) {
+    const formData = new FormData()
+    formData.append('audio', audioBlob, filename)
+    return apiRequest('/voice/transcribe', {
+        method: 'POST',
+        body: formData,
+        signal: options.signal,
+    })
+}
+
+export async function synthesizeVoiceSpeech(text, options = {}) {
+    const token = localStorage.getItem('access_token')
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+    }
+    if (token) {
+        headers.Authorization = `Bearer ${token}`
+    }
+
+    const response = await fetch(`${API_BASE_URL}/voice/speak`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ text }),
+        signal: options.signal,
+    })
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('user')
+        }
+        const errData = await response.json().catch(() => null)
+        const error = new Error(
+            errData?.detail || "Voice playback isn't available right now."
+        )
+        error.status = response.status
+        throw error
+    }
+
+    const blob = await response.blob()
+    return {
+        blob,
+        engine: response.headers.get('X-TTS-Engine') || 'local-tts',
+        model: response.headers.get('X-TTS-Model') || '',
+        processingMs: response.headers.get('X-TTS-Processing-Ms') || null,
+    }
 }

@@ -18,12 +18,31 @@ import {
 } from 'lucide-react'
 import NeuralWaveform from '../components/motion/NeuralWaveform'
 import MultiDocumentSelector from '../components/MultiDocumentSelector'
-import { apiRequest } from '../services/api'
+import {
+    VoiceStatusBanner,
+    VoiceTranscriptReview,
+    VoiceMicButton,
+    MessagePlaybackControls,
+} from '../components/VoiceAssistantControls'
+import {
+    apiRequest,
+    transcribeVoiceAudio,
+    synthesizeVoiceSpeech,
+} from '../services/api'
 import {
     buildSourceNavigationUrl,
     isInsufficientEvidenceText,
     toggleDocumentSelection,
 } from '../utils/citationUtils'
+import {
+    VOICE_STATES,
+    MAX_RECORDING_SECONDS,
+    isVoiceRecordingSupported,
+    getSupportedRecordingMimeType,
+    extensionForMimeType,
+    mapMicrophoneError,
+    mapVoiceApiError,
+} from '../utils/voiceUtils'
 import '../App.css'
 import '../styles/multi-document-chat.css'
 
@@ -214,6 +233,26 @@ function AskAI() {
     // Dynamic loading status indicator for inference feedback
     const [loadingStepIndex, setLoadingStepIndex] = useState(0)
 
+    // Local Voice Assistant foundation state
+    const [voiceState, setVoiceState] = useState(VOICE_STATES.IDLE)
+    const [voiceError, setVoiceError] = useState('')
+    const [voiceTranscript, setVoiceTranscript] = useState('')
+    const [voiceMeta, setVoiceMeta] = useState(null)
+    const [recordingSeconds, setRecordingSeconds] = useState(0)
+    const [activePlaybackMsgId, setActivePlaybackMsgId] = useState(null)
+    const [ttsLoadingMsgId, setTtsLoadingMsgId] = useState(null)
+    const [audioPaused, setAudioPaused] = useState(false)
+
+    const voiceSupported = isVoiceRecordingSupported()
+    const mediaRecorderRef = useRef(null)
+    const mediaStreamRef = useRef(null)
+    const audioChunksRef = useRef([])
+    const recTimerRef = useRef(null)
+    const sttAbortRef = useRef(null)
+    const ttsAbortRef = useRef(null)
+    const ttsAudioRef = useRef(null)
+    const ttsObjectUrlRef = useRef(null)
+
     useEffect(() => {
         if (!loading) return
         const interval = setInterval(() => {
@@ -331,6 +370,58 @@ function AskAI() {
         }
     }
 
+    const cleanupRecordingHardware = () => {
+        if (recTimerRef.current) {
+            clearInterval(recTimerRef.current)
+            recTimerRef.current = null
+        }
+        if (mediaStreamRef.current) {
+            mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+            mediaStreamRef.current = null
+        }
+        mediaRecorderRef.current = null
+    }
+
+    const stopVoicePlayback = () => {
+        if (ttsAbortRef.current) {
+            ttsAbortRef.current.abort()
+            ttsAbortRef.current = null
+        }
+        if (ttsAudioRef.current) {
+            ttsAudioRef.current.pause()
+            ttsAudioRef.current.currentTime = 0
+            ttsAudioRef.current.onended = null
+            ttsAudioRef.current.onerror = null
+            ttsAudioRef.current = null
+        }
+        if (ttsObjectUrlRef.current) {
+            URL.revokeObjectURL(ttsObjectUrlRef.current)
+            ttsObjectUrlRef.current = null
+        }
+        setActivePlaybackMsgId(null)
+        setTtsLoadingMsgId(null)
+        setAudioPaused(false)
+        setVoiceState((prev) => (prev === VOICE_STATES.SPEAKING ? VOICE_STATES.IDLE : prev))
+    }
+
+    const cancelVoiceRecording = () => {
+        if (sttAbortRef.current) {
+            sttAbortRef.current.abort()
+            sttAbortRef.current = null
+        }
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.onstop = null
+            try {
+                mediaRecorderRef.current.stop()
+            } catch {
+                // Ignore if already inactive
+            }
+        }
+        audioChunksRef.current = []
+        cleanupRecordingHardware()
+        setRecordingSeconds(0)
+    }
+
     const handleSelectConversation = async (convId) => {
         if (loading || convId === activeConversationId) return
 
@@ -363,6 +454,11 @@ function AskAI() {
                 timestamp: m.created_at,
             }))
             setMessages(restoredMessages)
+            stopVoicePlayback()
+            setVoiceTranscript('')
+            setVoiceMeta(null)
+            setVoiceError('')
+            setVoiceState(VOICE_STATES.IDLE)
 
             // Restore document scope without triggering a redundant PATCH sync
             pendingScopeSyncConvIdRef.current = null
@@ -493,6 +589,33 @@ function AskAI() {
             if (suggestionsAbortControllerRef.current) {
                 suggestionsAbortControllerRef.current.abort()
             }
+            if (sttAbortRef.current) {
+                sttAbortRef.current.abort()
+            }
+            if (ttsAbortRef.current) {
+                ttsAbortRef.current.abort()
+            }
+            if (recTimerRef.current) {
+                clearInterval(recTimerRef.current)
+            }
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                try {
+                    mediaRecorderRef.current.stop()
+                } catch {
+                    // Ignore already stopped recorder
+                }
+            }
+            if (mediaStreamRef.current) {
+                mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+            }
+            if (ttsAudioRef.current) {
+                ttsAudioRef.current.pause()
+                ttsAudioRef.current = null
+            }
+            if (ttsObjectUrlRef.current) {
+                URL.revokeObjectURL(ttsObjectUrlRef.current)
+                ttsObjectUrlRef.current = null
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -554,7 +677,7 @@ function AskAI() {
                 apiRequest(`/conversations/${activeConversationId}`, {
                     method: 'PATCH',
                     body: JSON.stringify({ scope_mode: newMode }),
-                }).catch(() => {})
+                }).catch(() => { })
             }
         }
     }
@@ -570,7 +693,7 @@ function AskAI() {
         apiRequest(`/conversations/${convId}`, {
             method: 'PATCH',
             body: JSON.stringify({ selected_doc_ids: selectedDocIds }),
-        }).catch(() => {})
+        }).catch(() => { })
     }, [selectedDocIds, activeConversationId])
 
     const handleToggleDoc = (docId) => {
@@ -627,6 +750,12 @@ function AskAI() {
             abortControllerRef.current.abort()
             abortControllerRef.current = null
         }
+        stopVoicePlayback()
+        cancelVoiceRecording()
+        setVoiceTranscript('')
+        setVoiceMeta(null)
+        setVoiceError('')
+        setVoiceState(VOICE_STATES.IDLE)
         setLoading(false)
         setActiveConversationId(null)
         setActiveConversationTitle('')
@@ -644,16 +773,225 @@ function AskAI() {
         }
     }
 
+    const speakMessageText = async (msgId, textContent) => {
+        if (!textContent || !textContent.trim()) return
+        stopVoicePlayback()
+
+        const controller = new AbortController()
+        ttsAbortRef.current = controller
+        setActivePlaybackMsgId(msgId)
+        setTtsLoadingMsgId(msgId)
+        setAudioPaused(false)
+        setVoiceError('')
+
+        try {
+            const { blob } = await synthesizeVoiceSpeech(textContent, {
+                signal: controller.signal,
+            })
+            if (ttsAbortRef.current !== controller || controller.signal.aborted) {
+                return
+            }
+
+            const objectUrl = URL.createObjectURL(blob)
+            ttsObjectUrlRef.current = objectUrl
+            const audio = new Audio(objectUrl)
+            ttsAudioRef.current = audio
+            setTtsLoadingMsgId(null)
+            setVoiceState(VOICE_STATES.SPEAKING)
+
+            audio.onended = () => {
+                if (ttsAudioRef.current === audio) {
+                    stopVoicePlayback()
+                }
+            }
+            audio.onerror = () => {
+                if (ttsAudioRef.current === audio) {
+                    stopVoicePlayback()
+                    setVoiceError("Voice playback isn't available right now. Your answer is still shown above.")
+                    setVoiceState(VOICE_STATES.ERROR)
+                }
+            }
+
+            await audio.play()
+        } catch (err) {
+            if (err?.name === 'AbortError' || ttsAbortRef.current !== controller) {
+                return
+            }
+            console.error('Voice TTS error:', err)
+            stopVoicePlayback()
+            setVoiceError(mapVoiceApiError(err, 'tts'))
+            setVoiceState(VOICE_STATES.ERROR)
+        }
+    }
+
+    const handleTogglePausePlayback = () => {
+        const audio = ttsAudioRef.current
+        if (!audio) return
+        if (audio.paused) {
+            audio.play().catch(() => { })
+            setAudioPaused(false)
+        } else {
+            audio.pause()
+            setAudioPaused(true)
+        }
+    }
+
+    const handleStopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            setVoiceState(VOICE_STATES.PROCESSING_AUDIO)
+            try {
+                mediaRecorderRef.current.stop()
+            } catch {
+                cleanupRecordingHardware()
+                setVoiceError('Unable to finalize audio recording. Please try again.')
+                setVoiceState(VOICE_STATES.ERROR)
+            }
+        }
+    }
+
+    const handleStartVoiceRecording = async () => {
+        stopVoicePlayback()
+        setVoiceError('')
+        setVoiceTranscript('')
+        setVoiceMeta(null)
+
+        if (!isVoiceRecordingSupported()) {
+            setVoiceError('Voice recording is not supported in this browser.')
+            setVoiceState(VOICE_STATES.ERROR)
+            return
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            mediaStreamRef.current = stream
+            audioChunksRef.current = []
+
+            const { mimeType, extension } = getSupportedRecordingMimeType()
+            const recorderOptions = mimeType ? { mimeType } : undefined
+            const recorder = new MediaRecorder(stream, recorderOptions)
+            mediaRecorderRef.current = recorder
+
+            recorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    audioChunksRef.current.push(event.data)
+                }
+            }
+
+            recorder.onerror = () => {
+                cleanupRecordingHardware()
+                setVoiceError('Recording failed unexpectedly. Please try again.')
+                setVoiceState(VOICE_STATES.ERROR)
+            }
+
+            recorder.onstop = async () => {
+                const chunks = audioChunksRef.current
+                audioChunksRef.current = []
+                const actualMime = recorder.mimeType || mimeType || 'audio/webm'
+                const ext = extensionForMimeType(actualMime) || extension
+                cleanupRecordingHardware()
+
+                const audioBlob = new Blob(chunks, { type: actualMime })
+                if (!audioBlob || audioBlob.size === 0) {
+                    setVoiceError('No speech detected. Please try again.')
+                    setVoiceState(VOICE_STATES.ERROR)
+                    return
+                }
+
+                setVoiceState(VOICE_STATES.TRANSCRIBING)
+                const sttController = new AbortController()
+                sttAbortRef.current = sttController
+
+                try {
+                    const data = await transcribeVoiceAudio(audioBlob, `voice-query${ext}`, {
+                        signal: sttController.signal,
+                    })
+                    if (sttAbortRef.current !== sttController || sttController.signal.aborted) {
+                        return
+                    }
+                    const recognizedText = (data?.text || '').trim()
+                    if (!recognizedText) {
+                        setVoiceError('No speech detected. Please try again.')
+                        setVoiceState(VOICE_STATES.ERROR)
+                        return
+                    }
+                    setVoiceTranscript(recognizedText)
+                    setVoiceMeta(data)
+                    setVoiceState(VOICE_STATES.REVIEWING)
+                } catch (err) {
+                    if (err?.name === 'AbortError' || sttAbortRef.current !== sttController) {
+                        return
+                    }
+                    console.error('Voice STT error:', err)
+                    setVoiceError(mapVoiceApiError(err, 'stt'))
+                    setVoiceState(VOICE_STATES.ERROR)
+                }
+            }
+
+            setRecordingSeconds(0)
+            recorder.start(250)
+            setVoiceState(VOICE_STATES.LISTENING)
+
+            let elapsed = 0
+            recTimerRef.current = setInterval(() => {
+                elapsed += 1
+                setRecordingSeconds(elapsed)
+                if (elapsed >= MAX_RECORDING_SECONDS) {
+                    handleStopRecording()
+                }
+            }, 1000)
+        } catch (err) {
+            cleanupRecordingHardware()
+            setVoiceError(mapMicrophoneError(err))
+            setVoiceState(VOICE_STATES.ERROR)
+        }
+    }
+
+    const handleToggleMic = () => {
+        if (voiceState === VOICE_STATES.LISTENING) {
+            handleStopRecording()
+        } else {
+            handleStartVoiceRecording()
+        }
+    }
+
+    const handleCancelVoiceTranscript = () => {
+        setVoiceTranscript('')
+        setVoiceMeta(null)
+        setVoiceError('')
+        setVoiceState(VOICE_STATES.IDLE)
+    }
+
+    const handleSubmitVoiceTranscript = () => {
+        const cleaned = voiceTranscript.trim()
+        if (!cleaned || loading) return
+        setVoiceTranscript('')
+        setVoiceMeta(null)
+        handleAskAI(cleaned, { fromVoice: true })
+    }
+
     const isSubmitDisabled =
         loading ||
         !question.trim() ||
         (scopeMode === 'specific' && selectedDocIds.length === 0) ||
         (!docsLoading && documents.length === 0)
 
-    const handleAskAI = async (overrideQuery = null) => {
+    const handleAskAI = async (overrideQuery = null, options = {}) => {
+        const fromVoice = Boolean(options?.fromVoice)
         const queryText = (typeof overrideQuery === 'string' ? overrideQuery : question).trim()
         if (!queryText || loading) {
             return
+        }
+
+        // Never allow stale TTS speech playback to overlap a new inquiry
+        stopVoicePlayback()
+        if (fromVoice) {
+            setVoiceState(VOICE_STATES.THINKING)
+            setVoiceError('')
+        } else if (voiceState === VOICE_STATES.REVIEWING || voiceState === VOICE_STATES.ERROR) {
+            setVoiceTranscript('')
+            setVoiceMeta(null)
+            setVoiceError('')
+            setVoiceState(VOICE_STATES.IDLE)
         }
 
         if (scopeMode === 'specific' && selectedDocIds.length === 0) {
@@ -747,6 +1085,10 @@ function AskAI() {
                 }
                 fetchConversations()
             }
+
+            if (fromVoice) {
+                speakMessageText(asstMsg.id, aiAnswer)
+            }
         } catch (err) {
             // If request was superseded or cancelled, ignore silently
             if (currentRequestId !== activeRequestIdRef.current) {
@@ -762,6 +1104,9 @@ function AskAI() {
             // Restore query text in textarea so user input is not lost
             setQuestion(queryText)
             setError(err.message || 'Failed to get an answer.')
+            if (fromVoice) {
+                setVoiceState(VOICE_STATES.IDLE)
+            }
         } finally {
             if (currentRequestId === activeRequestIdRef.current) {
                 setLoading(false)
@@ -1218,383 +1563,425 @@ function AskAI() {
                     </div>
                 </header>
 
-            {/* ACTIVE SCOPE BANNER (WHEN SPECIFIC DOCUMENTS ARE ACTIVE) */}
-            {scopeMode === 'specific' && selectedDocIds.length > 0 && !isDocPickerOpen && (
-                <div className="active-scope-banner" role="status" aria-label="Active document scope">
-                    <div className="active-scope-left">
-                        <Layers size={14} className="active-scope-icon" aria-hidden="true" />
-                        <span className="active-scope-title">Active Scope:</span>
-                        <span className="active-scope-names" title={selectedDocNames}>
-                            {selectedDocNames}
-                        </span>
-                    </div>
-                    <button
-                        type="button"
-                        className="active-scope-edit-btn"
-                        onClick={() => setIsDocPickerOpen(true)}
-                        title="Modify selected documents"
-                    >
-                        Change Scope ▾
-                    </button>
-                </div>
-            )}
-
-            {/* SEARCHABLE MULTI-DOCUMENT SELECTOR PANEL */}
-            <MultiDocumentSelector
-                isOpen={scopeMode === 'specific' && isDocPickerOpen}
-                onClose={() => setIsDocPickerOpen(false)}
-                documents={documents}
-                selectedDocIds={selectedDocIds}
-                onToggleDoc={handleToggleDoc}
-                onSelectAll={handleSelectAllDocs}
-                onClear={handleClearDocs}
-                loading={loading}
-            />
-
-            {/* Document repository loading / error alerts */}
-            {docsLoading && (
-                <div className="scope-status-banner">
-                    <span className="scope-spinner" aria-hidden="true"></span>
-                    <span>Connecting to document repository...</span>
-                </div>
-            )}
-
-            {docsError && (
-                <div className="scope-status-banner scope-status-error" role="alert">
-                    <span>⚠️ {docsError}</span>
-                    <button type="button" className="scope-retry-link" onClick={fetchDocuments}>
-                        Retry
-                    </button>
-                </div>
-            )}
-
-            {!docsLoading && !docsError && documents.length === 0 && (
-                <div className="scope-status-banner scope-status-empty" role="alert">
-                    <span>📂 No documents uploaded yet.</span>
-                    <Link to="/documents" className="scope-retry-link">Upload documents</Link>
-                </div>
-            )}
-
-            {/* =================================
-                CHAT SCROLL CONTAINER & THREAD
-            ================================= */}
-            <div className="chat-scroll-container">
-                {/* EMPTY STATE WITH NEURAL WAVEFORM */}
-                {messages.length === 0 && !loading && (
-                    <motion.section
-                        className="chat-empty-state"
-                        aria-label="Ask AI overview"
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <NeuralWaveform isGenerating={false} statusText="Grounded Intelligence Active" />
-
-                        <h3 className="chat-empty-title">Cognidocs Intelligence Ready</h3>
-                        <p className="chat-empty-desc">
-                            Ask anything about your uploaded documents. Cognidocs AI retrieves exact passages and formulates context-grounded answers with traceable citations.
-                        </p>
-
-                        <div className="chat-suggestions-wrap">
-                            <span className="chat-suggestions-label">
-                                {scopeMode === 'specific' ? 'Document Suggestions' : 'Collection Inquiries'}
+                {/* ACTIVE SCOPE BANNER (WHEN SPECIFIC DOCUMENTS ARE ACTIVE) */}
+                {scopeMode === 'specific' && selectedDocIds.length > 0 && !isDocPickerOpen && (
+                    <div className="active-scope-banner" role="status" aria-label="Active document scope">
+                        <div className="active-scope-left">
+                            <Layers size={14} className="active-scope-icon" aria-hidden="true" />
+                            <span className="active-scope-title">Active Scope:</span>
+                            <span className="active-scope-names" title={selectedDocNames}>
+                                {selectedDocNames}
                             </span>
-                            {suggestionsLoading ? (
-                                <div className="chat-suggestions-loading" aria-label="Generating document-aware suggestions">
-                                    <span className="suggestion-spinner" aria-hidden="true"></span>
-                                    <span className="suggestion-loading-text">Generating document-aware suggestions...</span>
-                                </div>
-                            ) : scopeMode === 'specific' && selectedDocIds.length === 0 ? (
-                                <p className="chat-suggestions-hint">
-                                    Select one or more documents above to generate tailored inquiry suggestions.
-                                </p>
-                            ) : suggestedQuestions.length > 0 ? (
-                                <div className="chat-suggestions-chips">
-                                    {suggestedQuestions.map((suggestion) => (
-                                        <motion.button
-                                            key={suggestion}
-                                            type="button"
-                                            className="chat-suggestion-chip"
-                                            onClick={() => handleSuggestedQuestion(suggestion)}
-                                            disabled={loading}
-                                            title={`Ask: "${suggestion}"`}
-                                            whileHover={{ scale: 1.03, y: -2 }}
-                                            whileTap={{ scale: 0.97 }}
-                                        >
-                                            <span className="suggestion-sparkle" aria-hidden="true">
-                                                <Sparkles size={12} />
-                                            </span>
-                                            <span>{suggestion}</span>
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            ) : !docsLoading && documents.length > 0 ? (
-                                <p className="chat-suggestions-hint">
-                                    Ask any question about your documents in the composer below.
-                                </p>
-                            ) : null}
                         </div>
-                    </motion.section>
+                        <button
+                            type="button"
+                            className="active-scope-edit-btn"
+                            onClick={() => setIsDocPickerOpen(true)}
+                            title="Modify selected documents"
+                        >
+                            Change Scope ▾
+                        </button>
+                    </div>
                 )}
 
-                {/* CONVERSATION MESSAGES */}
-                {messages.length > 0 && (
-                    <div className="chat-thread-container" aria-label="Conversation thread">
-                        {messages.map((msg, idx) => {
-                            if (msg.role === 'user') {
+                {/* SEARCHABLE MULTI-DOCUMENT SELECTOR PANEL */}
+                <MultiDocumentSelector
+                    isOpen={scopeMode === 'specific' && isDocPickerOpen}
+                    onClose={() => setIsDocPickerOpen(false)}
+                    documents={documents}
+                    selectedDocIds={selectedDocIds}
+                    onToggleDoc={handleToggleDoc}
+                    onSelectAll={handleSelectAllDocs}
+                    onClear={handleClearDocs}
+                    loading={loading}
+                />
+
+                {/* Document repository loading / error alerts */}
+                {docsLoading && (
+                    <div className="scope-status-banner">
+                        <span className="scope-spinner" aria-hidden="true"></span>
+                        <span>Connecting to document repository...</span>
+                    </div>
+                )}
+
+                {docsError && (
+                    <div className="scope-status-banner scope-status-error" role="alert">
+                        <span>⚠️ {docsError}</span>
+                        <button type="button" className="scope-retry-link" onClick={fetchDocuments}>
+                            Retry
+                        </button>
+                    </div>
+                )}
+
+                {!docsLoading && !docsError && documents.length === 0 && (
+                    <div className="scope-status-banner scope-status-empty" role="alert">
+                        <span>📂 No documents uploaded yet.</span>
+                        <Link to="/documents" className="scope-retry-link">Upload documents</Link>
+                    </div>
+                )}
+
+                {/* =================================
+                CHAT SCROLL CONTAINER & THREAD
+            ================================= */}
+                <div className="chat-scroll-container">
+                    {/* EMPTY STATE WITH NEURAL WAVEFORM */}
+                    {messages.length === 0 && !loading && (
+                        <motion.section
+                            className="chat-empty-state"
+                            aria-label="Ask AI overview"
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.4 }}
+                        >
+                            <NeuralWaveform isGenerating={false} statusText="Grounded Intelligence Active" />
+
+                            <h3 className="chat-empty-title">Cognidocs Intelligence Ready</h3>
+                            <p className="chat-empty-desc">
+                                Ask anything about your uploaded documents. Cognidocs AI retrieves exact passages and formulates context-grounded answers with traceable citations.
+                            </p>
+
+                            <div className="chat-suggestions-wrap">
+                                <span className="chat-suggestions-label">
+                                    {scopeMode === 'specific' ? 'Document Suggestions' : 'Collection Inquiries'}
+                                </span>
+                                {suggestionsLoading ? (
+                                    <div className="chat-suggestions-loading" aria-label="Generating document-aware suggestions">
+                                        <span className="suggestion-spinner" aria-hidden="true"></span>
+                                        <span className="suggestion-loading-text">Generating document-aware suggestions...</span>
+                                    </div>
+                                ) : scopeMode === 'specific' && selectedDocIds.length === 0 ? (
+                                    <p className="chat-suggestions-hint">
+                                        Select one or more documents above to generate tailored inquiry suggestions.
+                                    </p>
+                                ) : suggestedQuestions.length > 0 ? (
+                                    <div className="chat-suggestions-chips">
+                                        {suggestedQuestions.map((suggestion) => (
+                                            <motion.button
+                                                key={suggestion}
+                                                type="button"
+                                                className="chat-suggestion-chip"
+                                                onClick={() => handleSuggestedQuestion(suggestion)}
+                                                disabled={loading}
+                                                title={`Ask: "${suggestion}"`}
+                                                whileHover={{ scale: 1.03, y: -2 }}
+                                                whileTap={{ scale: 0.97 }}
+                                            >
+                                                <span className="suggestion-sparkle" aria-hidden="true">
+                                                    <Sparkles size={12} />
+                                                </span>
+                                                <span>{suggestion}</span>
+                                            </motion.button>
+                                        ))}
+                                    </div>
+                                ) : !docsLoading && documents.length > 0 ? (
+                                    <p className="chat-suggestions-hint">
+                                        Ask any question about your documents in the composer below.
+                                    </p>
+                                ) : null}
+                            </div>
+                        </motion.section>
+                    )}
+
+                    {/* CONVERSATION MESSAGES */}
+                    {messages.length > 0 && (
+                        <div className="chat-thread-container" aria-label="Conversation thread">
+                            {messages.map((msg, idx) => {
+                                if (msg.role === 'user') {
+                                    return (
+                                        <motion.div
+                                            key={msg.id}
+                                            className="chat-row chat-row-user"
+                                            initial={{ opacity: 0, y: 15 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                                        >
+                                            <div className="chat-bubble-user" tabIndex={0}>
+                                                <p className="chat-user-text">{msg.content}</p>
+                                                <span className="chat-user-time">
+                                                    {formatTimestamp(msg.timestamp)}
+                                                </span>
+                                            </div>
+                                        </motion.div>
+                                    )
+                                }
+
+                                // Assistant message
+                                const isInsufficient = isInsufficientEvidenceText(msg.content)
+                                const sortedSources = !isInsufficient && Array.isArray(msg.sources)
+                                    ? [...msg.sources].sort(
+                                        (a, b) => (Number(a.citation_index) || 0) - (Number(b.citation_index) || 0)
+                                    )
+                                    : []
+
+                                const isDrawerExpanded = expandedSourcesDrawers[msg.id] !== false
+
                                 return (
                                     <motion.div
                                         key={msg.id}
-                                        className="chat-row chat-row-user"
+                                        className="chat-row chat-row-assistant"
                                         initial={{ opacity: 0, y: 15 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                                     >
-                                        <div className="chat-bubble-user" tabIndex={0}>
-                                            <p className="chat-user-text">{msg.content}</p>
-                                            <span className="chat-user-time">
-                                                {formatTimestamp(msg.timestamp)}
-                                            </span>
+                                        <div className="assistant-avatar" aria-hidden="true">
+                                            <Sparkles size={16} />
+                                        </div>
+
+                                        <div className="assistant-bubble-column">
+                                            <article
+                                                className="chat-bubble-assistant"
+                                                aria-label={`Assistant response ${idx + 1}`}
+                                            >
+                                                <div className="assistant-body">
+                                                    {renderFormattedAnswer(msg.content, msg.sources, msg.id)}
+                                                </div>
+
+                                                {/* FOLLOW-UP QUESTION SUGGESTION CHIPS */}
+                                                {Array.isArray(msg.follow_up_questions) && msg.follow_up_questions.length > 0 && (
+                                                    <div className="followup-questions-container" aria-label="Suggested follow-up questions">
+                                                        <span className="followup-questions-label">Suggested Follow-ups</span>
+                                                        <div className="followup-questions-chips">
+                                                            {msg.follow_up_questions.map((fq, fqIdx) => (
+                                                                <button
+                                                                    key={`fq-${msg.id}-${fqIdx}`}
+                                                                    type="button"
+                                                                    className="followup-chip"
+                                                                    onClick={() => handleAskAI(fq)}
+                                                                    disabled={loading}
+                                                                    title={`Ask: "${fq}"`}
+                                                                >
+                                                                    <Sparkles size={13} className="followup-icon" aria-hidden="true" />
+                                                                    <span>{fq}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="assistant-bubble-footer">
+                                                    <span className="assistant-time">
+                                                        {formatTimestamp(msg.timestamp)}
+                                                    </span>
+                                                    <div className="assistant-footer-actions">
+                                                        <MessagePlaybackControls
+                                                            msgId={msg.id}
+                                                            activePlaybackMsgId={activePlaybackMsgId}
+                                                            isLoadingTts={ttsLoadingMsgId === msg.id}
+                                                            isSpeaking={
+                                                                activePlaybackMsgId === msg.id &&
+                                                                ttsLoadingMsgId !== msg.id &&
+                                                                !audioPaused
+                                                            }
+                                                            isPaused={audioPaused}
+                                                            onPlay={() => speakMessageText(msg.id, msg.content)}
+                                                            onTogglePause={handleTogglePausePlayback}
+                                                            onStop={stopVoicePlayback}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="assistant-copy-btn"
+                                                            onClick={() => handleCopyAnswer(msg.id, msg.content)}
+                                                            aria-label="Copy answer text"
+                                                        >
+                                                            {copiedMsgId === msg.id ? 'Copied ✨' : 'Copy'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </article>
+
+                                            {/* GROUNDED CITATION SOURCES SECTION */}
+                                            {sortedSources.length > 0 && (
+                                                <div className="chat-sources-container" aria-label="Answer sources">
+                                                    <button
+                                                        type="button"
+                                                        className={`sources-drawer-btn ${isDrawerExpanded ? 'expanded' : ''}`}
+                                                        onClick={() => toggleSourcesDrawer(msg.id)}
+                                                        aria-expanded={isDrawerExpanded}
+                                                        title="Toggle verified supporting source excerpts"
+                                                    >
+                                                        <span className="sources-drawer-icon" aria-hidden="true">
+                                                            <BookOpen size={15} />
+                                                        </span>
+                                                        <span className="sources-drawer-label">
+                                                            Sources ({sortedSources.length})
+                                                        </span>
+                                                        <span className="sources-drawer-arrow" aria-hidden="true">
+                                                            {isDrawerExpanded ? '▴ Hide' : '▾ Show'}
+                                                        </span>
+                                                    </button>
+
+                                                    {isDrawerExpanded && (
+                                                        <div className="sources-cards-list">
+                                                            {/* Multi-document / page evidence summary */}
+                                                            {(() => {
+                                                                const distinctDocIds = new Set(
+                                                                    sortedSources.map((s) => s.document_id).filter((id) => id != null)
+                                                                )
+                                                                const docCount = distinctDocIds.size || 1
+                                                                return (
+                                                                    <div className="multi-doc-sources-summary">
+                                                                        <span className="sources-summary-title">
+                                                                            Grounded Evidence: {docCount} {docCount === 1 ? 'document' : 'documents'} · {sortedSources.length} {sortedSources.length === 1 ? 'citation' : 'citations'}
+                                                                        </span>
+                                                                    </div>
+                                                                )
+                                                            })()}
+
+                                                            {sortedSources.map((source, sIdx) => {
+                                                                const citeNum = source.citation_index || (sIdx + 1)
+                                                                const isHighlighted =
+                                                                    highlightedCitation &&
+                                                                    highlightedCitation.msgId === msg.id &&
+                                                                    highlightedCitation.num === citeNum
+                                                                const excerptKey = `${msg.id}-${citeNum}`
+                                                                const isExpanded = Boolean(expandedSourceExcerpts[excerptKey])
+
+                                                                const docName =
+                                                                    source.document_name ||
+                                                                    source.document_title ||
+                                                                    source.filename ||
+                                                                    `Document #${source.document_id || citeNum}`
+                                                                const isHw =
+                                                                    source.source_type === 'handwritten' ||
+                                                                    (source.document_type && source.document_type.toLowerCase().includes('handwritten')) ||
+                                                                    (source.filename && source.filename.toLowerCase().includes('handwritten'))
+                                                                const hasPage = source.page_number != null
+                                                                const pageLabel = hasPage
+                                                                    ? `Page ${source.page_number}`
+                                                                    : 'Full Document'
+                                                                const rawExcerpt =
+                                                                    source.excerpt || source.content || source.source_text || 'No text excerpt available.'
+                                                                const fullContent =
+                                                                    source.content || source.source_text || rawExcerpt
+                                                                const canExpand =
+                                                                    fullContent.length > rawExcerpt.length + 25 || rawExcerpt.length > 220
+                                                                const displayText = isExpanded
+                                                                    ? fullContent
+                                                                    : rawExcerpt.length > 240
+                                                                        ? `${rawExcerpt.slice(0, 240)}...`
+                                                                        : rawExcerpt
+                                                                const navUrl = buildSourceNavigationUrl(source)
+
+                                                                const rawScore =
+                                                                    typeof source.similarity === 'number' && !isNaN(source.similarity)
+                                                                        ? source.similarity
+                                                                        : typeof source.retrieval_score === 'number' && !isNaN(source.retrieval_score)
+                                                                            ? source.retrieval_score
+                                                                            : null
+                                                                const similarityScore = rawScore !== null ? Math.min(100, Math.round(rawScore * 100)) : null
+
+                                                                return (
+                                                                    <article
+                                                                        key={`src-${msg.id}-${source.chunk_id || source.id || citeNum}`}
+                                                                        id={`source-card-${msg.id}-${citeNum}`}
+                                                                        className={`compact-source-card ${isHighlighted ? 'source-card-highlighted' : ''
+                                                                            }`}
+                                                                        tabIndex={0}
+                                                                        aria-label={`Source ${citeNum}: ${docName}, ${pageLabel}`}
+                                                                    >
+                                                                        <div className="source-card-topbar">
+                                                                            <div className="source-meta-group">
+                                                                                <span className="source-idx-pill">
+                                                                                    [{citeNum}]
+                                                                                </span>
+                                                                                <span className="source-name" title={docName}>
+                                                                                    {isHw ? '✍️ ' : '📄 '}
+                                                                                    {docName}
+                                                                                </span>
+                                                                                <span className={`source-type-pill ${isHw ? 'hw' : 'printed'}`}>
+                                                                                    {isHw ? 'HANDWRITTEN' : 'PRINTED'}
+                                                                                </span>
+                                                                                <span className="source-page-badge">
+                                                                                    {pageLabel}
+                                                                                </span>
+                                                                                {similarityScore !== null && (
+                                                                                    <span
+                                                                                        className="source-sim-chip"
+                                                                                        title="Semantic retrieval relevance indicator"
+                                                                                    >
+                                                                                        {similarityScore}% match
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+                                                                                {navUrl && (
+                                                                                    <Link
+                                                                                        to={navUrl}
+                                                                                        className="source-nav-link"
+                                                                                        title={
+                                                                                            isHw
+                                                                                                ? `Open handwritten ${pageLabel} in Studio`
+                                                                                                : hasPage
+                                                                                                    ? `Open ${docName} at ${pageLabel}`
+                                                                                                    : `Open ${docName}`
+                                                                                        }
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                    >
+                                                                                        {isHw
+                                                                                            ? `Studio ${hasPage ? `p.${source.page_number} ` : ''}↗`
+                                                                                            : hasPage
+                                                                                                ? `Open Page ${source.page_number} ↗`
+                                                                                                : 'Open Doc ↗'}
+                                                                                    </Link>
+                                                                                )}
+                                                                                {canExpand && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="source-expand-btn"
+                                                                                        onClick={() => toggleSourceExcerpt(msg.id, citeNum)}
+                                                                                        aria-expanded={isExpanded}
+                                                                                    >
+                                                                                        {isExpanded ? 'Less ▴' : 'More ▾'}
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <blockquote className="source-excerpt-quote">
+                                                                            &ldquo;{displayText}&rdquo;
+                                                                        </blockquote>
+                                                                    </article>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </motion.div>
                                 )
-                            }
+                            })}
 
-                            // Assistant message
-                            const isInsufficient = isInsufficientEvidenceText(msg.content)
-                            const sortedSources = !isInsufficient && Array.isArray(msg.sources)
-                                ? [...msg.sources].sort(
-                                      (a, b) => (Number(a.citation_index) || 0) - (Number(b.citation_index) || 0)
-                                  )
-                                : []
-
-                            const isDrawerExpanded = expandedSourcesDrawers[msg.id] !== false
-
-                            return (
+                            {/* SYNTHESIZING TYPING INDICATOR WITH NEURAL WAVEFORM */}
+                            {loading && (
                                 <motion.div
-                                    key={msg.id}
-                                    className="chat-row chat-row-assistant"
+                                    className="chat-row chat-row-assistant chat-row-loading"
                                     initial={{ opacity: 0, y: 15 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                                 >
-                                    <div className="assistant-avatar" aria-hidden="true">
+                                    <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
                                         <Sparkles size={16} />
                                     </div>
-
                                     <div className="assistant-bubble-column">
-                                        <article
-                                            className="chat-bubble-assistant"
-                                            aria-label={`Assistant response ${idx + 1}`}
-                                        >
-                                            <div className="assistant-body">
-                                                {renderFormattedAnswer(msg.content, msg.sources, msg.id)}
-                                            </div>
-
-                                            {/* FOLLOW-UP QUESTION SUGGESTION CHIPS */}
-                                            {Array.isArray(msg.follow_up_questions) && msg.follow_up_questions.length > 0 && (
-                                                <div className="followup-questions-container" aria-label="Suggested follow-up questions">
-                                                    <span className="followup-questions-label">Suggested Follow-ups</span>
-                                                    <div className="followup-questions-chips">
-                                                        {msg.follow_up_questions.map((fq, fqIdx) => (
-                                                            <button
-                                                                key={`fq-${msg.id}-${fqIdx}`}
-                                                                type="button"
-                                                                className="followup-chip"
-                                                                onClick={() => handleAskAI(fq)}
-                                                                disabled={loading}
-                                                                title={`Ask: "${fq}"`}
-                                                            >
-                                                                <Sparkles size={13} className="followup-icon" aria-hidden="true" />
-                                                                <span>{fq}</span>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <div className="assistant-bubble-footer">
-                                                <span className="assistant-time">
-                                                    {formatTimestamp(msg.timestamp)}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    className="assistant-copy-btn"
-                                                    onClick={() => handleCopyAnswer(msg.id, msg.content)}
-                                                    aria-label="Copy answer text"
-                                                >
-                                                    {copiedMsgId === msg.id ? 'Copied ✨' : 'Copy'}
-                                                </button>
-                                            </div>
-                                        </article>
-
-                                        {/* GROUNDED CITATION SOURCES SECTION */}
-                                        {sortedSources.length > 0 && (
-                                            <div className="chat-sources-container" aria-label="Answer sources">
-                                                <button
-                                                    type="button"
-                                                    className={`sources-drawer-btn ${isDrawerExpanded ? 'expanded' : ''}`}
-                                                    onClick={() => toggleSourcesDrawer(msg.id)}
-                                                    aria-expanded={isDrawerExpanded}
-                                                    title="Toggle verified supporting source excerpts"
-                                                >
-                                                    <span className="sources-drawer-icon" aria-hidden="true">
-                                                        <BookOpen size={15} />
-                                                    </span>
-                                                    <span className="sources-drawer-label">
-                                                        Sources ({sortedSources.length})
-                                                    </span>
-                                                    <span className="sources-drawer-arrow" aria-hidden="true">
-                                                        {isDrawerExpanded ? '▴ Hide' : '▾ Show'}
-                                                    </span>
-                                                </button>
-
-                                                {isDrawerExpanded && (
-                                                    <div className="sources-cards-list">
-                                                        {/* Multi-document / page evidence summary */}
-                                                        {(() => {
-                                                            const distinctDocIds = new Set(
-                                                                sortedSources.map((s) => s.document_id).filter((id) => id != null)
-                                                            )
-                                                            const docCount = distinctDocIds.size || 1
-                                                            return (
-                                                                <div className="multi-doc-sources-summary">
-                                                                    <span className="sources-summary-title">
-                                                                        Grounded Evidence: {docCount} {docCount === 1 ? 'document' : 'documents'} · {sortedSources.length} {sortedSources.length === 1 ? 'citation' : 'citations'}
-                                                                    </span>
-                                                                </div>
-                                                            )
-                                                        })()}
-
-                                                        {sortedSources.map((source, sIdx) => {
-                                                            const citeNum = source.citation_index || (sIdx + 1)
-                                                            const isHighlighted =
-                                                                highlightedCitation &&
-                                                                highlightedCitation.msgId === msg.id &&
-                                                                highlightedCitation.num === citeNum
-                                                            const excerptKey = `${msg.id}-${citeNum}`
-                                                            const isExpanded = Boolean(expandedSourceExcerpts[excerptKey])
-
-                                                            const docName =
-                                                                source.document_name ||
-                                                                source.document_title ||
-                                                                source.filename ||
-                                                                `Document #${source.document_id || citeNum}`
-                                                            const isHw =
-                                                                source.source_type === 'handwritten' ||
-                                                                (source.document_type && source.document_type.toLowerCase().includes('handwritten')) ||
-                                                                (source.filename && source.filename.toLowerCase().includes('handwritten'))
-                                                            const hasPage = source.page_number != null
-                                                            const pageLabel = hasPage
-                                                                ? `Page ${source.page_number}`
-                                                                : 'Full Document'
-                                                            const rawExcerpt =
-                                                                source.excerpt || source.content || source.source_text || 'No text excerpt available.'
-                                                            const fullContent =
-                                                                source.content || source.source_text || rawExcerpt
-                                                            const canExpand =
-                                                                fullContent.length > rawExcerpt.length + 25 || rawExcerpt.length > 220
-                                                            const displayText = isExpanded
-                                                                ? fullContent
-                                                                : rawExcerpt.length > 240
-                                                                ? `${rawExcerpt.slice(0, 240)}...`
-                                                                : rawExcerpt
-                                                            const navUrl = buildSourceNavigationUrl(source)
-
-                                                            const rawScore =
-                                                                typeof source.similarity === 'number' && !isNaN(source.similarity)
-                                                                    ? source.similarity
-                                                                    : typeof source.retrieval_score === 'number' && !isNaN(source.retrieval_score)
-                                                                    ? source.retrieval_score
-                                                                    : null
-                                                            const similarityScore = rawScore !== null ? Math.min(100, Math.round(rawScore * 100)) : null
-
-                                                            return (
-                                                                <article
-                                                                    key={`src-${msg.id}-${source.chunk_id || source.id || citeNum}`}
-                                                                    id={`source-card-${msg.id}-${citeNum}`}
-                                                                    className={`compact-source-card ${
-                                                                        isHighlighted ? 'source-card-highlighted' : ''
-                                                                    }`}
-                                                                    tabIndex={0}
-                                                                    aria-label={`Source ${citeNum}: ${docName}, ${pageLabel}`}
-                                                                >
-                                                                    <div className="source-card-topbar">
-                                                                        <div className="source-meta-group">
-                                                                            <span className="source-idx-pill">
-                                                                                [{citeNum}]
-                                                                            </span>
-                                                                            <span className="source-name" title={docName}>
-                                                                                {isHw ? '✍️ ' : '📄 '}
-                                                                                {docName}
-                                                                            </span>
-                                                                            <span className={`source-type-pill ${isHw ? 'hw' : 'printed'}`}>
-                                                                                {isHw ? 'HANDWRITTEN' : 'PRINTED'}
-                                                                            </span>
-                                                                            <span className="source-page-badge">
-                                                                                {pageLabel}
-                                                                            </span>
-                                                                            {similarityScore !== null && (
-                                                                                <span
-                                                                                    className="source-sim-chip"
-                                                                                    title="Semantic retrieval relevance indicator"
-                                                                                >
-                                                                                    {similarityScore}% match
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                                                                            {navUrl && (
-                                                                                <Link
-                                                                                    to={navUrl}
-                                                                                    className="source-nav-link"
-                                                                                    title={
-                                                                                        isHw
-                                                                                            ? `Open handwritten ${pageLabel} in Studio`
-                                                                                            : hasPage
-                                                                                            ? `Open ${docName} at ${pageLabel}`
-                                                                                            : `Open ${docName}`
-                                                                                    }
-                                                                                    onClick={(e) => e.stopPropagation()}
-                                                                                >
-                                                                                    {isHw
-                                                                                        ? `Studio ${hasPage ? `p.${source.page_number} ` : ''}↗`
-                                                                                        : hasPage
-                                                                                        ? `Open Page ${source.page_number} ↗`
-                                                                                        : 'Open Doc ↗'}
-                                                                                </Link>
-                                                                            )}
-                                                                            {canExpand && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    className="source-expand-btn"
-                                                                                    onClick={() => toggleSourceExcerpt(msg.id, citeNum)}
-                                                                                    aria-expanded={isExpanded}
-                                                                                >
-                                                                                    {isExpanded ? 'Less ▴' : 'More ▾'}
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <blockquote className="source-excerpt-quote">
-                                                                        &ldquo;{displayText}&rdquo;
-                                                                    </blockquote>
-                                                                </article>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                        <div className="chat-bubble-assistant chat-bubble-loading">
+                                            <NeuralWaveform
+                                                isGenerating={true}
+                                                compact={true}
+                                                statusText={currentLoadingStatus}
+                                            />
+                                        </div>
                                     </div>
                                 </motion.div>
-                            )
-                        })}
+                            )}
 
-                        {/* SYNTHESIZING TYPING INDICATOR WITH NEURAL WAVEFORM */}
-                        {loading && (
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )}
+
+                    {/* Initial loading state when messages array is empty */}
+                    {messages.length === 0 && loading && (
+                        <div className="chat-thread-container">
                             <motion.div
                                 className="chat-row chat-row-assistant chat-row-loading"
                                 initial={{ opacity: 0, y: 15 }}
@@ -1613,116 +2000,127 @@ function AskAI() {
                                     </div>
                                 </div>
                             </motion.div>
-                        )}
+                        </div>
+                    )}
+                </div>
 
-                        <div ref={messagesEndRef} />
-                    </div>
-                )}
-
-                {/* Initial loading state when messages array is empty */}
-                {messages.length === 0 && loading && (
-                    <div className="chat-thread-container">
-                        <motion.div
-                            className="chat-row chat-row-assistant chat-row-loading"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
-                                <Sparkles size={16} />
-                            </div>
-                            <div className="assistant-bubble-column">
-                                <div className="chat-bubble-assistant chat-bubble-loading">
-                                    <NeuralWaveform
-                                        isGenerating={true}
-                                        compact={true}
-                                        statusText={currentLoadingStatus}
-                                    />
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </div>
-
-            {/* =================================
+                {/* =================================
                 MODERN CHAT COMPOSER DOCK
             ================================= */}
-            <footer className="chat-composer-wrapper">
-                {error && (
-                    <div className="chat-error-toast" role="alert">
-                        <span className="error-icon" aria-hidden="true">⚠️</span>
-                        <span className="error-text">{error}</span>
-                        <button
-                            type="button"
-                            className="error-dismiss-btn"
-                            onClick={() => setError('')}
-                            aria-label="Dismiss error notification"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
+                <footer className="chat-composer-wrapper">
+                    {error && (
+                        <div className="chat-error-toast" role="alert">
+                            <span className="error-icon" aria-hidden="true">⚠️</span>
+                            <span className="error-text">{error}</span>
+                            <button
+                                type="button"
+                                className="error-dismiss-btn"
+                                onClick={() => setError('')}
+                                aria-label="Dismiss error notification"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
 
-                <div className={`chat-composer-box ${loading ? 'composer-disabled' : ''}`}>
-                    <textarea
-                        ref={textareaRef}
-                        className="composer-textarea"
-                        placeholder={
-                            messages.length > 0
-                                ? 'Ask a follow-up (e.g., "What are its types?", "Explain the second one")...'
-                                : 'Ask anything about your uploaded documents...'
+                    <VoiceStatusBanner
+                        voiceState={voiceState}
+                        recordingSeconds={recordingSeconds}
+                        voiceError={voiceError}
+                        audioPaused={audioPaused}
+                        onStopRecording={handleStopRecording}
+                        onTogglePausePlayback={handleTogglePausePlayback}
+                        onStopPlayback={stopVoicePlayback}
+                        onRetry={
+                            voiceState === VOICE_STATES.ERROR && voiceSupported
+                                ? handleStartVoiceRecording
+                                : null
                         }
-                        value={question}
-                        onChange={(event) => setQuestion(event.target.value)}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter' && !event.shiftKey) {
-                                event.preventDefault()
-                                if (!isSubmitDisabled) {
-                                    handleAskAI()
-                                }
-                            }
+                        onDismissError={() => {
+                            setVoiceError('')
+                            setVoiceState(VOICE_STATES.IDLE)
                         }}
-                        disabled={loading}
-                        rows={1}
-                        aria-label="Ask a question about your documents"
                     />
 
-                    <div className="composer-bottom-bar">
-                        <div className="composer-info-left">
-                            <span className="composer-key-hint">
-                                <strong>Enter</strong> to ask · <strong>Shift + Enter</strong> for line break
-                            </span>
-                            {!docsLoading && documents.length > 0 && (
-                                <span className="composer-scope-tag">
-                                    {scopeMode === 'all'
-                                        ? `Scope: All (${documents.length})`
-                                        : `Scope: ${selectedDocIds.length} Selected`}
-                                </span>
-                            )}
-                        </div>
+                    {voiceState === VOICE_STATES.REVIEWING && (
+                        <VoiceTranscriptReview
+                            transcript={voiceTranscript}
+                            metadata={voiceMeta}
+                            onChangeTranscript={setVoiceTranscript}
+                            onSubmitTranscript={handleSubmitVoiceTranscript}
+                            onCancelTranscript={handleCancelVoiceTranscript}
+                            disabled={loading}
+                        />
+                    )}
 
-                        <motion.button
-                            type="button"
-                            className="composer-send-button"
-                            onClick={handleAskAI}
-                            disabled={isSubmitDisabled}
-                            whileHover={!isSubmitDisabled ? { scale: 1.08 } : {}}
-                            whileTap={!isSubmitDisabled ? { scale: 0.93 } : {}}
-                            title="Send inquiry"
-                            aria-label="Send inquiry"
-                        >
-                            {loading ? (
-                                <span className="send-spinner" aria-hidden="true"></span>
-                            ) : (
-                                <Send size={15} aria-hidden="true" />
-                            )}
-                        </motion.button>
+                    <div className={`chat-composer-box ${loading ? 'composer-disabled' : ''}`}>
+                        <textarea
+                            ref={textareaRef}
+                            className="composer-textarea"
+                            placeholder={
+                                messages.length > 0
+                                    ? 'Ask a follow-up (e.g., "What are its types?", "Explain the second one")...'
+                                    : 'Ask anything about your uploaded documents...'
+                            }
+                            value={question}
+                            onChange={(event) => setQuestion(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' && !event.shiftKey) {
+                                    event.preventDefault()
+                                    if (!isSubmitDisabled) {
+                                        handleAskAI()
+                                    }
+                                }
+                            }}
+                            disabled={loading}
+                            rows={1}
+                            aria-label="Ask a question about your documents"
+                        />
+
+                        <div className="composer-bottom-bar">
+                            <div className="composer-info-left">
+                                <span className="composer-key-hint">
+                                    <strong>Enter</strong> to ask · <strong>Shift + Enter</strong> for line break
+                                </span>
+                                {!docsLoading && documents.length > 0 && (
+                                    <span className="composer-scope-tag">
+                                        {scopeMode === 'all'
+                                            ? `Scope: All (${documents.length})`
+                                            : `Scope: ${selectedDocIds.length} Selected`}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="composer-action-group">
+                                <VoiceMicButton
+                                    voiceState={voiceState}
+                                    disabled={loading}
+                                    supported={voiceSupported}
+                                    onToggleMic={handleToggleMic}
+                                />
+                                <motion.button
+                                    type="button"
+                                    className="composer-send-button"
+                                    onClick={handleAskAI}
+                                    disabled={isSubmitDisabled}
+                                    whileHover={!isSubmitDisabled ? { scale: 1.08 } : {}}
+                                    whileTap={!isSubmitDisabled ? { scale: 0.93 } : {}}
+                                    title="Send inquiry"
+                                    aria-label="Send inquiry"
+                                >
+                                    {loading ? (
+                                        <span className="send-spinner" aria-hidden="true"></span>
+                                    ) : (
+                                        <Send size={15} aria-hidden="true" />
+                                    )}
+                                </motion.button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </footer>
-        </main>
-    </div>
-)
+                </footer>
+            </main>
+        </div>
+    )
 }
 
 export default AskAI
