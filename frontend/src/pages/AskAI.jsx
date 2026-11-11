@@ -677,7 +677,7 @@ function AskAI() {
                 apiRequest(`/conversations/${activeConversationId}`, {
                     method: 'PATCH',
                     body: JSON.stringify({ scope_mode: newMode }),
-                }).catch(() => { })
+                }).catch(() => {})
             }
         }
     }
@@ -693,7 +693,7 @@ function AskAI() {
         apiRequest(`/conversations/${convId}`, {
             method: 'PATCH',
             body: JSON.stringify({ selected_doc_ids: selectedDocIds }),
-        }).catch(() => { })
+        }).catch(() => {})
     }, [selectedDocIds, activeConversationId])
 
     const handleToggleDoc = (docId) => {
@@ -828,7 +828,7 @@ function AskAI() {
         const audio = ttsAudioRef.current
         if (!audio) return
         if (audio.paused) {
-            audio.play().catch(() => { })
+            audio.play().catch(() => {})
             setAudioPaused(false)
         } else {
             audio.pause()
@@ -1563,425 +1563,399 @@ function AskAI() {
                     </div>
                 </header>
 
-                {/* ACTIVE SCOPE BANNER (WHEN SPECIFIC DOCUMENTS ARE ACTIVE) */}
-                {scopeMode === 'specific' && selectedDocIds.length > 0 && !isDocPickerOpen && (
-                    <div className="active-scope-banner" role="status" aria-label="Active document scope">
-                        <div className="active-scope-left">
-                            <Layers size={14} className="active-scope-icon" aria-hidden="true" />
-                            <span className="active-scope-title">Active Scope:</span>
-                            <span className="active-scope-names" title={selectedDocNames}>
-                                {selectedDocNames}
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            className="active-scope-edit-btn"
-                            onClick={() => setIsDocPickerOpen(true)}
-                            title="Modify selected documents"
-                        >
-                            Change Scope ▾
-                        </button>
+            {/* ACTIVE SCOPE BANNER (WHEN SPECIFIC DOCUMENTS ARE ACTIVE) */}
+            {scopeMode === 'specific' && selectedDocIds.length > 0 && !isDocPickerOpen && (
+                <div className="active-scope-banner" role="status" aria-label="Active document scope">
+                    <div className="active-scope-left">
+                        <Layers size={14} className="active-scope-icon" aria-hidden="true" />
+                        <span className="active-scope-title">Active Scope:</span>
+                        <span className="active-scope-names" title={selectedDocNames}>
+                            {selectedDocNames}
+                        </span>
                     </div>
-                )}
+                    <button
+                        type="button"
+                        className="active-scope-edit-btn"
+                        onClick={() => setIsDocPickerOpen(true)}
+                        title="Modify selected documents"
+                    >
+                        Change Scope ▾
+                    </button>
+                </div>
+            )}
 
-                {/* SEARCHABLE MULTI-DOCUMENT SELECTOR PANEL */}
-                <MultiDocumentSelector
-                    isOpen={scopeMode === 'specific' && isDocPickerOpen}
-                    onClose={() => setIsDocPickerOpen(false)}
-                    documents={documents}
-                    selectedDocIds={selectedDocIds}
-                    onToggleDoc={handleToggleDoc}
-                    onSelectAll={handleSelectAllDocs}
-                    onClear={handleClearDocs}
-                    loading={loading}
-                />
+            {/* SEARCHABLE MULTI-DOCUMENT SELECTOR PANEL */}
+            <MultiDocumentSelector
+                isOpen={scopeMode === 'specific' && isDocPickerOpen}
+                onClose={() => setIsDocPickerOpen(false)}
+                documents={documents}
+                selectedDocIds={selectedDocIds}
+                onToggleDoc={handleToggleDoc}
+                onSelectAll={handleSelectAllDocs}
+                onClear={handleClearDocs}
+                loading={loading}
+            />
 
-                {/* Document repository loading / error alerts */}
-                {docsLoading && (
-                    <div className="scope-status-banner">
-                        <span className="scope-spinner" aria-hidden="true"></span>
-                        <span>Connecting to document repository...</span>
-                    </div>
-                )}
+            {/* Document repository loading / error alerts */}
+            {docsLoading && (
+                <div className="scope-status-banner">
+                    <span className="scope-spinner" aria-hidden="true"></span>
+                    <span>Connecting to document repository...</span>
+                </div>
+            )}
 
-                {docsError && (
-                    <div className="scope-status-banner scope-status-error" role="alert">
-                        <span>⚠️ {docsError}</span>
-                        <button type="button" className="scope-retry-link" onClick={fetchDocuments}>
-                            Retry
-                        </button>
-                    </div>
-                )}
+            {docsError && (
+                <div className="scope-status-banner scope-status-error" role="alert">
+                    <span>⚠️ {docsError}</span>
+                    <button type="button" className="scope-retry-link" onClick={fetchDocuments}>
+                        Retry
+                    </button>
+                </div>
+            )}
 
-                {!docsLoading && !docsError && documents.length === 0 && (
-                    <div className="scope-status-banner scope-status-empty" role="alert">
-                        <span>📂 No documents uploaded yet.</span>
-                        <Link to="/documents" className="scope-retry-link">Upload documents</Link>
-                    </div>
-                )}
+            {!docsLoading && !docsError && documents.length === 0 && (
+                <div className="scope-status-banner scope-status-empty" role="alert">
+                    <span>📂 No documents uploaded yet.</span>
+                    <Link to="/documents" className="scope-retry-link">Upload documents</Link>
+                </div>
+            )}
 
-                {/* =================================
+            {/* =================================
                 CHAT SCROLL CONTAINER & THREAD
             ================================= */}
-                <div className="chat-scroll-container">
-                    {/* EMPTY STATE WITH NEURAL WAVEFORM */}
-                    {messages.length === 0 && !loading && (
-                        <motion.section
-                            className="chat-empty-state"
-                            aria-label="Ask AI overview"
-                            initial={{ opacity: 0, scale: 0.96 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.4 }}
-                        >
-                            <NeuralWaveform isGenerating={false} statusText="Grounded Intelligence Active" />
+            <div className="chat-scroll-container">
+                {/* EMPTY STATE WITH NEURAL WAVEFORM */}
+                {messages.length === 0 && !loading && (
+                    <motion.section
+                        className="chat-empty-state"
+                        aria-label="Ask AI overview"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        <NeuralWaveform isGenerating={false} statusText="Grounded Intelligence Active" />
 
-                            <h3 className="chat-empty-title">Cognidocs Intelligence Ready</h3>
-                            <p className="chat-empty-desc">
-                                Ask anything about your uploaded documents. Cognidocs AI retrieves exact passages and formulates context-grounded answers with traceable citations.
-                            </p>
+                        <h3 className="chat-empty-title">Cognidocs Intelligence Ready</h3>
+                        <p className="chat-empty-desc">
+                            Ask anything about your uploaded documents. Cognidocs AI retrieves exact passages and formulates context-grounded answers with traceable citations.
+                        </p>
 
-                            <div className="chat-suggestions-wrap">
-                                <span className="chat-suggestions-label">
-                                    {scopeMode === 'specific' ? 'Document Suggestions' : 'Collection Inquiries'}
-                                </span>
-                                {suggestionsLoading ? (
-                                    <div className="chat-suggestions-loading" aria-label="Generating document-aware suggestions">
-                                        <span className="suggestion-spinner" aria-hidden="true"></span>
-                                        <span className="suggestion-loading-text">Generating document-aware suggestions...</span>
-                                    </div>
-                                ) : scopeMode === 'specific' && selectedDocIds.length === 0 ? (
-                                    <p className="chat-suggestions-hint">
-                                        Select one or more documents above to generate tailored inquiry suggestions.
-                                    </p>
-                                ) : suggestedQuestions.length > 0 ? (
-                                    <div className="chat-suggestions-chips">
-                                        {suggestedQuestions.map((suggestion) => (
-                                            <motion.button
-                                                key={suggestion}
-                                                type="button"
-                                                className="chat-suggestion-chip"
-                                                onClick={() => handleSuggestedQuestion(suggestion)}
-                                                disabled={loading}
-                                                title={`Ask: "${suggestion}"`}
-                                                whileHover={{ scale: 1.03, y: -2 }}
-                                                whileTap={{ scale: 0.97 }}
-                                            >
-                                                <span className="suggestion-sparkle" aria-hidden="true">
-                                                    <Sparkles size={12} />
-                                                </span>
-                                                <span>{suggestion}</span>
-                                            </motion.button>
-                                        ))}
-                                    </div>
-                                ) : !docsLoading && documents.length > 0 ? (
-                                    <p className="chat-suggestions-hint">
-                                        Ask any question about your documents in the composer below.
-                                    </p>
-                                ) : null}
-                            </div>
-                        </motion.section>
-                    )}
-
-                    {/* CONVERSATION MESSAGES */}
-                    {messages.length > 0 && (
-                        <div className="chat-thread-container" aria-label="Conversation thread">
-                            {messages.map((msg, idx) => {
-                                if (msg.role === 'user') {
-                                    return (
-                                        <motion.div
-                                            key={msg.id}
-                                            className="chat-row chat-row-user"
-                                            initial={{ opacity: 0, y: 15 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                        <div className="chat-suggestions-wrap">
+                            <span className="chat-suggestions-label">
+                                {scopeMode === 'specific' ? 'Document Suggestions' : 'Collection Inquiries'}
+                            </span>
+                            {suggestionsLoading ? (
+                                <div className="chat-suggestions-loading" aria-label="Generating document-aware suggestions">
+                                    <span className="suggestion-spinner" aria-hidden="true"></span>
+                                    <span className="suggestion-loading-text">Generating document-aware suggestions...</span>
+                                </div>
+                            ) : scopeMode === 'specific' && selectedDocIds.length === 0 ? (
+                                <p className="chat-suggestions-hint">
+                                    Select one or more documents above to generate tailored inquiry suggestions.
+                                </p>
+                            ) : suggestedQuestions.length > 0 ? (
+                                <div className="chat-suggestions-chips">
+                                    {suggestedQuestions.map((suggestion) => (
+                                        <motion.button
+                                            key={suggestion}
+                                            type="button"
+                                            className="chat-suggestion-chip"
+                                            onClick={() => handleSuggestedQuestion(suggestion)}
+                                            disabled={loading}
+                                            title={`Ask: "${suggestion}"`}
+                                            whileHover={{ scale: 1.03, y: -2 }}
+                                            whileTap={{ scale: 0.97 }}
                                         >
-                                            <div className="chat-bubble-user" tabIndex={0}>
-                                                <p className="chat-user-text">{msg.content}</p>
-                                                <span className="chat-user-time">
-                                                    {formatTimestamp(msg.timestamp)}
-                                                </span>
-                                            </div>
-                                        </motion.div>
-                                    )
-                                }
+                                            <span className="suggestion-sparkle" aria-hidden="true">
+                                                <Sparkles size={12} />
+                                            </span>
+                                            <span>{suggestion}</span>
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            ) : !docsLoading && documents.length > 0 ? (
+                                <p className="chat-suggestions-hint">
+                                    Ask any question about your documents in the composer below.
+                                </p>
+                            ) : null}
+                        </div>
+                    </motion.section>
+                )}
 
-                                // Assistant message
-                                const isInsufficient = isInsufficientEvidenceText(msg.content)
-                                const sortedSources = !isInsufficient && Array.isArray(msg.sources)
-                                    ? [...msg.sources].sort(
-                                        (a, b) => (Number(a.citation_index) || 0) - (Number(b.citation_index) || 0)
-                                    )
-                                    : []
-
-                                const isDrawerExpanded = expandedSourcesDrawers[msg.id] !== false
-
+                {/* CONVERSATION MESSAGES */}
+                {messages.length > 0 && (
+                    <div className="chat-thread-container" aria-label="Conversation thread">
+                        {messages.map((msg, idx) => {
+                            if (msg.role === 'user') {
                                 return (
                                     <motion.div
                                         key={msg.id}
-                                        className="chat-row chat-row-assistant"
+                                        className="chat-row chat-row-user"
                                         initial={{ opacity: 0, y: 15 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
                                     >
-                                        <div className="assistant-avatar" aria-hidden="true">
-                                            <Sparkles size={16} />
-                                        </div>
-
-                                        <div className="assistant-bubble-column">
-                                            <article
-                                                className="chat-bubble-assistant"
-                                                aria-label={`Assistant response ${idx + 1}`}
-                                            >
-                                                <div className="assistant-body">
-                                                    {renderFormattedAnswer(msg.content, msg.sources, msg.id)}
-                                                </div>
-
-                                                {/* FOLLOW-UP QUESTION SUGGESTION CHIPS */}
-                                                {Array.isArray(msg.follow_up_questions) && msg.follow_up_questions.length > 0 && (
-                                                    <div className="followup-questions-container" aria-label="Suggested follow-up questions">
-                                                        <span className="followup-questions-label">Suggested Follow-ups</span>
-                                                        <div className="followup-questions-chips">
-                                                            {msg.follow_up_questions.map((fq, fqIdx) => (
-                                                                <button
-                                                                    key={`fq-${msg.id}-${fqIdx}`}
-                                                                    type="button"
-                                                                    className="followup-chip"
-                                                                    onClick={() => handleAskAI(fq)}
-                                                                    disabled={loading}
-                                                                    title={`Ask: "${fq}"`}
-                                                                >
-                                                                    <Sparkles size={13} className="followup-icon" aria-hidden="true" />
-                                                                    <span>{fq}</span>
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="assistant-bubble-footer">
-                                                    <span className="assistant-time">
-                                                        {formatTimestamp(msg.timestamp)}
-                                                    </span>
-                                                    <div className="assistant-footer-actions">
-                                                        <MessagePlaybackControls
-                                                            msgId={msg.id}
-                                                            activePlaybackMsgId={activePlaybackMsgId}
-                                                            isLoadingTts={ttsLoadingMsgId === msg.id}
-                                                            isSpeaking={
-                                                                activePlaybackMsgId === msg.id &&
-                                                                ttsLoadingMsgId !== msg.id &&
-                                                                !audioPaused
-                                                            }
-                                                            isPaused={audioPaused}
-                                                            onPlay={() => speakMessageText(msg.id, msg.content)}
-                                                            onTogglePause={handleTogglePausePlayback}
-                                                            onStop={stopVoicePlayback}
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="assistant-copy-btn"
-                                                            onClick={() => handleCopyAnswer(msg.id, msg.content)}
-                                                            aria-label="Copy answer text"
-                                                        >
-                                                            {copiedMsgId === msg.id ? 'Copied ✨' : 'Copy'}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </article>
-
-                                            {/* GROUNDED CITATION SOURCES SECTION */}
-                                            {sortedSources.length > 0 && (
-                                                <div className="chat-sources-container" aria-label="Answer sources">
-                                                    <button
-                                                        type="button"
-                                                        className={`sources-drawer-btn ${isDrawerExpanded ? 'expanded' : ''}`}
-                                                        onClick={() => toggleSourcesDrawer(msg.id)}
-                                                        aria-expanded={isDrawerExpanded}
-                                                        title="Toggle verified supporting source excerpts"
-                                                    >
-                                                        <span className="sources-drawer-icon" aria-hidden="true">
-                                                            <BookOpen size={15} />
-                                                        </span>
-                                                        <span className="sources-drawer-label">
-                                                            Sources ({sortedSources.length})
-                                                        </span>
-                                                        <span className="sources-drawer-arrow" aria-hidden="true">
-                                                            {isDrawerExpanded ? '▴ Hide' : '▾ Show'}
-                                                        </span>
-                                                    </button>
-
-                                                    {isDrawerExpanded && (
-                                                        <div className="sources-cards-list">
-                                                            {/* Multi-document / page evidence summary */}
-                                                            {(() => {
-                                                                const distinctDocIds = new Set(
-                                                                    sortedSources.map((s) => s.document_id).filter((id) => id != null)
-                                                                )
-                                                                const docCount = distinctDocIds.size || 1
-                                                                return (
-                                                                    <div className="multi-doc-sources-summary">
-                                                                        <span className="sources-summary-title">
-                                                                            Grounded Evidence: {docCount} {docCount === 1 ? 'document' : 'documents'} · {sortedSources.length} {sortedSources.length === 1 ? 'citation' : 'citations'}
-                                                                        </span>
-                                                                    </div>
-                                                                )
-                                                            })()}
-
-                                                            {sortedSources.map((source, sIdx) => {
-                                                                const citeNum = source.citation_index || (sIdx + 1)
-                                                                const isHighlighted =
-                                                                    highlightedCitation &&
-                                                                    highlightedCitation.msgId === msg.id &&
-                                                                    highlightedCitation.num === citeNum
-                                                                const excerptKey = `${msg.id}-${citeNum}`
-                                                                const isExpanded = Boolean(expandedSourceExcerpts[excerptKey])
-
-                                                                const docName =
-                                                                    source.document_name ||
-                                                                    source.document_title ||
-                                                                    source.filename ||
-                                                                    `Document #${source.document_id || citeNum}`
-                                                                const isHw =
-                                                                    source.source_type === 'handwritten' ||
-                                                                    (source.document_type && source.document_type.toLowerCase().includes('handwritten')) ||
-                                                                    (source.filename && source.filename.toLowerCase().includes('handwritten'))
-                                                                const hasPage = source.page_number != null
-                                                                const pageLabel = hasPage
-                                                                    ? `Page ${source.page_number}`
-                                                                    : 'Full Document'
-                                                                const rawExcerpt =
-                                                                    source.excerpt || source.content || source.source_text || 'No text excerpt available.'
-                                                                const fullContent =
-                                                                    source.content || source.source_text || rawExcerpt
-                                                                const canExpand =
-                                                                    fullContent.length > rawExcerpt.length + 25 || rawExcerpt.length > 220
-                                                                const displayText = isExpanded
-                                                                    ? fullContent
-                                                                    : rawExcerpt.length > 240
-                                                                        ? `${rawExcerpt.slice(0, 240)}...`
-                                                                        : rawExcerpt
-                                                                const navUrl = buildSourceNavigationUrl(source)
-
-                                                                const rawScore =
-                                                                    typeof source.similarity === 'number' && !isNaN(source.similarity)
-                                                                        ? source.similarity
-                                                                        : typeof source.retrieval_score === 'number' && !isNaN(source.retrieval_score)
-                                                                            ? source.retrieval_score
-                                                                            : null
-                                                                const similarityScore = rawScore !== null ? Math.min(100, Math.round(rawScore * 100)) : null
-
-                                                                return (
-                                                                    <article
-                                                                        key={`src-${msg.id}-${source.chunk_id || source.id || citeNum}`}
-                                                                        id={`source-card-${msg.id}-${citeNum}`}
-                                                                        className={`compact-source-card ${isHighlighted ? 'source-card-highlighted' : ''
-                                                                            }`}
-                                                                        tabIndex={0}
-                                                                        aria-label={`Source ${citeNum}: ${docName}, ${pageLabel}`}
-                                                                    >
-                                                                        <div className="source-card-topbar">
-                                                                            <div className="source-meta-group">
-                                                                                <span className="source-idx-pill">
-                                                                                    [{citeNum}]
-                                                                                </span>
-                                                                                <span className="source-name" title={docName}>
-                                                                                    {isHw ? '✍️ ' : '📄 '}
-                                                                                    {docName}
-                                                                                </span>
-                                                                                <span className={`source-type-pill ${isHw ? 'hw' : 'printed'}`}>
-                                                                                    {isHw ? 'HANDWRITTEN' : 'PRINTED'}
-                                                                                </span>
-                                                                                <span className="source-page-badge">
-                                                                                    {pageLabel}
-                                                                                </span>
-                                                                                {similarityScore !== null && (
-                                                                                    <span
-                                                                                        className="source-sim-chip"
-                                                                                        title="Semantic retrieval relevance indicator"
-                                                                                    >
-                                                                                        {similarityScore}% match
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                                                                                {navUrl && (
-                                                                                    <Link
-                                                                                        to={navUrl}
-                                                                                        className="source-nav-link"
-                                                                                        title={
-                                                                                            isHw
-                                                                                                ? `Open handwritten ${pageLabel} in Studio`
-                                                                                                : hasPage
-                                                                                                    ? `Open ${docName} at ${pageLabel}`
-                                                                                                    : `Open ${docName}`
-                                                                                        }
-                                                                                        onClick={(e) => e.stopPropagation()}
-                                                                                    >
-                                                                                        {isHw
-                                                                                            ? `Studio ${hasPage ? `p.${source.page_number} ` : ''}↗`
-                                                                                            : hasPage
-                                                                                                ? `Open Page ${source.page_number} ↗`
-                                                                                                : 'Open Doc ↗'}
-                                                                                    </Link>
-                                                                                )}
-                                                                                {canExpand && (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        className="source-expand-btn"
-                                                                                        onClick={() => toggleSourceExcerpt(msg.id, citeNum)}
-                                                                                        aria-expanded={isExpanded}
-                                                                                    >
-                                                                                        {isExpanded ? 'Less ▴' : 'More ▾'}
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-
-                                                                        <blockquote className="source-excerpt-quote">
-                                                                            &ldquo;{displayText}&rdquo;
-                                                                        </blockquote>
-                                                                    </article>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
+                                        <div className="chat-bubble-user" tabIndex={0}>
+                                            <p className="chat-user-text">{msg.content}</p>
+                                            <span className="chat-user-time">
+                                                {formatTimestamp(msg.timestamp)}
+                                            </span>
                                         </div>
                                     </motion.div>
                                 )
-                            })}
+                            }
 
-                            {/* SYNTHESIZING TYPING INDICATOR WITH NEURAL WAVEFORM */}
-                            {loading && (
+                            // Assistant message
+                            const isInsufficient = isInsufficientEvidenceText(msg.content)
+                            const sortedSources = !isInsufficient && Array.isArray(msg.sources)
+                                ? [...msg.sources].sort(
+                                      (a, b) => (Number(a.citation_index) || 0) - (Number(b.citation_index) || 0)
+                                  )
+                                : []
+
+                            const isDrawerExpanded = expandedSourcesDrawers[msg.id] !== false
+
+                            return (
                                 <motion.div
-                                    className="chat-row chat-row-assistant chat-row-loading"
+                                    key={msg.id}
+                                    className="chat-row chat-row-assistant"
                                     initial={{ opacity: 0, y: 15 }}
                                     animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                                 >
-                                    <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
+                                    <div className="assistant-avatar" aria-hidden="true">
                                         <Sparkles size={16} />
                                     </div>
+
                                     <div className="assistant-bubble-column">
-                                        <div className="chat-bubble-assistant chat-bubble-loading">
-                                            <NeuralWaveform
-                                                isGenerating={true}
-                                                compact={true}
-                                                statusText={currentLoadingStatus}
-                                            />
-                                        </div>
+                                        <article
+                                            className="chat-bubble-assistant"
+                                            aria-label={`Assistant response ${idx + 1}`}
+                                        >
+                                            <div className="assistant-body">
+                                                {renderFormattedAnswer(msg.content, msg.sources, msg.id)}
+                                            </div>
+
+                                            {/* FOLLOW-UP QUESTION SUGGESTION CHIPS */}
+                                            {Array.isArray(msg.follow_up_questions) && msg.follow_up_questions.length > 0 && (
+                                                <div className="followup-questions-container" aria-label="Suggested follow-up questions">
+                                                    <span className="followup-questions-label">Suggested Follow-ups</span>
+                                                    <div className="followup-questions-chips">
+                                                        {msg.follow_up_questions.map((fq, fqIdx) => (
+                                                            <button
+                                                                key={`fq-${msg.id}-${fqIdx}`}
+                                                                type="button"
+                                                                className="followup-chip"
+                                                                onClick={() => handleAskAI(fq)}
+                                                                disabled={loading}
+                                                                title={`Ask: "${fq}"`}
+                                                            >
+                                                                <Sparkles size={13} className="followup-icon" aria-hidden="true" />
+                                                                <span>{fq}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="assistant-bubble-footer">
+                                                <span className="assistant-time">
+                                                    {formatTimestamp(msg.timestamp)}
+                                                </span>
+                                                <div className="assistant-footer-actions">
+                                                    <MessagePlaybackControls
+                                                        msgId={msg.id}
+                                                        activePlaybackMsgId={activePlaybackMsgId}
+                                                        isLoadingTts={ttsLoadingMsgId === msg.id}
+                                                        isSpeaking={
+                                                            activePlaybackMsgId === msg.id &&
+                                                            ttsLoadingMsgId !== msg.id &&
+                                                            !audioPaused
+                                                        }
+                                                        isPaused={audioPaused}
+                                                        onPlay={() => speakMessageText(msg.id, msg.content)}
+                                                        onTogglePause={handleTogglePausePlayback}
+                                                        onStop={stopVoicePlayback}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="assistant-copy-btn"
+                                                        onClick={() => handleCopyAnswer(msg.id, msg.content)}
+                                                        aria-label="Copy answer text"
+                                                    >
+                                                        {copiedMsgId === msg.id ? 'Copied ✨' : 'Copy'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </article>
+
+                                        {/* GROUNDED CITATION SOURCES SECTION */}
+                                        {sortedSources.length > 0 && (
+                                            <div className="chat-sources-container" aria-label="Answer sources">
+                                                <button
+                                                    type="button"
+                                                    className={`sources-drawer-btn ${isDrawerExpanded ? 'expanded' : ''}`}
+                                                    onClick={() => toggleSourcesDrawer(msg.id)}
+                                                    aria-expanded={isDrawerExpanded}
+                                                    title="Toggle verified supporting source excerpts"
+                                                >
+                                                    <span className="sources-drawer-icon" aria-hidden="true">
+                                                        <BookOpen size={15} />
+                                                    </span>
+                                                    <span className="sources-drawer-label">
+                                                        Sources ({sortedSources.length})
+                                                    </span>
+                                                    <span className="sources-drawer-arrow" aria-hidden="true">
+                                                        {isDrawerExpanded ? '▴ Hide' : '▾ Show'}
+                                                    </span>
+                                                </button>
+
+                                                {isDrawerExpanded && (
+                                                    <div className="sources-cards-list">
+                                                        {/* Multi-document / page evidence summary */}
+                                                        {(() => {
+                                                            const distinctDocIds = new Set(
+                                                                sortedSources.map((s) => s.document_id).filter((id) => id != null)
+                                                            )
+                                                            const docCount = distinctDocIds.size || 1
+                                                            return (
+                                                                <div className="multi-doc-sources-summary">
+                                                                    <span className="sources-summary-title">
+                                                                        Grounded Evidence: {docCount} {docCount === 1 ? 'document' : 'documents'} · {sortedSources.length} {sortedSources.length === 1 ? 'citation' : 'citations'}
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        })()}
+
+                                                        {sortedSources.map((source, sIdx) => {
+                                                            const citeNum = source.citation_index || (sIdx + 1)
+                                                            const isHighlighted =
+                                                                highlightedCitation &&
+                                                                highlightedCitation.msgId === msg.id &&
+                                                                highlightedCitation.num === citeNum
+                                                            const excerptKey = `${msg.id}-${citeNum}`
+                                                            const isExpanded = Boolean(expandedSourceExcerpts[excerptKey])
+
+                                                            const docName =
+                                                                source.document_name ||
+                                                                source.document_title ||
+                                                                source.filename ||
+                                                                `Document #${source.document_id || citeNum}`
+                                                            const isHw =
+                                                                source.source_type === 'handwritten' ||
+                                                                (source.document_type && source.document_type.toLowerCase().includes('handwritten')) ||
+                                                                (source.filename && source.filename.toLowerCase().includes('handwritten'))
+                                                            const hasPage = source.page_number != null
+                                                            const pageLabel = hasPage
+                                                                ? `Page ${source.page_number}`
+                                                                : 'Full Document'
+                                                            const rawExcerpt =
+                                                                source.excerpt || source.content || source.source_text || 'No text excerpt available.'
+                                                            const fullContent =
+                                                                source.content || source.source_text || rawExcerpt
+                                                            const canExpand =
+                                                                fullContent.length > rawExcerpt.length + 25 || rawExcerpt.length > 220
+                                                            const displayText = isExpanded
+                                                                ? fullContent
+                                                                : rawExcerpt.length > 240
+                                                                ? `${rawExcerpt.slice(0, 240)}...`
+                                                                : rawExcerpt
+                                                            const navUrl = buildSourceNavigationUrl(source)
+
+                                                            const rawScore =
+                                                                typeof source.similarity === 'number' && !isNaN(source.similarity)
+                                                                    ? source.similarity
+                                                                    : typeof source.retrieval_score === 'number' && !isNaN(source.retrieval_score)
+                                                                    ? source.retrieval_score
+                                                                    : null
+                                                            const similarityScore = rawScore !== null ? Math.min(100, Math.round(rawScore * 100)) : null
+
+                                                            return (
+                                                                <article
+                                                                    key={`src-${msg.id}-${source.chunk_id || source.id || citeNum}`}
+                                                                    id={`source-card-${msg.id}-${citeNum}`}
+                                                                    className={`compact-source-card ${
+                                                                        isHighlighted ? 'source-card-highlighted' : ''
+                                                                    }`}
+                                                                    tabIndex={0}
+                                                                    aria-label={`Source ${citeNum}: ${docName}, ${pageLabel}`}
+                                                                >
+                                                                    <div className="source-card-topbar">
+                                                                        <div className="source-meta-group">
+                                                                            <span className="source-idx-pill">
+                                                                                [{citeNum}]
+                                                                            </span>
+                                                                            <span className="source-name" title={docName}>
+                                                                                {isHw ? '✍️ ' : '📄 '}
+                                                                                {docName}
+                                                                            </span>
+                                                                            <span className={`source-type-pill ${isHw ? 'hw' : 'printed'}`}>
+                                                                                {isHw ? 'HANDWRITTEN' : 'PRINTED'}
+                                                                            </span>
+                                                                            <span className="source-page-badge">
+                                                                                {pageLabel}
+                                                                            </span>
+                                                                            {similarityScore !== null && (
+                                                                                <span
+                                                                                    className="source-sim-chip"
+                                                                                    title="Semantic retrieval relevance indicator"
+                                                                                >
+                                                                                    {similarityScore}% match
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+                                                                            {navUrl && (
+                                                                                <Link
+                                                                                    to={navUrl}
+                                                                                    className="source-nav-link"
+                                                                                    title={
+                                                                                        isHw
+                                                                                            ? `Open handwritten ${pageLabel} in Studio`
+                                                                                            : hasPage
+                                                                                            ? `Open ${docName} at ${pageLabel}`
+                                                                                            : `Open ${docName}`
+                                                                                    }
+                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                >
+                                                                                    {isHw
+                                                                                        ? `Studio ${hasPage ? `p.${source.page_number} ` : ''}↗`
+                                                                                        : hasPage
+                                                                                        ? `Open Page ${source.page_number} ↗`
+                                                                                        : 'Open Doc ↗'}
+                                                                                </Link>
+                                                                            )}
+                                                                            {canExpand && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="source-expand-btn"
+                                                                                    onClick={() => toggleSourceExcerpt(msg.id, citeNum)}
+                                                                                    aria-expanded={isExpanded}
+                                                                                >
+                                                                                    {isExpanded ? 'Less ▴' : 'More ▾'}
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <blockquote className="source-excerpt-quote">
+                                                                        &ldquo;{displayText}&rdquo;
+                                                                    </blockquote>
+                                                                </article>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
-                            )}
+                            )
+                        })}
 
-                            <div ref={messagesEndRef} />
-                        </div>
-                    )}
-
-                    {/* Initial loading state when messages array is empty */}
-                    {messages.length === 0 && loading && (
-                        <div className="chat-thread-container">
+                        {/* SYNTHESIZING TYPING INDICATOR WITH NEURAL WAVEFORM */}
+                        {loading && (
                             <motion.div
                                 className="chat-row chat-row-assistant chat-row-loading"
                                 initial={{ opacity: 0, y: 15 }}
@@ -2000,127 +1974,154 @@ function AskAI() {
                                     </div>
                                 </div>
                             </motion.div>
-                        </div>
-                    )}
-                </div>
+                        )}
 
-                {/* =================================
+                        <div ref={messagesEndRef} />
+                    </div>
+                )}
+
+                {/* Initial loading state when messages array is empty */}
+                {messages.length === 0 && loading && (
+                    <div className="chat-thread-container">
+                        <motion.div
+                            className="chat-row chat-row-assistant chat-row-loading"
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                        >
+                            <div className="assistant-avatar assistant-avatar-pulse" aria-hidden="true">
+                                <Sparkles size={16} />
+                            </div>
+                            <div className="assistant-bubble-column">
+                                <div className="chat-bubble-assistant chat-bubble-loading">
+                                    <NeuralWaveform
+                                        isGenerating={true}
+                                        compact={true}
+                                        statusText={currentLoadingStatus}
+                                    />
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </div>
+
+            {/* =================================
                 MODERN CHAT COMPOSER DOCK
             ================================= */}
-                <footer className="chat-composer-wrapper">
-                    {error && (
-                        <div className="chat-error-toast" role="alert">
-                            <span className="error-icon" aria-hidden="true">⚠️</span>
-                            <span className="error-text">{error}</span>
-                            <button
-                                type="button"
-                                className="error-dismiss-btn"
-                                onClick={() => setError('')}
-                                aria-label="Dismiss error notification"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    )}
+            <footer className="chat-composer-wrapper">
+                {error && (
+                    <div className="chat-error-toast" role="alert">
+                        <span className="error-icon" aria-hidden="true">⚠️</span>
+                        <span className="error-text">{error}</span>
+                        <button
+                            type="button"
+                            className="error-dismiss-btn"
+                            onClick={() => setError('')}
+                            aria-label="Dismiss error notification"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
 
-                    <VoiceStatusBanner
-                        voiceState={voiceState}
-                        recordingSeconds={recordingSeconds}
-                        voiceError={voiceError}
-                        audioPaused={audioPaused}
-                        onStopRecording={handleStopRecording}
-                        onTogglePausePlayback={handleTogglePausePlayback}
-                        onStopPlayback={stopVoicePlayback}
-                        onRetry={
-                            voiceState === VOICE_STATES.ERROR && voiceSupported
-                                ? handleStartVoiceRecording
-                                : null
+                <VoiceStatusBanner
+                    voiceState={voiceState}
+                    recordingSeconds={recordingSeconds}
+                    voiceError={voiceError}
+                    audioPaused={audioPaused}
+                    onStopRecording={handleStopRecording}
+                    onTogglePausePlayback={handleTogglePausePlayback}
+                    onStopPlayback={stopVoicePlayback}
+                    onRetry={
+                        voiceState === VOICE_STATES.ERROR && voiceSupported
+                            ? handleStartVoiceRecording
+                            : null
+                    }
+                    onDismissError={() => {
+                        setVoiceError('')
+                        setVoiceState(VOICE_STATES.IDLE)
+                    }}
+                />
+
+                {voiceState === VOICE_STATES.REVIEWING && (
+                    <VoiceTranscriptReview
+                        transcript={voiceTranscript}
+                        metadata={voiceMeta}
+                        onChangeTranscript={setVoiceTranscript}
+                        onSubmitTranscript={handleSubmitVoiceTranscript}
+                        onCancelTranscript={handleCancelVoiceTranscript}
+                        disabled={loading}
+                    />
+                )}
+
+                <div className={`chat-composer-box ${loading ? 'composer-disabled' : ''}`}>
+                    <textarea
+                        ref={textareaRef}
+                        className="composer-textarea"
+                        placeholder={
+                            messages.length > 0
+                                ? 'Ask a follow-up (e.g., "What are its types?", "Explain the second one")...'
+                                : 'Ask anything about your uploaded documents...'
                         }
-                        onDismissError={() => {
-                            setVoiceError('')
-                            setVoiceState(VOICE_STATES.IDLE)
+                        value={question}
+                        onChange={(event) => setQuestion(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' && !event.shiftKey) {
+                                event.preventDefault()
+                                if (!isSubmitDisabled) {
+                                    handleAskAI()
+                                }
+                            }
                         }}
+                        disabled={loading}
+                        rows={1}
+                        aria-label="Ask a question about your documents"
                     />
 
-                    {voiceState === VOICE_STATES.REVIEWING && (
-                        <VoiceTranscriptReview
-                            transcript={voiceTranscript}
-                            metadata={voiceMeta}
-                            onChangeTranscript={setVoiceTranscript}
-                            onSubmitTranscript={handleSubmitVoiceTranscript}
-                            onCancelTranscript={handleCancelVoiceTranscript}
-                            disabled={loading}
-                        />
-                    )}
-
-                    <div className={`chat-composer-box ${loading ? 'composer-disabled' : ''}`}>
-                        <textarea
-                            ref={textareaRef}
-                            className="composer-textarea"
-                            placeholder={
-                                messages.length > 0
-                                    ? 'Ask a follow-up (e.g., "What are its types?", "Explain the second one")...'
-                                    : 'Ask anything about your uploaded documents...'
-                            }
-                            value={question}
-                            onChange={(event) => setQuestion(event.target.value)}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter' && !event.shiftKey) {
-                                    event.preventDefault()
-                                    if (!isSubmitDisabled) {
-                                        handleAskAI()
-                                    }
-                                }
-                            }}
-                            disabled={loading}
-                            rows={1}
-                            aria-label="Ask a question about your documents"
-                        />
-
-                        <div className="composer-bottom-bar">
-                            <div className="composer-info-left">
-                                <span className="composer-key-hint">
-                                    <strong>Enter</strong> to ask · <strong>Shift + Enter</strong> for line break
+                    <div className="composer-bottom-bar">
+                        <div className="composer-info-left">
+                            <span className="composer-key-hint">
+                                <strong>Enter</strong> to ask · <strong>Shift + Enter</strong> for line break
+                            </span>
+                            {!docsLoading && documents.length > 0 && (
+                                <span className="composer-scope-tag">
+                                    {scopeMode === 'all'
+                                        ? `Scope: All (${documents.length})`
+                                        : `Scope: ${selectedDocIds.length} Selected`}
                                 </span>
-                                {!docsLoading && documents.length > 0 && (
-                                    <span className="composer-scope-tag">
-                                        {scopeMode === 'all'
-                                            ? `Scope: All (${documents.length})`
-                                            : `Scope: ${selectedDocIds.length} Selected`}
-                                    </span>
-                                )}
-                            </div>
+                            )}
+                        </div>
 
-                            <div className="composer-action-group">
-                                <VoiceMicButton
-                                    voiceState={voiceState}
-                                    disabled={loading}
-                                    supported={voiceSupported}
-                                    onToggleMic={handleToggleMic}
-                                />
-                                <motion.button
-                                    type="button"
-                                    className="composer-send-button"
-                                    onClick={handleAskAI}
-                                    disabled={isSubmitDisabled}
-                                    whileHover={!isSubmitDisabled ? { scale: 1.08 } : {}}
-                                    whileTap={!isSubmitDisabled ? { scale: 0.93 } : {}}
-                                    title="Send inquiry"
-                                    aria-label="Send inquiry"
-                                >
-                                    {loading ? (
-                                        <span className="send-spinner" aria-hidden="true"></span>
-                                    ) : (
-                                        <Send size={15} aria-hidden="true" />
-                                    )}
-                                </motion.button>
-                            </div>
+                        <div className="composer-action-group">
+                            <VoiceMicButton
+                                voiceState={voiceState}
+                                disabled={loading}
+                                supported={voiceSupported}
+                                onToggleMic={handleToggleMic}
+                            />
+                            <motion.button
+                                type="button"
+                                className="composer-send-button"
+                                onClick={handleAskAI}
+                                disabled={isSubmitDisabled}
+                                whileHover={!isSubmitDisabled ? { scale: 1.08 } : {}}
+                                whileTap={!isSubmitDisabled ? { scale: 0.93 } : {}}
+                                title="Send inquiry"
+                                aria-label="Send inquiry"
+                            >
+                                {loading ? (
+                                    <span className="send-spinner" aria-hidden="true"></span>
+                                ) : (
+                                    <Send size={15} aria-hidden="true" />
+                                )}
+                            </motion.button>
                         </div>
                     </div>
-                </footer>
-            </main>
-        </div>
-    )
+                </div>
+            </footer>
+        </main>
+    </div>
+)
 }
 
 export default AskAI

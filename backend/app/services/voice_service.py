@@ -148,10 +148,42 @@ def get_whisper_model() -> WhisperModel:
     return _whisper_model
 
 
+def decode_audio_to_16k_mono(input_path: str) -> np.ndarray:
+    """
+    Decode browser/uploaded audio containers (WebM/Opus, OGG, MP4, WAV, MP3)
+    using PyAV directly into a 16kHz mono float32 waveform without external ffmpeg.
+    """
+    resampler = av.audio.resampler.AudioResampler(
+        format="s16",
+        layout="mono",
+        rate=16000,
+    )
+    chunks: list[np.ndarray] = []
+    with av.open(input_path, mode="r") as container:
+        audio_streams = [s for s in container.streams if s.type == "audio"]
+        if not audio_streams:
+            raise ValueError("No audio stream found in uploaded file.")
+        for frame in container.decode(audio=0):
+            for resampled in resampler.resample(frame):
+                arr = resampled.to_ndarray()
+                if arr.size:
+                    chunks.append(arr.reshape(-1))
+        for resampled in resampler.resample(None):
+            arr = resampled.to_ndarray()
+            if arr.size:
+                chunks.append(arr.reshape(-1))
+
+    if not chunks:
+        return np.array([], dtype=np.float32)
+
+    pcm16 = np.concatenate(chunks)
+    return pcm16.astype(np.float32) / 32768.0
+
+
 def _transcribe_file_with_model(tmp_path: str) -> dict[str, Any]:
     """Decode audio via PyAV, validate duration/energy, and run local Whisper transcription."""
     try:
-        audio_array = decode_audio(tmp_path, sampling_rate=16000)
+        audio_array = decode_audio_to_16k_mono(tmp_path)
     except Exception as exc:
         raise VoiceValidationError(
             "Could not decode uploaded audio recording. Please try recording again.",
@@ -182,10 +214,6 @@ def _transcribe_file_with_model(tmp_path: str) -> dict[str, Any]:
             language="en",
             beam_size=2,
             vad_filter=True,
-            initial_prompt=(
-                "Academic and technical discussion: TCP, UDP, SYN flood, HTTP, CephVault, "
-                "OCR, SQLite, FastAPI, neural networks."
-            ),
         )
         text = " ".join(seg.text.strip() for seg in segments if seg.text).strip()
     except Exception as exc:
