@@ -1,0 +1,1399 @@
+{
+  "benchmark": "knowledge_graph_phase1_real_documents",
+  "dev_db_before": {
+    "documents": 102,
+    "conversations": 102,
+    "research_paper_analyses": 1
+  },
+  "dev_db_after": {
+    "documents": 102,
+    "conversations": 102,
+    "research_paper_analyses": 1
+  },
+  "dev_db_untouched": true,
+  "ollama_health": {
+    "status": "unavailable",
+    "message": "Ollama is not running or unreachable at http://127.0.0.1:11434. Please ensure Ollama service is active (`ollama serve`).",
+    "base_url": "http://127.0.0.1:11434",
+    "required_model": "llama3.2",
+    "available_models": [],
+    "response_time_ms": 2040.6,
+    "cached": false,
+    "timestamp": 1794502923.8067265
+  },
+  "real_document_results": [
+    {
+      "document_id": 12,
+      "filename": "text-to-handwriting.pdf",
+      "document_type": "HANDWRITTEN",
+      "is_handwritten": true,
+      "elapsed_seconds": 13.374,
+      "status": "ready",
+      "generation_method": "deterministic",
+      "node_count": 32,
+      "edge_count": 37,
+      "hidden_low_confidence_edges": 0,
+      "explicit_edges": 9,
+      "derived_edges": 28,
+      "high_confidence_edges": 11,
+      "medium_confidence_edges": 26,
+      "low_confidence_edges": 0,
+      "average_edge_confidence": 0.73,
+      "grounded_node_ratio": 1.0,
+      "grounded_edge_ratio": 1.0,
+      "used_research_analysis": false,
+      "pages_covered_count": 7,
+      "node_type_counts": {
+        "Protocol": 3,
+        "Attack": 6,
+        "Concept": 18,
+        "System": 4,
+        "Defense": 1
+      },
+      "relationship_counts": {
+        "depends_on": 6,
+        "example_of": 3,
+        "related_to": 28
+      },
+      "top_nodes": [
+        {
+          "label": "TCP",
+          "type": "Protocol",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "ACK",
+          "type": "Protocol",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Attacks",
+          "type": "Attack",
+          "ev": 4,
+          "aliases": [
+            "Attack"
+          ]
+        },
+        {
+          "label": "Connections",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Network",
+          "type": "System",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Hood",
+          "type": "Concept",
+          "ev": 2,
+          "aliases": []
+        },
+        {
+          "label": "MIT",
+          "type": "Concept",
+          "ev": 2,
+          "aliases": []
+        },
+        {
+          "label": "MLK",
+          "type": "Concept",
+          "ev": 2,
+          "aliases": []
+        },
+        {
+          "label": "Members",
+          "type": "Concept",
+          "ev": 2,
+          "aliases": []
+        },
+        {
+          "label": "SYN",
+          "type": "Protocol",
+          "ev": 2,
+          "aliases": []
+        }
+      ],
+      "top_edges": [
+        {
+          "source": "attack",
+          "relationship": "depends_on",
+          "target": "tcp",
+          "origin": "explicit",
+          "confidence": 0.888,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "tcp",
+          "relationship": "example_of",
+          "target": "attack",
+          "origin": "explicit",
+          "confidence": 0.888,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "attack",
+          "relationship": "depends_on",
+          "target": "syn",
+          "origin": "explicit",
+          "confidence": 0.885,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "attack",
+          "relationship": "depends_on",
+          "target": "ack",
+          "origin": "explicit",
+          "confidence": 0.883,
+          "pages": [
+            1,
+            6
+          ]
+        },
+        {
+          "source": "hood",
+          "relationship": "depends_on",
+          "target": "ack",
+          "origin": "explicit",
+          "confidence": 0.846,
+          "pages": [
+            1,
+            6
+          ]
+        },
+        {
+          "source": "hood",
+          "relationship": "example_of",
+          "target": "attack",
+          "origin": "explicit",
+          "confidence": 0.843,
+          "pages": [
+            1,
+            6
+          ]
+        },
+        {
+          "source": "hood",
+          "relationship": "depends_on",
+          "target": "syn",
+          "origin": "explicit",
+          "confidence": 0.805,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "hood",
+          "relationship": "depends_on",
+          "target": "tcp",
+          "origin": "explicit",
+          "confidence": 0.804,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "tcp",
+          "relationship": "related_to",
+          "target": "syn",
+          "origin": "derived",
+          "confidence": 0.799,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "how_the_attack_works_i_the_attacker",
+          "relationship": "related_to",
+          "target": "attack",
+          "origin": "derived",
+          "confidence": 0.78,
+          "pages": [
+            4
+          ]
+        }
+      ],
+      "diagnostics": {
+        "raw_unit_count": 8,
+        "substantive_unit_count": 8,
+        "sentence_span_count": 72,
+        "pages_count": 7,
+        "candidate_pool_size": 49,
+        "rejected_ungrounded_nodes": 9,
+        "merged_duplicate_nodes": 0,
+        "final_node_count": 32,
+        "candidate_pairs": 44,
+        "rejected_self_loops": 0,
+        "rejected_invalid_relationships": 0,
+        "rejected_evidence_free": 0,
+        "llm_batches": 0,
+        "llm_verified_count": 0,
+        "llm_rejected_invalid_rel": 0,
+        "llm_rejected_ungrounded": 0,
+        "llm_fallback_used": 0
+      }
+    },
+    {
+      "document_id": 13,
+      "filename": "Complete-PYhton-Handwritten-Notes-28-11.webp",
+      "document_type": "HANDWRITTEN",
+      "is_handwritten": true,
+      "elapsed_seconds": 0.465,
+      "status": "ready",
+      "generation_method": "deterministic",
+      "node_count": 7,
+      "edge_count": 14,
+      "hidden_low_confidence_edges": 0,
+      "explicit_edges": 0,
+      "derived_edges": 14,
+      "high_confidence_edges": 0,
+      "medium_confidence_edges": 14,
+      "low_confidence_edges": 0,
+      "average_edge_confidence": 0.675,
+      "grounded_node_ratio": 1.0,
+      "grounded_edge_ratio": 1.0,
+      "used_research_analysis": false,
+      "pages_covered_count": 1,
+      "node_type_counts": {
+        "Concept": 7
+      },
+      "relationship_counts": {
+        "related_to": 14
+      },
+      "top_nodes": [
+        {
+          "label": "CSS",
+          "type": "Concept",
+          "ev": 3,
+          "aliases": []
+        },
+        {
+          "label": "Cascading Style Sheets",
+          "type": "Concept",
+          "ev": 1,
+          "aliases": []
+        },
+        {
+          "label": "Introduction to CSS",
+          "type": "Concept",
+          "ev": 1,
+          "aliases": []
+        },
+        {
+          "label": "HTML",
+          "type": "Concept",
+          "ev": 1,
+          "aliases": []
+        },
+        {
+          "label": "Motvlesheet",
+          "type": "Concept",
+          "ev": 1,
+          "aliases": []
+        },
+        {
+          "label": "Presentation and Formatting",
+          "type": "Concept",
+          "ev": 1,
+          "aliases": []
+        },
+        {
+          "label": "Web Development",
+          "type": "Concept",
+          "ev": 1,
+          "aliases": []
+        }
+      ],
+      "top_edges": [
+        {
+          "source": "introduction_to_css",
+          "relationship": "related_to",
+          "target": "css",
+          "origin": "derived",
+          "confidence": 0.748,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "css",
+          "relationship": "related_to",
+          "target": "cascading_style_sheet",
+          "origin": "derived",
+          "confidence": 0.723,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "css",
+          "relationship": "related_to",
+          "target": "web_development",
+          "origin": "derived",
+          "confidence": 0.722,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "presentation_and_formatting",
+          "relationship": "related_to",
+          "target": "html",
+          "origin": "derived",
+          "confidence": 0.686,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "css",
+          "relationship": "related_to",
+          "target": "html",
+          "origin": "derived",
+          "confidence": 0.684,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "motvlesheet",
+          "relationship": "related_to",
+          "target": "html",
+          "origin": "derived",
+          "confidence": 0.673,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "css",
+          "relationship": "related_to",
+          "target": "presentation_and_formatting",
+          "origin": "derived",
+          "confidence": 0.671,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "motvlesheet",
+          "relationship": "related_to",
+          "target": "presentation_and_formatting",
+          "origin": "derived",
+          "confidence": 0.67,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "web_development",
+          "relationship": "related_to",
+          "target": "cascading_style_sheet",
+          "origin": "derived",
+          "confidence": 0.67,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "css",
+          "relationship": "related_to",
+          "target": "motvlesheet",
+          "origin": "derived",
+          "confidence": 0.662,
+          "pages": [
+            1
+          ]
+        }
+      ],
+      "diagnostics": {
+        "raw_unit_count": 1,
+        "substantive_unit_count": 1,
+        "sentence_span_count": 6,
+        "pages_count": 1,
+        "candidate_pool_size": 10,
+        "rejected_ungrounded_nodes": 3,
+        "merged_duplicate_nodes": 0,
+        "final_node_count": 7,
+        "candidate_pairs": 25,
+        "rejected_self_loops": 0,
+        "rejected_invalid_relationships": 0,
+        "rejected_evidence_free": 0,
+        "llm_batches": 0,
+        "llm_verified_count": 0,
+        "llm_rejected_invalid_rel": 0,
+        "llm_rejected_ungrounded": 0,
+        "llm_fallback_used": 0
+      }
+    },
+    {
+      "document_id": 2,
+      "filename": "Fortifying+Cloud+Security+with+Advanced+Data+Encryption+Technique.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "elapsed_seconds": 4.459,
+      "status": "ready",
+      "generation_method": "deterministic",
+      "node_count": 32,
+      "edge_count": 32,
+      "hidden_low_confidence_edges": 0,
+      "explicit_edges": 0,
+      "derived_edges": 32,
+      "high_confidence_edges": 32,
+      "medium_confidence_edges": 0,
+      "low_confidence_edges": 0,
+      "average_edge_confidence": 0.799,
+      "grounded_node_ratio": 1.0,
+      "grounded_edge_ratio": 1.0,
+      "used_research_analysis": false,
+      "pages_covered_count": 8,
+      "node_type_counts": {
+        "Concept": 26,
+        "System": 2,
+        "Defense": 1,
+        "Method": 3
+      },
+      "relationship_counts": {
+        "related_to": 32
+      },
+      "top_nodes": [
+        {
+          "label": "RSA",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "AES",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Cloud",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Networks",
+          "type": "System",
+          "ev": 4,
+          "aliases": [
+            "NETWORK"
+          ]
+        },
+        {
+          "label": "Encryption",
+          "type": "Defense",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Security",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "USING",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Int",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Enhanced",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Engineering",
+          "type": "System",
+          "ev": 4,
+          "aliases": []
+        }
+      ],
+      "top_edges": [
+        {
+          "source": "computing",
+          "relationship": "related_to",
+          "target": "algorithm",
+          "origin": "derived",
+          "confidence": 0.817,
+          "pages": [
+            3,
+            6,
+            7
+          ]
+        },
+        {
+          "source": "security",
+          "relationship": "related_to",
+          "target": "encryption",
+          "origin": "derived",
+          "confidence": 0.814,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "neural",
+          "relationship": "related_to",
+          "target": "network",
+          "origin": "derived",
+          "confidence": 0.81,
+          "pages": [
+            7
+          ]
+        },
+        {
+          "source": "encryption",
+          "relationship": "related_to",
+          "target": "aes",
+          "origin": "derived",
+          "confidence": 0.804,
+          "pages": [
+            1,
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "source": "cloud",
+          "relationship": "related_to",
+          "target": "computing",
+          "origin": "derived",
+          "confidence": 0.803,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "encryption",
+          "relationship": "related_to",
+          "target": "rsa",
+          "origin": "derived",
+          "confidence": 0.803,
+          "pages": [
+            1,
+            4,
+            5,
+            6
+          ]
+        },
+        {
+          "source": "advanced",
+          "relationship": "related_to",
+          "target": "computing",
+          "origin": "derived",
+          "confidence": 0.802,
+          "pages": [
+            2,
+            3,
+            5,
+            7
+          ]
+        },
+        {
+          "source": "advanced",
+          "relationship": "related_to",
+          "target": "technique",
+          "origin": "derived",
+          "confidence": 0.802,
+          "pages": [
+            2,
+            3
+          ]
+        },
+        {
+          "source": "security",
+          "relationship": "related_to",
+          "target": "management",
+          "origin": "derived",
+          "confidence": 0.801,
+          "pages": [
+            2,
+            3
+          ]
+        },
+        {
+          "source": "cloud",
+          "relationship": "related_to",
+          "target": "encryption",
+          "origin": "derived",
+          "confidence": 0.8,
+          "pages": [
+            1
+          ]
+        }
+      ],
+      "diagnostics": {
+        "raw_unit_count": 42,
+        "substantive_unit_count": 42,
+        "sentence_span_count": 555,
+        "pages_count": 8,
+        "candidate_pool_size": 325,
+        "rejected_ungrounded_nodes": 1,
+        "merged_duplicate_nodes": 0,
+        "final_node_count": 32,
+        "candidate_pairs": 154,
+        "rejected_self_loops": 0,
+        "rejected_invalid_relationships": 0,
+        "rejected_evidence_free": 0,
+        "llm_batches": 0,
+        "llm_verified_count": 0,
+        "llm_rejected_invalid_rel": 0,
+        "llm_rejected_ungrounded": 0,
+        "llm_fallback_used": 0
+      }
+    },
+    {
+      "document_id": 5,
+      "filename": "Subhabrata Rana - Thesis.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "elapsed_seconds": 412.666,
+      "status": "ready",
+      "generation_method": "deterministic",
+      "node_count": 32,
+      "edge_count": 106,
+      "hidden_low_confidence_edges": 0,
+      "explicit_edges": 74,
+      "derived_edges": 32,
+      "high_confidence_edges": 106,
+      "medium_confidence_edges": 0,
+      "low_confidence_edges": 0,
+      "average_edge_confidence": 0.858,
+      "grounded_node_ratio": 1.0,
+      "grounded_edge_ratio": 1.0,
+      "used_research_analysis": false,
+      "pages_covered_count": 97,
+      "node_type_counts": {
+        "Concept": 28,
+        "Defense": 4
+      },
+      "relationship_counts": {
+        "supports": 15,
+        "uses": 26,
+        "results_in": 8,
+        "part_of": 7,
+        "example_of": 6,
+        "contains": 4,
+        "improves": 1,
+        "depends_on": 5,
+        "follows": 1,
+        "contradicts": 1,
+        "related_to": 32
+      },
+      "top_nodes": [
+        {
+          "label": "CephVault",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Ceph",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Key Encryption Key",
+          "type": "Defense",
+          "ev": 4,
+          "aliases": [
+            "KEK"
+          ]
+        },
+        {
+          "label": "Data Encryption Key",
+          "type": "Defense",
+          "ev": 4,
+          "aliases": [
+            "DEK"
+          ]
+        },
+        {
+          "label": "CephArmor",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Key",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Trusted Platform Modules",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": [
+            "TPM",
+            "Trusted Platform Module"
+          ]
+        },
+        {
+          "label": "Secure Key Management System",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": [
+            "KMS"
+          ]
+        },
+        {
+          "label": "AES-CBC",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": [
+            "AES CBC",
+            "NI"
+          ]
+        },
+        {
+          "label": "Encryption",
+          "type": "Defense",
+          "ev": 4,
+          "aliases": []
+        }
+      ],
+      "top_edges": [
+        {
+          "source": "cephvault",
+          "relationship": "supports",
+          "target": "ceph",
+          "origin": "explicit",
+          "confidence": 0.913,
+          "pages": [
+            43,
+            56,
+            57
+          ]
+        },
+        {
+          "source": "cepharmor",
+          "relationship": "uses",
+          "target": "cephvault",
+          "origin": "explicit",
+          "confidence": 0.908,
+          "pages": [
+            43,
+            55,
+            56,
+            57
+          ]
+        },
+        {
+          "source": "cepharmor",
+          "relationship": "supports",
+          "target": "cephvault",
+          "origin": "explicit",
+          "confidence": 0.908,
+          "pages": [
+            43,
+            55,
+            56,
+            57
+          ]
+        },
+        {
+          "source": "cephvault",
+          "relationship": "results_in",
+          "target": "cepharmor",
+          "origin": "explicit",
+          "confidence": 0.908,
+          "pages": [
+            43,
+            55,
+            56,
+            57
+          ]
+        },
+        {
+          "source": "key_encryption_key",
+          "relationship": "results_in",
+          "target": "encryption",
+          "origin": "explicit",
+          "confidence": 0.908,
+          "pages": [
+            15,
+            27,
+            29,
+            54
+          ]
+        },
+        {
+          "source": "encryption",
+          "relationship": "supports",
+          "target": "security",
+          "origin": "explicit",
+          "confidence": 0.904,
+          "pages": [
+            2,
+            17,
+            21,
+            44
+          ]
+        },
+        {
+          "source": "key",
+          "relationship": "uses",
+          "target": "data_encryption_key",
+          "origin": "explicit",
+          "confidence": 0.895,
+          "pages": [
+            15,
+            26,
+            27,
+            54
+          ]
+        },
+        {
+          "source": "key",
+          "relationship": "part_of",
+          "target": "secure_key_management_system",
+          "origin": "explicit",
+          "confidence": 0.892,
+          "pages": [
+            1,
+            2,
+            15,
+            17
+          ]
+        },
+        {
+          "source": "key",
+          "relationship": "example_of",
+          "target": "secure_key_management_system",
+          "origin": "explicit",
+          "confidence": 0.892,
+          "pages": [
+            1,
+            2,
+            15,
+            17
+          ]
+        },
+        {
+          "source": "secure_key_management_system",
+          "relationship": "contains",
+          "target": "key",
+          "origin": "explicit",
+          "confidence": 0.892,
+          "pages": [
+            1,
+            2,
+            15,
+            17
+          ]
+        }
+      ],
+      "diagnostics": {
+        "raw_unit_count": 382,
+        "substantive_unit_count": 363,
+        "sentence_span_count": 5379,
+        "pages_count": 160,
+        "candidate_pool_size": 1587,
+        "rejected_ungrounded_nodes": 0,
+        "merged_duplicate_nodes": 0,
+        "final_node_count": 32,
+        "candidate_pairs": 377,
+        "rejected_self_loops": 0,
+        "rejected_invalid_relationships": 0,
+        "rejected_evidence_free": 0,
+        "llm_batches": 0,
+        "llm_verified_count": 0,
+        "llm_rejected_invalid_rel": 0,
+        "llm_rejected_ungrounded": 0,
+        "llm_fallback_used": 0
+      }
+    },
+    {
+      "document_id": 1,
+      "filename": "Niranjana A S_Resume.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "elapsed_seconds": 3.471,
+      "status": "ready",
+      "generation_method": "deterministic",
+      "node_count": 32,
+      "edge_count": 32,
+      "hidden_low_confidence_edges": 0,
+      "explicit_edges": 0,
+      "derived_edges": 32,
+      "high_confidence_edges": 26,
+      "medium_confidence_edges": 6,
+      "low_confidence_edges": 0,
+      "average_edge_confidence": 0.772,
+      "grounded_node_ratio": 1.0,
+      "grounded_edge_ratio": 1.0,
+      "used_research_analysis": false,
+      "pages_covered_count": 2,
+      "node_type_counts": {
+        "Concept": 32
+      },
+      "relationship_counts": {
+        "related_to": 32
+      },
+      "top_nodes": [
+        {
+          "label": "Learning",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "PostgreSQL",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Python",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "DONE",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Tools",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "CSS",
+          "type": "Concept",
+          "ev": 3,
+          "aliases": []
+        },
+        {
+          "label": "SKILLS",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "HTML",
+          "type": "Concept",
+          "ev": 3,
+          "aliases": []
+        },
+        {
+          "label": "School",
+          "type": "Concept",
+          "ev": 3,
+          "aliases": []
+        },
+        {
+          "label": "Campus",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        }
+      ],
+      "top_edges": [
+        {
+          "source": "school",
+          "relationship": "related_to",
+          "target": "education",
+          "origin": "derived",
+          "confidence": 0.822,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "machine_learning",
+          "relationship": "related_to",
+          "target": "learning",
+          "origin": "derived",
+          "confidence": 0.816,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "learning",
+          "relationship": "related_to",
+          "target": "deep",
+          "origin": "derived",
+          "confidence": 0.808,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "php",
+          "relationship": "related_to",
+          "target": "mysql",
+          "origin": "derived",
+          "confidence": 0.808,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "machine",
+          "relationship": "related_to",
+          "target": "machine_learning",
+          "origin": "derived",
+          "confidence": 0.807,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "ai",
+          "relationship": "related_to",
+          "target": "data_science",
+          "origin": "derived",
+          "confidence": 0.802,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "machine",
+          "relationship": "related_to",
+          "target": "learning",
+          "origin": "derived",
+          "confidence": 0.801,
+          "pages": [
+            1,
+            2
+          ]
+        },
+        {
+          "source": "secondary",
+          "relationship": "related_to",
+          "target": "school",
+          "origin": "derived",
+          "confidence": 0.801,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "learning",
+          "relationship": "related_to",
+          "target": "springboard",
+          "origin": "derived",
+          "confidence": 0.793,
+          "pages": [
+            2
+          ]
+        },
+        {
+          "source": "learning",
+          "relationship": "related_to",
+          "target": "infosy",
+          "origin": "derived",
+          "confidence": 0.79,
+          "pages": [
+            2
+          ]
+        }
+      ],
+      "diagnostics": {
+        "raw_unit_count": 14,
+        "substantive_unit_count": 14,
+        "sentence_span_count": 88,
+        "pages_count": 2,
+        "candidate_pool_size": 138,
+        "rejected_ungrounded_nodes": 16,
+        "merged_duplicate_nodes": 0,
+        "final_node_count": 32,
+        "candidate_pairs": 99,
+        "rejected_self_loops": 0,
+        "rejected_invalid_relationships": 0,
+        "rejected_evidence_free": 0,
+        "llm_batches": 0,
+        "llm_verified_count": 0,
+        "llm_rejected_invalid_rel": 0,
+        "llm_rejected_ungrounded": 0,
+        "llm_fallback_used": 0
+      }
+    },
+    {
+      "document_id": 3,
+      "filename": "Project Report - LLM.docx",
+      "document_type": "DOCX",
+      "is_handwritten": false,
+      "elapsed_seconds": 4.072,
+      "status": "ready",
+      "generation_method": "deterministic",
+      "node_count": 32,
+      "edge_count": 54,
+      "hidden_low_confidence_edges": 0,
+      "explicit_edges": 22,
+      "derived_edges": 32,
+      "high_confidence_edges": 54,
+      "medium_confidence_edges": 0,
+      "low_confidence_edges": 0,
+      "average_edge_confidence": 0.832,
+      "grounded_node_ratio": 1.0,
+      "grounded_edge_ratio": 1.0,
+      "used_research_analysis": false,
+      "pages_covered_count": 1,
+      "node_type_counts": {
+        "Concept": 28,
+        "Metric": 3,
+        "Dataset": 1
+      },
+      "relationship_counts": {
+        "improves": 11,
+        "precedes": 3,
+        "contains": 7,
+        "degrades": 1,
+        "related_to": 32
+      },
+      "top_nodes": [
+        {
+          "label": "Modules",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": [
+            "Module"
+          ]
+        },
+        {
+          "label": "TrOCR",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Optical Character Recognition",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": [
+            "OCR"
+          ]
+        },
+        {
+          "label": "Images",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": [
+            "Image"
+          ]
+        },
+        {
+          "label": "Large Language Model",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": [
+            "LLM"
+          ]
+        },
+        {
+          "label": "Character Error Rate",
+          "type": "Metric",
+          "ev": 4,
+          "aliases": [
+            "CER"
+          ]
+        },
+        {
+          "label": "Word Error Rate",
+          "type": "Metric",
+          "ev": 4,
+          "aliases": [
+            "WER"
+          ]
+        },
+        {
+          "label": "Evaluation",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        },
+        {
+          "label": "Datasets",
+          "type": "Dataset",
+          "ev": 4,
+          "aliases": [
+            "Dataset"
+          ]
+        },
+        {
+          "label": "Qwen3-4B-Instruct-2507",
+          "type": "Concept",
+          "ev": 4,
+          "aliases": []
+        }
+      ],
+      "top_edges": [
+        {
+          "source": "image",
+          "relationship": "improves",
+          "target": "handwritten",
+          "origin": "explicit",
+          "confidence": 0.898,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "handwritten",
+          "relationship": "improves",
+          "target": "optical_character_recognition",
+          "origin": "explicit",
+          "confidence": 0.896,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "handwritten",
+          "relationship": "precedes",
+          "target": "optical_character_recognition",
+          "origin": "explicit",
+          "confidence": 0.896,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "intelligent",
+          "relationship": "improves",
+          "target": "language",
+          "origin": "explicit",
+          "confidence": 0.895,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "dataset",
+          "relationship": "contains",
+          "target": "image",
+          "origin": "explicit",
+          "confidence": 0.894,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "image",
+          "relationship": "precedes",
+          "target": "optical_character_recognition",
+          "origin": "explicit",
+          "confidence": 0.892,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "dataset",
+          "relationship": "contains",
+          "target": "handwritten",
+          "origin": "explicit",
+          "confidence": 0.887,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "summarization",
+          "relationship": "improves",
+          "target": "large_language_model",
+          "origin": "explicit",
+          "confidence": 0.886,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "preprocessing",
+          "relationship": "improves",
+          "target": "handwritten",
+          "origin": "explicit",
+          "confidence": 0.884,
+          "pages": [
+            1
+          ]
+        },
+        {
+          "source": "iam",
+          "relationship": "contains",
+          "target": "image",
+          "origin": "explicit",
+          "confidence": 0.883,
+          "pages": [
+            1
+          ]
+        }
+      ],
+      "diagnostics": {
+        "raw_unit_count": 17,
+        "substantive_unit_count": 17,
+        "sentence_span_count": 182,
+        "pages_count": 1,
+        "candidate_pool_size": 125,
+        "rejected_ungrounded_nodes": 11,
+        "merged_duplicate_nodes": 0,
+        "final_node_count": 32,
+        "candidate_pairs": 210,
+        "rejected_self_loops": 0,
+        "rejected_invalid_relationships": 0,
+        "rejected_evidence_free": 0,
+        "llm_batches": 0,
+        "llm_verified_count": 0,
+        "llm_rejected_invalid_rel": 0,
+        "llm_rejected_ungrounded": 0,
+        "llm_fallback_used": 0
+      }
+    }
+  ],
+  "lifecycle_checks": {
+    "document_id": 12,
+    "get_cached_status": 200,
+    "get_cached_flag": true,
+    "get_cached_ms": 89.66,
+    "regenerate_status": 200,
+    "regenerate_cached_flag": false,
+    "delete_status": 200,
+    "after_delete_get_status": 404
+  },
+  "live_ollama_hybrid_result": {
+    "skipped": true,
+    "reason": "Ollama not running locally during script execution"
+  }
+}

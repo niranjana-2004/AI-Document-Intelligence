@@ -8,6 +8,7 @@ import {
     Search,
     ArrowLeftRight,
     Network,
+    GitBranch,
     FlaskConical,
     User,
     Info,
@@ -220,6 +221,19 @@ function AppLayout({ children }) {
                         </span>
                         <span className="nav-label-with-badge">
                             <span>Mind Map</span>
+                            <span className="nav-badge-ai badge-mindmap">AI</span>
+                        </span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/knowledge-graph"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                        <span className="nav-icon" aria-hidden="true">
+                            <GitBranch size={18} />
+                        </span>
+                        <span className="nav-label-with-badge">
+                            <span>Knowledge Graph</span>
                             <span className="nav-badge-ai badge-mindmap">AI</span>
                         </span>
                     </NavLink>

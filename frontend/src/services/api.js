@@ -122,3 +122,47 @@ export async function getResearchPaperAnalysis(documentId, options = {}) {
         signal: options.signal,
     })
 }
+
+export async function generateKnowledgeGraph(documentId, options = {}) {
+    return apiRequest(`/documents/${documentId}/knowledge-graph`, {
+        method: 'POST',
+        body: JSON.stringify({
+            force_refresh: Boolean(options.forceRefresh),
+            include_low_confidence: Boolean(options.includeLowConfidence),
+            skip_llm: Boolean(options.skipLlm),
+            max_nodes: options.maxNodes ?? 32,
+        }),
+        signal: options.signal,
+    })
+}
+
+export async function getKnowledgeGraph(documentId, options = {}) {
+    const params = new URLSearchParams()
+    if (options.includeLowConfidence) {
+        params.set('include_low_confidence', 'true')
+    }
+    const qs = params.toString()
+    return apiRequest(`/documents/${documentId}/knowledge-graph${qs ? `?${qs}` : ''}`, {
+        method: 'GET',
+        signal: options.signal,
+    })
+}
+
+export async function regenerateKnowledgeGraph(documentId, options = {}) {
+    return apiRequest(`/documents/${documentId}/knowledge-graph/regenerate`, {
+        method: 'POST',
+        body: JSON.stringify({
+            force_refresh: true,
+            include_low_confidence: Boolean(options.includeLowConfidence),
+            skip_llm: Boolean(options.skipLlm),
+            max_nodes: options.maxNodes ?? 32,
+        }),
+        signal: options.signal,
+    })
+}
+
+export async function deleteKnowledgeGraph(documentId) {
+    return apiRequest(`/documents/${documentId}/knowledge-graph`, {
+        method: 'DELETE',
+    })
+}

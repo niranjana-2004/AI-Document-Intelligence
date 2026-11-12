@@ -1,7 +1,8 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
     Network,
+    GitBranch,
     Sparkles,
     CheckCircle2,
     Layers,
@@ -576,6 +577,18 @@ export default function MindMap() {
                                 <>
                                     <span>•</span>
                                     <span style={{ color: 'var(--success-ink)', fontWeight: 600 }}>(Cached)</span>
+                                </>
+                            )}
+                            {selectedDocId && (
+                                <>
+                                    <span>•</span>
+                                    <Link
+                                        to={`/knowledge-graph?doc=${selectedDocId}`}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--accent-ink)', fontWeight: 600, textDecoration: 'none' }}
+                                    >
+                                        <GitBranch size={13} />
+                                        <span>Knowledge Graph</span>
+                                    </Link>
                                 </>
                             )}
                         </div>

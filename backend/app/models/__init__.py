@@ -17,6 +17,12 @@ from app.models.handwritten_analysis import (
 from app.models.document_comparison import DocumentComparison, ensure_document_comparison_schema
 from app.models.document_mind_map import DocumentMindMap, ensure_mind_map_schema
 from app.models.chat_cache import ChatQueryCache, ensure_chat_cache_schema
+from app.models.knowledge_graph import (
+    KnowledgeGraph,
+    KnowledgeGraphEdge,
+    KnowledgeGraphNode,
+    ensure_knowledge_graph_schema,
+)
 
 __all__ = [
     "User",
@@ -39,6 +45,10 @@ __all__ = [
     "DocumentMindMap",
     "ensure_mind_map_schema",
     "ChatQueryCache",
-    "ensure_chat_cache_schema"
+    "ensure_chat_cache_schema",
+    "KnowledgeGraph",
+    "KnowledgeGraphNode",
+    "KnowledgeGraphEdge",
+    "ensure_knowledge_graph_schema",
 ]
 

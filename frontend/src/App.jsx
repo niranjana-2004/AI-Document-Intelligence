@@ -20,6 +20,7 @@ import HandwrittenNotes from './pages/HandwrittenNotes'
 import HandwrittenStudio from './pages/HandwrittenStudio'
 import DocumentComparison from './pages/DocumentComparison'
 import MindMap from './pages/MindMap'
+import KnowledgeGraph from './pages/KnowledgeGraph'
 import ResearchPaperAnalyzer from './components/research/ResearchPaperAnalyzer'
 import AskAI from './pages/AskAI'
 import Search from './pages/Search'
@@ -108,6 +109,17 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <AppLayout>
                 <MindMap />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/knowledge-graph"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <KnowledgeGraph />
               </AppLayout>
             </ProtectedRoute>
           }
