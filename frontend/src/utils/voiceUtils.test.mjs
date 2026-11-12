@@ -3,6 +3,8 @@ import test from 'node:test'
 import {
     VOICE_STATES,
     VOICE_STATE_LABELS,
+    VOICE_RECOVERY_DECISIONS,
+    resolveVoiceReviewChoice,
     isVoiceRecordingSupported,
     getSupportedRecordingMimeType,
     extensionForMimeType,
@@ -87,5 +89,44 @@ test('formatRecordingTimer formats mm:ss cleanly', () => {
     assert.equal(formatRecordingTimer(0), '0:00')
     assert.equal(formatRecordingTimer(4.8), '0:04')
     assert.equal(formatRecordingTimer(75), '1:15')
+})
+
+test('resolveVoiceReviewChoice respects safety gate decisions and manual edit locks', () => {
+    assert.equal(VOICE_RECOVERY_DECISIONS.RECOVERED, 'RECOVERED')
+    assert.equal(VOICE_RECOVERY_DECISIONS.SUGGESTED, 'SUGGESTED')
+    assert.equal(VOICE_RECOVERY_DECISIONS.AMBIGUOUS, 'AMBIGUOUS')
+
+    assert.deepEqual(
+        resolveVoiceReviewChoice({
+            raw_transcript: 'What is a swion flood?',
+            recovered_transcript: 'What is a SYN flood?',
+            decision: 'RECOVERED',
+            recovery_applied: true,
+        }),
+        { choice: 'recovered', activeText: 'What is a SYN flood?' }
+    )
+
+    assert.deepEqual(
+        resolveVoiceReviewChoice({
+            raw_transcript: 'What is sin?',
+            recovered_transcript: 'What is sin?',
+            decision: 'SUGGESTED',
+            recovery_applied: false,
+        }),
+        { choice: 'raw', activeText: 'What is sin?' }
+    )
+
+    assert.deepEqual(
+        resolveVoiceReviewChoice(
+            {
+                raw_transcript: 'What is a swion flood?',
+                recovered_transcript: 'What is a SYN flood?',
+                decision: 'RECOVERED',
+                recovery_applied: true,
+            },
+            true
+        ),
+        { choice: 'manual', activeText: 'What is a swion flood?' }
+    )
 })
 

@@ -27,6 +27,7 @@ import {
 import {
     apiRequest,
     transcribeVoiceAudio,
+    recoverVoiceQuery,
     synthesizeVoiceSpeech,
 } from '../services/api'
 import {
@@ -233,10 +234,15 @@ function AskAI() {
     // Dynamic loading status indicator for inference feedback
     const [loadingStepIndex, setLoadingStepIndex] = useState(0)
 
-    // Local Voice Assistant foundation state
+    // Local Voice Assistant foundation + Phase 2 query recovery state
     const [voiceState, setVoiceState] = useState(VOICE_STATES.IDLE)
     const [voiceError, setVoiceError] = useState('')
     const [voiceTranscript, setVoiceTranscript] = useState('')
+    const [voiceRawTranscript, setVoiceRawTranscript] = useState('')
+    const [voiceRecovery, setVoiceRecovery] = useState(null)
+    const [voiceRecoveryChoice, setVoiceRecoveryChoice] = useState('raw')
+    const [voiceSuggestionIndex, setVoiceSuggestionIndex] = useState(0)
+    const [voiceManuallyEdited, setVoiceManuallyEdited] = useState(false)
     const [voiceMeta, setVoiceMeta] = useState(null)
     const [recordingSeconds, setRecordingSeconds] = useState(0)
     const [activePlaybackMsgId, setActivePlaybackMsgId] = useState(null)
@@ -249,6 +255,10 @@ function AskAI() {
     const audioChunksRef = useRef([])
     const recTimerRef = useRef(null)
     const sttAbortRef = useRef(null)
+    const recoverAbortRef = useRef(null)
+    const voiceManuallyEditedRef = useRef(false)
+    const scopeModeRef = useRef(scopeMode)
+    const selectedDocIdsRef = useRef(selectedDocIds)
     const ttsAbortRef = useRef(null)
     const ttsAudioRef = useRef(null)
     const ttsObjectUrlRef = useRef(null)
@@ -404,10 +414,27 @@ function AskAI() {
         setVoiceState((prev) => (prev === VOICE_STATES.SPEAKING ? VOICE_STATES.IDLE : prev))
     }
 
+    const resetVoiceRecoveryState = () => {
+        if (recoverAbortRef.current) {
+            recoverAbortRef.current.abort()
+            recoverAbortRef.current = null
+        }
+        voiceManuallyEditedRef.current = false
+        setVoiceRawTranscript('')
+        setVoiceRecovery(null)
+        setVoiceRecoveryChoice('raw')
+        setVoiceSuggestionIndex(0)
+        setVoiceManuallyEdited(false)
+    }
+
     const cancelVoiceRecording = () => {
         if (sttAbortRef.current) {
             sttAbortRef.current.abort()
             sttAbortRef.current = null
+        }
+        if (recoverAbortRef.current) {
+            recoverAbortRef.current.abort()
+            recoverAbortRef.current = null
         }
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.onstop = null
@@ -420,6 +447,58 @@ function AskAI() {
         audioChunksRef.current = []
         cleanupRecordingHardware()
         setRecordingSeconds(0)
+    }
+
+    const runVoiceQueryRecovery = async (rawText, scopedIds) => {
+        if (!rawText || !rawText.trim() || voiceManuallyEditedRef.current) {
+            return
+        }
+        if (recoverAbortRef.current) {
+            recoverAbortRef.current.abort()
+        }
+        const controller = new AbortController()
+        recoverAbortRef.current = controller
+
+        try {
+            const rec = await recoverVoiceQuery(
+                {
+                    raw_transcript: rawText,
+                    document_ids: scopedIds,
+                    manual_override: voiceManuallyEditedRef.current,
+                },
+                { signal: controller.signal }
+            )
+            if (
+                recoverAbortRef.current !== controller ||
+                controller.signal.aborted ||
+                voiceManuallyEditedRef.current
+            ) {
+                return
+            }
+            setVoiceRecovery(rec)
+            setVoiceSuggestionIndex(0)
+            if (
+                rec?.decision === 'RECOVERED' &&
+                rec?.recovery_applied &&
+                rec?.recovered_transcript
+            ) {
+                setVoiceRecoveryChoice('recovered')
+                setVoiceTranscript(rec.recovered_transcript)
+            } else {
+                setVoiceRecoveryChoice('raw')
+                setVoiceTranscript(rec?.raw_transcript || rawText)
+            }
+        } catch (err) {
+            if (err?.name === 'AbortError' || recoverAbortRef.current !== controller) {
+                return
+            }
+            // Safe degradation: preserve raw transcript unchanged if recovery fails
+            if (!voiceManuallyEditedRef.current) {
+                setVoiceRecovery(null)
+                setVoiceRecoveryChoice('raw')
+                setVoiceTranscript(rawText)
+            }
+        }
     }
 
     const handleSelectConversation = async (convId) => {
@@ -592,6 +671,9 @@ function AskAI() {
             if (sttAbortRef.current) {
                 sttAbortRef.current.abort()
             }
+            if (recoverAbortRef.current) {
+                recoverAbortRef.current.abort()
+            }
             if (ttsAbortRef.current) {
                 ttsAbortRef.current.abort()
             }
@@ -638,6 +720,20 @@ function AskAI() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scopeMode, selectedDocIds, documents.length, docsLoading])
+
+    useEffect(() => {
+        scopeModeRef.current = scopeMode
+        selectedDocIdsRef.current = selectedDocIds
+        if (
+            voiceState === VOICE_STATES.REVIEWING &&
+            voiceRawTranscript &&
+            !voiceManuallyEditedRef.current
+        ) {
+            const scopedIds = scopeMode === 'specific' ? selectedDocIds : null
+            runVoiceQueryRecovery(voiceRawTranscript, scopedIds)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scopeMode, selectedDocIds])
 
     // Auto-scroll to bottom of conversation thread on new messages or loading
     useEffect(() => {
@@ -752,6 +848,7 @@ function AskAI() {
         }
         stopVoicePlayback()
         cancelVoiceRecording()
+        resetVoiceRecoveryState()
         setVoiceTranscript('')
         setVoiceMeta(null)
         setVoiceError('')
@@ -851,6 +948,7 @@ function AskAI() {
 
     const handleStartVoiceRecording = async () => {
         stopVoicePlayback()
+        resetVoiceRecoveryState()
         setVoiceError('')
         setVoiceTranscript('')
         setVoiceMeta(null)
@@ -914,8 +1012,19 @@ function AskAI() {
                         setVoiceState(VOICE_STATES.ERROR)
                         return
                     }
+                    voiceManuallyEditedRef.current = false
+                    setVoiceManuallyEdited(false)
+                    setVoiceRawTranscript(recognizedText)
                     setVoiceTranscript(recognizedText)
                     setVoiceMeta(data)
+                    const currentScopeIds =
+                        scopeModeRef.current === 'specific'
+                            ? selectedDocIdsRef.current
+                            : null
+                    await runVoiceQueryRecovery(recognizedText, currentScopeIds)
+                    if (sttAbortRef.current !== sttController || sttController.signal.aborted) {
+                        return
+                    }
                     setVoiceState(VOICE_STATES.REVIEWING)
                 } catch (err) {
                     if (err?.name === 'AbortError' || sttAbortRef.current !== sttController) {
@@ -955,18 +1064,50 @@ function AskAI() {
     }
 
     const handleCancelVoiceTranscript = () => {
+        resetVoiceRecoveryState()
         setVoiceTranscript('')
         setVoiceMeta(null)
         setVoiceError('')
         setVoiceState(VOICE_STATES.IDLE)
     }
 
+    const handleManualEditVoiceTranscript = (nextValue) => {
+        voiceManuallyEditedRef.current = true
+        setVoiceManuallyEdited(true)
+        setVoiceRecoveryChoice('manual')
+        setVoiceTranscript(nextValue)
+    }
+
+    const handleSelectRecoveryChoice = (choice, suggestionIdx = 0) => {
+        if (voiceManuallyEditedRef.current) return
+        if (choice === 'recovered' && voiceRecovery?.recovered_transcript) {
+            setVoiceRecoveryChoice('recovered')
+            setVoiceTranscript(voiceRecovery.recovered_transcript)
+        } else if (choice === 'suggestion') {
+            const sug = voiceRecovery?.suggestions?.[suggestionIdx]
+            setVoiceSuggestionIndex(suggestionIdx)
+            setVoiceRecoveryChoice('suggestion')
+            setVoiceTranscript(sug?.replacement_query || voiceRawTranscript)
+        } else {
+            setVoiceRecoveryChoice('raw')
+            setVoiceTranscript(voiceRawTranscript)
+        }
+    }
+
     const handleSubmitVoiceTranscript = () => {
         const cleaned = voiceTranscript.trim()
         if (!cleaned || loading) return
+        const rawCandidate = (voiceRawTranscript || '').trim()
+        const rawFallback =
+            !voiceManuallyEditedRef.current &&
+            rawCandidate &&
+            rawCandidate.toLowerCase() !== cleaned.toLowerCase()
+                ? rawCandidate
+                : null
+        resetVoiceRecoveryState()
         setVoiceTranscript('')
         setVoiceMeta(null)
-        handleAskAI(cleaned, { fromVoice: true })
+        handleAskAI(cleaned, { fromVoice: true, rawQuery: rawFallback })
     }
 
     const isSubmitDisabled =
@@ -977,6 +1118,10 @@ function AskAI() {
 
     const handleAskAI = async (overrideQuery = null, options = {}) => {
         const fromVoice = Boolean(options?.fromVoice)
+        const rawQueryOverride =
+            typeof options?.rawQuery === 'string' && options.rawQuery.trim()
+                ? options.rawQuery.trim()
+                : null
         const queryText = (typeof overrideQuery === 'string' ? overrideQuery : question).trim()
         if (!queryText || loading) {
             return
@@ -988,6 +1133,7 @@ function AskAI() {
             setVoiceState(VOICE_STATES.THINKING)
             setVoiceError('')
         } else if (voiceState === VOICE_STATES.REVIEWING || voiceState === VOICE_STATES.ERROR) {
+            resetVoiceRecoveryState()
             setVoiceTranscript('')
             setVoiceMeta(null)
             setVoiceError('')
@@ -1037,6 +1183,8 @@ function AskAI() {
                     signal: abortController.signal,
                     body: JSON.stringify({
                         query: queryText,
+                        raw_query: rawQueryOverride,
+                        query_source: fromVoice ? 'voice' : 'text',
                         document_id: null,
                         document_ids: scopeMode === 'specific' ? selectedDocIds : null,
                         top_k: 6,
@@ -2046,8 +2194,14 @@ function AskAI() {
                 {voiceState === VOICE_STATES.REVIEWING && (
                     <VoiceTranscriptReview
                         transcript={voiceTranscript}
+                        rawTranscript={voiceRawTranscript}
                         metadata={voiceMeta}
-                        onChangeTranscript={setVoiceTranscript}
+                        recovery={voiceRecovery}
+                        selectedChoice={voiceRecoveryChoice}
+                        activeSuggestionIndex={voiceSuggestionIndex}
+                        isManuallyEdited={voiceManuallyEdited}
+                        onSelectRecoveryChoice={handleSelectRecoveryChoice}
+                        onChangeTranscript={handleManualEditVoiceTranscript}
                         onSubmitTranscript={handleSubmitVoiceTranscript}
                         onCancelTranscript={handleCancelVoiceTranscript}
                         disabled={loading}

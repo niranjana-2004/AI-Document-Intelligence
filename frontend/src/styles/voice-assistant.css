@@ -450,3 +450,144 @@
   }
 }
 
+/* ==========================================================================
+   PHASE 2 — CONTEXT-AWARE VOICE QUERY RECOVERY PANEL
+   ========================================================================== */
+.voice-review-quote.is-selected-query {
+  border-left-color: var(--accent);
+}
+
+.voice-manual-meta {
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+.voice-recovery-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface-secondary);
+}
+
+.voice-recovery-box.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.voice-recovery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.voice-recovery-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.voice-recovery-active-pill,
+.voice-recovery-neutral-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--badge-info-border);
+  background: var(--badge-info-bg);
+  color: var(--badge-info-text);
+}
+
+.voice-recovery-neutral-pill {
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+.voice-recovery-text {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.voice-recovery-reason {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.voice-recovery-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.voice-recovery-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.voice-recovery-chip:hover:not(:disabled),
+.voice-recovery-chip.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.voice-recovery-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.voice-recovery-choice-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.voice-recovery-choice-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.voice-recovery-choice-btn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+

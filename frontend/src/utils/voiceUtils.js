@@ -14,6 +14,38 @@ export const VOICE_STATES = {
     ERROR: 'ERROR',
 }
 
+export const VOICE_RECOVERY_DECISIONS = {
+    UNCHANGED: 'UNCHANGED',
+    RECOVERED: 'RECOVERED',
+    SUGGESTED: 'SUGGESTED',
+    AMBIGUOUS: 'AMBIGUOUS',
+    MANUAL: 'MANUAL',
+}
+
+export function resolveVoiceReviewChoice(recovery, manualEditLocked = false) {
+    const raw = String(recovery?.raw_transcript || '').trim()
+    if (manualEditLocked) {
+        return {
+            choice: 'manual',
+            activeText: raw,
+        }
+    }
+    if (
+        recovery?.decision === VOICE_RECOVERY_DECISIONS.RECOVERED &&
+        recovery?.recovery_applied &&
+        recovery?.recovered_transcript
+    ) {
+        return {
+            choice: 'recovered',
+            activeText: String(recovery.recovered_transcript).trim(),
+        }
+    }
+    return {
+        choice: 'raw',
+        activeText: raw,
+    }
+}
+
 export const VOICE_STATE_LABELS = {
     IDLE: 'Ask by voice',
     LISTENING: 'Listening...',

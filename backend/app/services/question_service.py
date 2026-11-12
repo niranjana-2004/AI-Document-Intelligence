@@ -402,12 +402,13 @@ def answer_question(
     document_ids: list[int] | None = None,
     top_k: int = 6,
     user_id: int | None = None,
-    conversation_history: list | None = None
+    conversation_history: list | None = None,
+    raw_query: str | None = None,
 ) -> dict:
     """
     Answer a question using relevant document context and grounded synthesis.
     Supports both single-document and multi-document query scopes with diversity balancing,
-    source-grounding, persistent SHA-256 caching, and offline resilience.
+    source-grounding, persistent SHA-256 caching, safe raw-transcript fallback, and offline resilience.
     """
     if not query.strip():
         raise ValueError("Question cannot be empty.")
@@ -417,6 +418,7 @@ def answer_question(
         conversation_history = getattr(query, "conversation_history", None)
 
     original_query = str(query)
+    raw_fallback_candidate = raw_query.strip() if isinstance(raw_query, str) and raw_query.strip() else None
     effective_ids = document_ids or ([document_id] if document_id else None)
     is_multi = (document_ids is not None and len(document_ids) > 1)
 
@@ -428,7 +430,12 @@ def answer_question(
     if user_id is not None and not conversation_history:
         try:
             combined_hash = compute_documents_combined_hash(effective_ids, db)
-            cache_key = compute_multi_doc_cache_key(user_id, effective_ids, combined_hash, original_query)
+            cache_query_token = (
+                f"{original_query}|raw:{raw_fallback_candidate}"
+                if raw_fallback_candidate and raw_fallback_candidate.lower() != original_query.strip().lower()
+                else original_query
+            )
+            cache_key = compute_multi_doc_cache_key(user_id, effective_ids, combined_hash, cache_query_token)
             cached_entry = (
                 db.query(ChatQueryCache)
                 .filter(
@@ -467,15 +474,50 @@ def answer_question(
     )
 
     # --------------------------------------------------
-    # Minimum confidence gate
+    # Safe Raw-Query Retrieval Fallback (Voice Recovery Guardrail)
     # --------------------------------------------------
-    # If no results returned or if the highest-ranking chunk score is below
-    # the minimum confidence threshold, return fallback answer without calling Ollama.
+    # If the primary (recovered) query yielded insufficient retrieval evidence
+    # and a distinct raw transcript was provided, retry retrieval cleanly once
+    # with the raw query and keep whichever evidence set is strictly stronger.
+    active_query_for_generation = original_query
+    active_retrieval_query = retrieval_query
+    retrieval_fallback_used = False
+
     top_chunk_score = (
         context_data["results"][0].get("final_score", 0.0)
         if context_data["results"]
         else 0.0
     )
+
+    if (
+        (context_data["result_count"] == 0 or top_chunk_score < MIN_CONFIDENCE_THRESHOLD)
+        and raw_fallback_candidate
+        and raw_fallback_candidate.lower() != original_query.strip().lower()
+    ):
+        raw_retrieval_query = resolve_follow_up_query(raw_fallback_candidate, conversation_history)
+        raw_context_data = build_context(
+            query=raw_retrieval_query,
+            db=db,
+            document_id=document_id,
+            document_ids=document_ids,
+            top_k=top_k,
+            user_id=user_id,
+        )
+        raw_top_score = (
+            raw_context_data["results"][0].get("final_score", 0.0)
+            if raw_context_data["results"]
+            else 0.0
+        )
+        if (
+            raw_context_data["result_count"] > 0
+            and raw_top_score >= MIN_CONFIDENCE_THRESHOLD
+            and raw_top_score > top_chunk_score
+        ):
+            context_data = raw_context_data
+            top_chunk_score = raw_top_score
+            active_query_for_generation = raw_fallback_candidate
+            active_retrieval_query = raw_retrieval_query
+            retrieval_fallback_used = True
 
     if (
         context_data["result_count"] == 0
@@ -489,6 +531,7 @@ def answer_question(
             "sources": [],
             "follow_up_questions": [],
             "selected_document_ids": effective_ids,
+            "retrieval_fallback_used": retrieval_fallback_used,
             "cached": False
         }
 
@@ -496,7 +539,7 @@ def answer_question(
     # Answer Generation (Ollama with resilient deterministic fallback)
     # --------------------------------------------------
     if (
-        (is_project_list_query(original_query) or is_project_list_query(retrieval_query))
+        (is_project_list_query(active_query_for_generation) or is_project_list_query(active_retrieval_query))
         and any(
             result.get("query_intent") == "projects"
             for result in context_data["results"]
@@ -511,25 +554,25 @@ def answer_question(
         else:
             try:
                 answer = generate_response(
-                    query=original_query,
+                    query=active_query_for_generation,
                     context=context_data["context"],
                     conversation_history=conversation_history,
                     is_multi_document=is_multi
                 )
             except Exception as e:
                 logger.warning(f"Ollama generation failed: {e}. Using deterministic fallback...")
-                answer = generate_deterministic_grounded_answer(original_query, context_data["results"], is_multi)
+                answer = generate_deterministic_grounded_answer(active_query_for_generation, context_data["results"], is_multi)
     else:
         try:
             answer = generate_response(
-                query=original_query,
+                query=active_query_for_generation,
                 context=context_data["context"],
                 conversation_history=conversation_history,
                 is_multi_document=is_multi
             )
         except Exception as e:
             logger.warning(f"Ollama generation failed: {e}. Using deterministic fallback...")
-            answer = generate_deterministic_grounded_answer(original_query, context_data["results"], is_multi)
+            answer = generate_deterministic_grounded_answer(active_query_for_generation, context_data["results"], is_multi)
 
     insufficient = is_insufficient_evidence_answer(answer)
     if insufficient:
@@ -541,12 +584,12 @@ def answer_question(
         structured_sources = build_structured_sources(
             context_data["results"],
             answer,
-            original_query,
+            active_query_for_generation,
         )
         exposed_results = context_data["results"]
         exposed_result_count = context_data["result_count"]
         follow_up_questions = generate_grounded_follow_up_questions(
-            original_query, context_data["results"], answer
+            active_query_for_generation, context_data["results"], answer
         )
 
     response_payload = {
@@ -557,6 +600,7 @@ def answer_question(
         "sources": structured_sources,
         "follow_up_questions": follow_up_questions,
         "selected_document_ids": effective_ids,
+        "retrieval_fallback_used": retrieval_fallback_used,
         "cached": False
     }
 

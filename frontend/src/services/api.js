@@ -51,6 +51,14 @@ export async function transcribeVoiceAudio(audioBlob, filename = 'recording.webm
     })
 }
 
+export async function recoverVoiceQuery(payload, options = {}) {
+    return apiRequest('/voice/recover-query', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        signal: options.signal,
+    })
+}
+
 export async function synthesizeVoiceSpeech(text, options = {}) {
     const token = localStorage.getItem('access_token')
     const headers = {

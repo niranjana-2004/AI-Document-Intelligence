@@ -166,7 +166,13 @@ export function VoiceStatusBanner({
 
 export function VoiceTranscriptReview({
     transcript,
+    rawTranscript,
     metadata,
+    recovery,
+    selectedChoice = 'raw',
+    activeSuggestionIndex = 0,
+    isManuallyEdited = false,
+    onSelectRecoveryChoice,
     onChangeTranscript,
     onSubmitTranscript,
     onCancelTranscript,
@@ -184,6 +190,21 @@ export function VoiceTranscriptReview({
     }, [isEditing])
 
     const canSubmit = !disabled && Boolean((transcript || '').trim())
+    const decision = recovery?.decision
+    const hasHighConfidenceRecovery =
+        !isManuallyEdited &&
+        decision === 'RECOVERED' &&
+        recovery?.recovery_applied &&
+        recovery?.recovered_transcript &&
+        recovery.recovered_transcript !== (rawTranscript || recovery.raw_transcript)
+    const suggestions = Array.isArray(recovery?.suggestions) ? recovery.suggestions : []
+    const hasSuggestion =
+        !isManuallyEdited &&
+        !hasHighConfidenceRecovery &&
+        (decision === 'SUGGESTED' || decision === 'AMBIGUOUS') &&
+        suggestions.length > 0
+
+    const displayRaw = (rawTranscript || recovery?.raw_transcript || transcript || '').trim()
 
     return (
         <section
@@ -193,10 +214,17 @@ export function VoiceTranscriptReview({
             <div className="voice-review-header">
                 <div className="voice-review-title-group">
                     <Mic size={14} className="voice-review-mic" aria-hidden="true" />
-                    <span className="voice-review-label">You said:</span>
+                    <span className="voice-review-label">
+                        {hasHighConfidenceRecovery || hasSuggestion ? 'Transcript' : 'You said:'}
+                    </span>
                     {metadata?.duration_seconds != null && (
                         <span className="voice-review-meta">
                             {metadata.duration_seconds}s · Local STT
+                        </span>
+                    )}
+                    {isManuallyEdited && (
+                        <span className="voice-review-meta voice-manual-meta">
+                            Edited manually
                         </span>
                     )}
                 </div>
@@ -231,9 +259,136 @@ export function VoiceTranscriptReview({
                     aria-label="Edit voice transcript before asking"
                 />
             ) : (
-                <p className="voice-review-quote">
-                    &ldquo;{transcript}&rdquo;
-                </p>
+                <>
+                    <p
+                        className={`voice-review-quote ${
+                            (hasHighConfidenceRecovery || hasSuggestion) && selectedChoice === 'raw'
+                                ? 'is-selected-query'
+                                : ''
+                        }`}
+                    >
+                        &ldquo;{hasHighConfidenceRecovery || hasSuggestion ? displayRaw : transcript}&rdquo;
+                    </p>
+
+                    {hasHighConfidenceRecovery && (
+                        <div
+                            className={`voice-recovery-box voice-recovery-applied ${
+                                selectedChoice === 'recovered' ? 'is-active' : ''
+                            }`}
+                            role="region"
+                            aria-label="Recovered voice query"
+                        >
+                            <div className="voice-recovery-head">
+                                <span className="voice-recovery-title">
+                                    <Check size={13} aria-hidden="true" />
+                                    <span>Recovered to:</span>
+                                </span>
+                                {selectedChoice === 'recovered' && (
+                                    <span className="voice-recovery-active-pill">Active query</span>
+                                )}
+                            </div>
+                            <p className="voice-recovery-text">
+                                &ldquo;{recovery.recovered_transcript}&rdquo;
+                            </p>
+                            {recovery.recovery_reason && (
+                                <p className="voice-recovery-reason">{recovery.recovery_reason}</p>
+                            )}
+                            <div className="voice-recovery-controls">
+                                <button
+                                    type="button"
+                                    className={`voice-recovery-choice-btn ${
+                                        selectedChoice === 'recovered' ? 'active' : ''
+                                    }`}
+                                    onClick={() => onSelectRecoveryChoice?.('recovered', 0)}
+                                    disabled={disabled}
+                                >
+                                    Use recovery
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`voice-recovery-choice-btn ${
+                                        selectedChoice === 'raw' ? 'active' : ''
+                                    }`}
+                                    onClick={() => onSelectRecoveryChoice?.('raw', 0)}
+                                    disabled={disabled}
+                                >
+                                    Keep original
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {hasSuggestion && (
+                        <div
+                            className={`voice-recovery-box voice-recovery-suggested ${
+                                selectedChoice === 'suggestion' ? 'is-active' : ''
+                            }`}
+                            role="region"
+                            aria-label="Possible terminology match"
+                        >
+                            <div className="voice-recovery-head">
+                                <span className="voice-recovery-title">
+                                    {suggestions.length > 1 ? 'Possible matches:' : 'Possible match:'}
+                                </span>
+                                {selectedChoice === 'suggestion' ? (
+                                    <span className="voice-recovery-active-pill">Using suggestion</span>
+                                ) : (
+                                    <span className="voice-recovery-neutral-pill">Keeping original</span>
+                                )}
+                            </div>
+                            <div className="voice-recovery-chips">
+                                {suggestions.map((sug, idx) => (
+                                    <button
+                                        key={`${sug.original_span}-${sug.suggested_span}-${idx}`}
+                                        type="button"
+                                        className={`voice-recovery-chip ${
+                                            selectedChoice === 'suggestion' && activeSuggestionIndex === idx
+                                                ? 'active'
+                                                : ''
+                                        }`}
+                                        onClick={() => onSelectRecoveryChoice?.('suggestion', idx)}
+                                        disabled={disabled}
+                                    >
+                                        <span>{sug.suggested_span}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            {selectedChoice === 'suggestion' &&
+                                suggestions[activeSuggestionIndex]?.replacement_query && (
+                                    <p className="voice-recovery-text">
+                                        &ldquo;{suggestions[activeSuggestionIndex].replacement_query}&rdquo;
+                                    </p>
+                                )}
+                            {recovery?.recovery_reason && (
+                                <p className="voice-recovery-reason">{recovery.recovery_reason}</p>
+                            )}
+                            <div className="voice-recovery-controls">
+                                <button
+                                    type="button"
+                                    className={`voice-recovery-choice-btn ${
+                                        selectedChoice === 'suggestion' ? 'active' : ''
+                                    }`}
+                                    onClick={() =>
+                                        onSelectRecoveryChoice?.('suggestion', activeSuggestionIndex)
+                                    }
+                                    disabled={disabled}
+                                >
+                                    Use suggestion
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`voice-recovery-choice-btn ${
+                                        selectedChoice === 'raw' ? 'active' : ''
+                                    }`}
+                                    onClick={() => onSelectRecoveryChoice?.('raw', 0)}
+                                    disabled={disabled}
+                                >
+                                    Keep original
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             <div className="voice-review-actions">

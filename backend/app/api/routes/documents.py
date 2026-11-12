@@ -231,7 +231,8 @@ def ask_question(
             document_ids=effective_document_ids,
             top_k=request.top_k,
             user_id=cast(int, current_user.id),
-            conversation_history=request.conversation_history
+            conversation_history=request.conversation_history,
+            raw_query=request.raw_query,
         )
 
         # Persist conversation and messages on successful answer

@@ -30,6 +30,8 @@ class ConversationalQuery(str):
 
 class QuestionRequest(BaseModel):
     query: str
+    raw_query: str | None = Field(default=None, max_length=2000)
+    query_source: Literal["text", "voice"] = "text"
     document_id: int | None = None
     document_ids: list[int] | None = Field(default=None, max_length=20)
     top_k: int = Field(default=5, ge=1, le=20)
