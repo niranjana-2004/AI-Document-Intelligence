@@ -44,6 +44,12 @@ export async function apiRequest(endpoint, options = {}) {
 export async function transcribeVoiceAudio(audioBlob, filename = 'recording.webm', options = {}) {
     const formData = new FormData()
     formData.append('audio', audioBlob, filename)
+    if (options.documentId != null) {
+        formData.append('document_id', String(options.documentId))
+    }
+    if (Array.isArray(options.documentIds) && options.documentIds.length > 0) {
+        formData.append('document_ids', JSON.stringify(options.documentIds))
+    }
     return apiRequest('/voice/transcribe', {
         method: 'POST',
         body: formData,

@@ -999,9 +999,15 @@ function AskAI() {
                 const sttController = new AbortController()
                 sttAbortRef.current = sttController
 
+                const currentScopeIds =
+                    scopeModeRef.current === 'specific'
+                        ? selectedDocIdsRef.current
+                        : null
+
                 try {
                     const data = await transcribeVoiceAudio(audioBlob, `voice-query${ext}`, {
                         signal: sttController.signal,
+                        documentIds: currentScopeIds,
                     })
                     if (sttAbortRef.current !== sttController || sttController.signal.aborted) {
                         return
@@ -1017,10 +1023,6 @@ function AskAI() {
                     setVoiceRawTranscript(recognizedText)
                     setVoiceTranscript(recognizedText)
                     setVoiceMeta(data)
-                    const currentScopeIds =
-                        scopeModeRef.current === 'specific'
-                            ? selectedDocIdsRef.current
-                            : null
                     await runVoiceQueryRecovery(recognizedText, currentScopeIds)
                     if (sttAbortRef.current !== sttController || sttController.signal.aborted) {
                         return

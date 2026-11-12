@@ -1,5 +1,6 @@
+import json
 import threading
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
@@ -24,6 +25,7 @@ from app.services.voice_service import (
     VoiceValidationError,
     transcribe_audio_bytes,
 )
+from app.services.voice_terminology_service import build_whisper_initial_prompt
 
 router = APIRouter(
     prefix="/voice",
@@ -31,16 +33,54 @@ router = APIRouter(
 )
 
 
+def _parse_document_ids_form(raw_value: str | None) -> list[int] | None:
+    if raw_value is None:
+        return None
+    stripped = raw_value.strip()
+    if not stripped:
+        return None
+    try:
+        if stripped.startswith("["):
+            parsed = json.loads(stripped)
+            if not isinstance(parsed, list):
+                raise ValueError("document_ids must be a list of positive integers.")
+            ids = [int(item) for item in parsed]
+        else:
+            ids = [int(part.strip()) for part in stripped.split(",") if part.strip()]
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid document_ids scope filter.",
+        ) from exc
+
+    if any(doc_id <= 0 for doc_id in ids):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Document IDs must be positive integers.",
+        )
+    return ids or None
+
+
 @router.post("/transcribe", response_model=VoiceTranscribeResponse)
 async def transcribe_voice_endpoint(
     audio: UploadFile = File(...),
+    document_id: int | None = Form(None),
+    document_ids: str | None = Form(None),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
     Transcribe authenticated user's uploaded microphone recording using the
-    fully local faster-whisper STT engine. Temporary audio is discarded immediately.
+    fully local faster-whisper STT engine, dynamically anchored with terminology
+    from the user's currently scoped documents. Temporary audio is discarded immediately.
     """
-    _ = current_user.id  # Enforce active authenticated user record
+    parsed_doc_ids = _parse_document_ids_form(document_ids)
+    initial_prompt = build_whisper_initial_prompt(
+        db=db,
+        user_id=current_user.id,
+        document_id=document_id,
+        document_ids=parsed_doc_ids,
+    )
 
     max_read = settings.VOICE_MAX_AUDIO_BYTES + 1
     try:
@@ -54,6 +94,7 @@ async def transcribe_voice_endpoint(
             audio_bytes,
             audio.filename,
             audio.content_type,
+            initial_prompt,
         )
         return VoiceTranscribeResponse(**result)
     except VoiceValidationError as ve:

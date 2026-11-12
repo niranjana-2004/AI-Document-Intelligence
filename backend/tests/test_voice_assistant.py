@@ -1,5 +1,6 @@
 import glob
 import io
+import json
 import os
 import tempfile
 import threading
@@ -401,6 +402,127 @@ class TestVoiceAssistant(unittest.TestCase):
             self.assertEqual(res_tts.status_code, 200)
             self.assertEqual(res_tts.headers["content-type"], "audio/wav")
             self.assertGreater(len(res_tts.content), 44)
+
+    def test_transcribe_uses_scoped_dynamic_document_initial_prompt_and_enforces_ownership(self):
+        from app.models.document_chunk import DocumentChunk
+        from app.services.embedding_services import generate_embedding
+        from app.services.voice_terminology_service import (
+            build_whisper_initial_prompt,
+            clear_voice_terminology_cache,
+        )
+
+        clear_voice_terminology_cache()
+        db = self.TestingSessionLocal()
+        try:
+            # Verify no-docs user produces no initial prompt
+            self.assertIsNone(build_whisper_initial_prompt(db=db, user_id=self.user.id))
+
+            chunk_text = (
+                "TCP and SYN flood attacks target the Transmission Control Block (TCB) "
+                "using spoofed SYN packets and RFC 5961 mitigations. SYN flood uses SYN packets over TCP."
+            )
+            net_doc = Document(
+                user_id=self.user.id,
+                filename="tcp_syn_flood.pdf",
+                document_type="PDF",
+                file_path="uploads/tcp_syn_flood.pdf",
+                extracted_text=chunk_text,
+                text_length=len(chunk_text),
+                processing_status="ready",
+                processing_progress=100,
+            )
+            db.add(net_doc)
+            db.flush()
+            db.add(
+                DocumentChunk(
+                    document_id=net_doc.id,
+                    page_number=1,
+                    chunk_index=0,
+                    content=chunk_text,
+                    embedding=generate_embedding(chunk_text),
+                )
+            )
+
+            other_text = "ZXQ99 proprietary protocol uses ZXQ99 packets."
+            other_doc = Document(
+                user_id=self.other_user.id,
+                filename="secret_xzq.pdf",
+                document_type="PDF",
+                file_path="uploads/secret_xzq.pdf",
+                extracted_text=other_text,
+                text_length=len(other_text),
+                processing_status="ready",
+                processing_progress=100,
+            )
+            db.add(other_doc)
+            db.flush()
+            db.add(
+                DocumentChunk(
+                    document_id=other_doc.id,
+                    page_number=1,
+                    chunk_index=0,
+                    content=other_text,
+                    embedding=generate_embedding(other_text),
+                )
+            )
+            db.commit()
+
+            prompt = build_whisper_initial_prompt(
+                db=db,
+                user_id=self.user.id,
+                document_ids=[net_doc.id],
+            )
+            self.assertIsNotNone(prompt)
+            self.assertLessEqual(len(prompt), 220)
+            self.assertIn("SYN", prompt)
+            self.assertIn("TCP", prompt)
+            self.assertNotIn("ZXQ99", prompt)
+            other_doc_id = other_doc.id
+            net_doc_id = net_doc.id
+        finally:
+            db.close()
+
+        captured_kwargs = {}
+
+        class _CapturingFakeWhisper:
+            def transcribe(self, audio_array, **kwargs):
+                captured_kwargs.update(kwargs)
+                return [_FakeSegment("What is SYN flood?")], _FakeInfo("en")
+
+        wav_bytes = _build_tone_wav_bytes(duration_sec=0.8)
+        with patch(
+            "app.services.voice_service.get_whisper_model",
+            return_value=_CapturingFakeWhisper(),
+        ):
+            res_ok = self.client.post(
+                "/voice/transcribe",
+                files={"audio": ("scoped.wav", wav_bytes, "audio/wav")},
+                data={"document_ids": json.dumps([net_doc_id])},
+                headers=self.headers,
+            )
+            self.assertEqual(res_ok.status_code, 200)
+            self.assertEqual(res_ok.json()["text"], "What is SYN flood?")
+            self.assertIn("initial_prompt", captured_kwargs)
+            self.assertIn("SYN", captured_kwargs["initial_prompt"])
+            self.assertNotIn("ZXQ99", captured_kwargs["initial_prompt"])
+
+            # Cross-tenant document ID must be strictly rejected with 404
+            res_forbidden = self.client.post(
+                "/voice/transcribe",
+                files={"audio": ("unowned.wav", wav_bytes, "audio/wav")},
+                data={"document_ids": json.dumps([other_doc_id])},
+                headers=self.headers,
+            )
+            self.assertEqual(res_forbidden.status_code, 404)
+
+            # Malformed document_ids must fail cleanly with 422
+            res_bad = self.client.post(
+                "/voice/transcribe",
+                files={"audio": ("bad.wav", wav_bytes, "audio/wav")},
+                data={"document_ids": "not-an-id"},
+                headers=self.headers,
+            )
+            self.assertEqual(res_bad.status_code, 422)
 
 
 if __name__ == "__main__":

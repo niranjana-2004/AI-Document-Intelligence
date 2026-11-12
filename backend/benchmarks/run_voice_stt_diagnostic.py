@@ -47,7 +47,10 @@ from app.services.voice_query_recovery_service import (
     recover_voice_query,
 )
 from app.services.voice_service import decode_audio_to_16k_mono, get_whisper_model
-from app.services.voice_terminology_service import clear_voice_terminology_cache
+from app.services.voice_terminology_service import (
+    clear_voice_terminology_cache,
+    get_scoped_terminology,
+)
 from test_db_isolation import isolated_test_db
 
 
@@ -680,7 +683,8 @@ def evaluate_phase2_and_retrieval(
         user_id=user_id,
         document_ids=scope_ids,
     )
-    if rec.decision.value == "RECOVERED" and rec.recovery_applied:
+    decision_str = getattr(rec.decision, "value", str(rec.decision))
+    if decision_str == "RECOVERED" and rec.recovery_applied:
         active_query = rec.recovered_transcript
     else:
         active_query = rec.raw_transcript
@@ -715,7 +719,7 @@ def evaluate_phase2_and_retrieval(
     return {
         "raw_transcript": raw_text,
         "recovered_transcript": rec.recovered_transcript,
-        "decision": rec.decision.value,
+        "decision": decision_str,
         "recovery_applied": rec.recovery_applied,
         "recovery_confidence": round(float(rec.confidence), 4),
         "effective_query": active_query,
@@ -743,6 +747,66 @@ def _pct(num: int, den: int) -> float | None:
     return round(100.0 * num / den, 1)
 
 
+def _build_dynamic_document_prompt(db, user_id: int, scope_ids: list[int], max_terms: int = 14) -> tuple[str, str]:
+    """
+    Section 9: Dynamically derive a concise Whisper initial_prompt & hotwords string
+    strictly from selected-document terminology via get_scoped_terminology().
+    """
+    bundle = get_scoped_terminology(db=db, user_id=user_id, document_ids=scope_ids)
+    ranked: list[tuple[float, str]] = []
+    seen_lower: set[str] = set()
+
+    for key, meta in (bundle.get("acronyms") or {}).items():
+        canon = str(meta.get("canonical") or key).strip()
+        if canon and canon.lower() not in seen_lower:
+            seen_lower.add(canon.lower())
+            score = float(meta.get("freq", 1)) * 3.0 + (4.0 if meta.get("in_heading") else 0.0) + (3.0 if meta.get("domain_match") else 0.0)
+            ranked.append((score, canon))
+
+    for pref, items in (bundle.get("prefixed_numbers") or {}).items():
+        for item in items:
+            label = f"{pref.upper()} {item['number']}".strip()
+            if label.lower() not in seen_lower:
+                seen_lower.add(label.lower())
+                ranked.append((5.0 + float(item.get("freq", 1)), label))
+
+    for key, meta in (bundle.get("phrases") or {}).items():
+        canon = str(meta.get("canonical") or key).strip()
+        first_word = canon.split(" ", 1)[0].lower() if canon else ""
+        if (
+            canon
+            and first_word not in {"the", "a", "an", "for", "of", "in", "on"}
+            and not (meta.get("in_title") and len(canon) > 22)
+            and canon.lower() not in seen_lower
+        ):
+            seen_lower.add(canon.lower())
+            score = float(meta.get("freq", 1)) * 1.5 + (3.0 if meta.get("in_heading") else 0.0) + (2.0 if meta.get("in_concept") else 0.0)
+            ranked.append((score, canon))
+
+    for bg in (bundle.get("bigrams") or set()):
+        parts = list(bg) if isinstance(bg, tuple) else str(bg).split()
+        if len(parts) == 2 and parts[0].upper() in (bundle.get("acronyms") or {}):
+            phrase = f"{parts[0].upper()} {parts[1]}"
+            if phrase.lower() not in seen_lower and parts[1] not in {"is", "are", "and", "or", "by", "of", "the", "a"}:
+                seen_lower.add(phrase.lower())
+                ranked.append((6.0, phrase))
+
+    for key, meta in (bundle.get("technical_terms") or {}).items():
+        canon = str(meta.get("canonical") or key).strip()
+        if canon and canon.lower() not in seen_lower and len(canon) >= 3 and not meta.get("in_title"):
+            seen_lower.add(canon.lower())
+            score = float(meta.get("freq", 1)) + (2.0 if meta.get("in_heading") else 0.0)
+            ranked.append((score, canon))
+
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    top_terms = [term for _, term in ranked[:max_terms]]
+    if not top_terms:
+        return "", ""
+    prompt_str = "Document terminology: " + ", ".join(top_terms) + "."
+    hotwords_str = " ".join(top_terms[:10])
+    return prompt_str, hotwords_str
+
+
 def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path: Path) -> dict[str, Any]:
     if not manifest_path.exists():
         raise FileNotFoundError(
@@ -761,9 +825,16 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
     clear_voice_recovery_cache()
 
     clip_records: list[dict[str, Any]] = []
+    dynamic_prompt_used = ""
+    dynamic_hotwords_used = ""
+    net_only_prompt = ""
 
     with isolated_test_db(clone_dev_db=True) as (db, _, _):
         user_id, scope_ids, tag_map = _setup_isolated_diagnostic_docs(db)
+        dynamic_prompt_used, dynamic_hotwords_used = _build_dynamic_document_prompt(db, user_id, scope_ids)
+        net_only_prompt, _ = _build_dynamic_document_prompt(db, user_id, [tag_map["net_ref"]])
+        print(f"Dynamic Document Prompt (all scoped): {dynamic_prompt_used!r}")
+        print(f"Dynamic Document Prompt (net_only): {net_only_prompt!r}")
 
         for idx, entry in enumerate(recordings, start=1):
             rel_path = entry["file_path"]
@@ -808,11 +879,24 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
                     {"language": "en", "beam_size": 2, "vad_filter": False},
                 ),
                 ("Whisper_Beam5", pcm_s16, 0.0, {"language": "en", "beam_size": 5, "vad_filter": True}),
+                ("Whisper_Temp0", pcm_s16, 0.0, {"language": "en", "beam_size": 2, "temperature": 0.0, "vad_filter": True}),
+                ("Whisper_NoCondPrev", pcm_s16, 0.0, {"language": "en", "beam_size": 2, "condition_on_previous_text": False, "vad_filter": True}),
                 (
                     "Whisper_Temp0_NoCond",
                     pcm_s16,
                     0.0,
                     {"language": "en", "beam_size": 2, "temperature": 0.0, "condition_on_previous_text": False, "vad_filter": True},
+                ),
+                (
+                    "Alt_VAD_MinSil500",
+                    pcm_s16,
+                    0.0,
+                    {
+                        "language": "en",
+                        "beam_size": 2,
+                        "vad_filter": True,
+                        "vad_parameters": {"threshold": 0.5, "min_silence_duration_ms": 500, "speech_pad_ms": 400},
+                    },
                 ),
                 (
                     "Whisper_SoftVAD_035",
@@ -822,7 +906,7 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
                         "language": "en",
                         "beam_size": 2,
                         "vad_filter": True,
-                        "vad_parameters": {"threshold": 0.35, "min_speech_duration_ms": 80, "speech_pad_ms": 400},
+                        "vad_parameters": {"threshold": 0.35, "min_speech_duration_ms": 80, "min_silence_duration_ms": 500, "speech_pad_ms": 400},
                     },
                 ),
                 ("Whisper_NoVAD", pcm_s16, 0.0, {"language": "en", "beam_size": 2, "vad_filter": False}),
@@ -836,7 +920,7 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
                         "temperature": 0.0,
                         "condition_on_previous_text": False,
                         "vad_filter": True,
-                        "vad_parameters": {"threshold": 0.35, "min_speech_duration_ms": 80, "speech_pad_ms": 400},
+                        "vad_parameters": {"threshold": 0.35, "min_speech_duration_ms": 80, "min_silence_duration_ms": 500, "speech_pad_ms": 400},
                     },
                 ),
                 (
@@ -847,7 +931,29 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
                         "language": "en",
                         "beam_size": 2,
                         "vad_filter": True,
-                        "initial_prompt": DOCUMENT_AWARE_PROMPT,
+                        "initial_prompt": dynamic_prompt_used,
+                    },
+                ),
+                (
+                    "Document_Hotwords",
+                    pcm_s16,
+                    0.0,
+                    {
+                        "language": "en",
+                        "beam_size": 2,
+                        "vad_filter": True,
+                        "hotwords": dynamic_hotwords_used,
+                    },
+                ),
+                (
+                    "Document_Prompt_NetOnly",
+                    pcm_s16,
+                    0.0,
+                    {
+                        "language": "en",
+                        "beam_size": 2,
+                        "vad_filter": True,
+                        "initial_prompt": net_only_prompt,
                     },
                 ),
                 (
@@ -860,8 +966,8 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
                         "temperature": 0.0,
                         "condition_on_previous_text": False,
                         "vad_filter": True,
-                        "vad_parameters": {"threshold": 0.35, "min_speech_duration_ms": 80, "speech_pad_ms": 400},
-                        "initial_prompt": DOCUMENT_AWARE_PROMPT,
+                        "vad_parameters": {"threshold": 0.35, "min_speech_duration_ms": 80, "min_silence_duration_ms": 500, "speech_pad_ms": 400},
+                        "initial_prompt": dynamic_prompt_used,
                     },
                 ),
             ]
@@ -878,13 +984,18 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
                 )
                 # Also score Phase 2 recovered transcript against target terms!
                 p2_term_scores = score_transcript_against_prompt(p2_ret["effective_query"], prompt_spec)
+                segs = stt.get("segments", [])
+                det_speech_s = round(sum(max(0.0, s["end"] - s["start"]) for s in segs), 3)
                 variant_outcomes[cfg_name] = {
                     "raw_text": stt["text"],
                     "stt_latency_ms": stt["latency_ms"],
                     "preprocess_ms": prep_ms,
                     "total_latency_ms": round(stt["latency_ms"] + prep_ms, 2),
+                    "language": stt.get("language", "en"),
                     "avg_logprob": stt["avg_logprob"],
                     "no_speech_prob": stt["no_speech_prob"],
+                    "segment_count": len(segs),
+                    "detected_speech_s": det_speech_s,
                     "raw_scores": scores,
                     "post_recovery_scores": p2_term_scores,
                     "phase2_and_retrieval": p2_ret,
@@ -1044,6 +1155,9 @@ def run_diagnostic(manifest_path: Path, results_json_path: Path, results_md_path
             "captured_at": manifest.get("captured_at"),
             "whisper_model": settings.VOICE_STT_MODEL,
             "compute_type": settings.VOICE_STT_COMPUTE_TYPE,
+            "dynamic_prompt_used": dynamic_prompt_used,
+            "net_only_prompt": net_only_prompt,
+            "dynamic_hotwords_used": dynamic_hotwords_used,
         },
         "audio_summary": audio_summary,
         "summary_by_config": summary_by_config,
@@ -1095,14 +1209,20 @@ def _write_markdown_report(report: dict[str, Any], md_path: Path) -> None:
     key_rows = [
         "Current",
         "VAD",
+        "VAD_Default_050",
         "Normalized",
         "VAD + normalized",
         "Whisper_Beam5",
+        "Whisper_Temp0",
+        "Whisper_NoCondPrev",
         "Whisper_Temp0_NoCond",
+        "Alt_VAD_MinSil500",
         "Whisper_SoftVAD_035",
         "Whisper_NoVAD",
         "Whisper_Tuned",
         "Document prompt",
+        "Document_Prompt_NetOnly",
+        "Document_Hotwords",
         "Document_Prompt_Tuned",
         "Mono_BestCh",
         "Resample_Float",

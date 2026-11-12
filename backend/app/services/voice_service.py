@@ -180,7 +180,10 @@ def decode_audio_to_16k_mono(input_path: str) -> np.ndarray:
     return pcm16.astype(np.float32) / 32768.0
 
 
-def _transcribe_file_with_model(tmp_path: str) -> dict[str, Any]:
+def _transcribe_file_with_model(
+    tmp_path: str,
+    initial_prompt: str | None = None,
+) -> dict[str, Any]:
     """Decode audio via PyAV, validate duration/energy, and run local Whisper transcription."""
     try:
         audio_array = decode_audio_to_16k_mono(tmp_path)
@@ -208,13 +211,17 @@ def _transcribe_file_with_model(tmp_path: str) -> dict[str, Any]:
         raise VoiceValidationError("No speech detected. Please try again.", status_code=422)
 
     model = get_whisper_model()
+    transcribe_kwargs: dict[str, Any] = {
+        "language": "en",
+        "beam_size": 2,
+        "vad_filter": True,
+    }
+    clean_prompt = (initial_prompt or "").strip()
+    if clean_prompt:
+        transcribe_kwargs["initial_prompt"] = clean_prompt
+
     try:
-        segments, info = model.transcribe(
-            audio_array,
-            language="en",
-            beam_size=2,
-            vad_filter=True,
-        )
+        segments, info = model.transcribe(audio_array, **transcribe_kwargs)
         text = " ".join(seg.text.strip() for seg in segments if seg.text).strip()
     except Exception as exc:
         logger.exception("Local faster-whisper transcription error")
@@ -239,6 +246,7 @@ def transcribe_audio_bytes(
     audio_bytes: bytes,
     filename: str | None = None,
     content_type: str | None = None,
+    initial_prompt: str | None = None,
 ) -> dict[str, Any]:
     """
     Validate uploaded audio bytes, materialize a short-lived temporary file for
@@ -258,7 +266,7 @@ def transcribe_audio_bytes(
             tmp_file.write(audio_bytes)
             tmp_path = tmp_file.name
 
-        result = _transcribe_file_with_model(tmp_path)
+        result = _transcribe_file_with_model(tmp_path, initial_prompt=initial_prompt)
         result["processing_time_ms"] = round((time.perf_counter() - t0) * 1000.0, 1)
         return result
     finally:

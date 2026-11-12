@@ -848,3 +848,131 @@ def get_scoped_terminology(
             _scoped_bundle_cache.popitem(last=False)
 
     return {**bundle, "cache_hit": all_cache_hit}
+
+
+_PROMPT_BIGRAM_STOPWORDS = {
+    "is", "are", "was", "were", "and", "or", "by", "of",
+    "the", "a", "an", "to", "in", "on", "for", "with", "at", "as", "from",
+}
+_PROMPT_PHRASE_LEADING_STOPWORDS = {"the", "a", "an", "for", "of", "in", "on", "to"}
+
+
+def build_whisper_initial_prompt(
+    db: Session,
+    user_id: int,
+    document_id: int | None = None,
+    document_ids: list[int] | None = None,
+    max_terms: int = 14,
+    max_chars: int = 220,
+) -> str | None:
+    """
+    Build a concise, bounded Whisper `initial_prompt` from the authenticated user's
+    scoped document vocabulary to anchor short technical acronyms and compound terms
+    without biasing unrelated normal English speech or leaking across tenants.
+    """
+    bundle = get_scoped_terminology(
+        db=db,
+        user_id=user_id,
+        document_id=document_id,
+        document_ids=document_ids,
+    )
+    if not bundle.get("has_evidence"):
+        return None
+
+    ranked: list[tuple[float, str]] = []
+    seen_lower: set[str] = set()
+    acronyms = bundle.get("acronyms") or {}
+
+    for key, meta in acronyms.items():
+        canon = str(meta.get("canonical") or key).strip()
+        if not canon or canon.lower() in ORDINARY_ENGLISH_WORDS:
+            continue
+        freq = int(meta.get("freq", 1))
+        if freq < 2 and not meta.get("in_heading") and not meta.get("domain_match"):
+            continue
+        score = (
+            freq * 3.0
+            + (4.0 if meta.get("in_heading") else 0.0)
+            + (3.0 if meta.get("domain_match") else 0.0)
+            + (2.0 if meta.get("in_definition") else 0.0)
+        )
+        if canon.lower() not in seen_lower:
+            seen_lower.add(canon.lower())
+            ranked.append((score, canon))
+
+    for pref, items in (bundle.get("prefixed_numbers") or {}).items():
+        for item in items:
+            label = f"{pref.upper()} {item['number']}".strip()
+            if label.lower() not in seen_lower:
+                seen_lower.add(label.lower())
+                ranked.append((5.0 + float(item.get("freq", 1)) * 2.0, label))
+
+    for bg, cnt in (bundle.get("bigrams") or {}).items():
+        parts = list(bg) if isinstance(bg, tuple) else str(bg).split()
+        if len(parts) != 2 or int(cnt) < 2:
+            continue
+        head_key = parts[0].upper()
+        tail = parts[1].lower()
+        if (
+            head_key not in acronyms
+            or parts[0].lower() in ORDINARY_ENGLISH_WORDS
+            or not re.fullmatch(r"[a-z]{3,}", tail)
+            or tail in _PROMPT_BIGRAM_STOPWORDS
+        ):
+            continue
+        head_canon = str(acronyms[head_key].get("canonical") or head_key).strip()
+        phrase = f"{head_canon} {parts[1]}"
+        if phrase.lower() not in seen_lower:
+            seen_lower.add(phrase.lower())
+            ranked.append((6.0 + float(cnt) * 3.0, phrase))
+
+    for key, meta in (bundle.get("phrases") or {}).items():
+        canon = str(meta.get("canonical") or key).strip()
+        first = canon.split(" ", 1)[0].lower() if canon else ""
+        if not canon or first in _PROMPT_PHRASE_LEADING_STOPWORDS or len(canon) > 32:
+            continue
+        freq = int(meta.get("freq", 1))
+        if freq < 2 and not meta.get("in_heading") and not meta.get("in_concept"):
+            continue
+        words = canon.split()
+        lead_key = words[0].upper()
+        if lead_key in acronyms and words[0].lower() not in ORDINARY_ENGLISH_WORDS:
+            words[0] = str(acronyms[lead_key].get("canonical") or lead_key).strip()
+            canon = " ".join(words)
+        if canon.lower() not in seen_lower:
+            seen_lower.add(canon.lower())
+            score = (
+                freq * 2.0
+                + (3.0 if meta.get("in_heading") else 0.0)
+                + (2.0 if meta.get("in_concept") else 0.0)
+            )
+            ranked.append((score, canon))
+
+    for key, meta in (bundle.get("technical_terms") or {}).items():
+        canon = str(meta.get("canonical") or key).strip()
+        if not canon or len(canon) < 3 or meta.get("in_title") or canon.lower() in seen_lower:
+            continue
+        freq = int(meta.get("freq", 1))
+        if freq < 2 and not meta.get("in_heading"):
+            continue
+        seen_lower.add(canon.lower())
+        ranked.append((float(freq) + (2.0 if meta.get("in_heading") else 0.0), canon))
+
+    if not ranked:
+        return None
+
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    chosen: list[str] = []
+    prefix = "Document terminology: "
+    current_len = len(prefix) + 1  # account for trailing period
+    for _, term in ranked[:max_terms]:
+        addition = (2 if chosen else 0) + len(term)
+        if current_len + addition > max_chars:
+            break
+        chosen.append(term)
+        current_len += addition
+
+    if not chosen:
+        return None
+    return f"{prefix}{', '.join(chosen)}."
+
