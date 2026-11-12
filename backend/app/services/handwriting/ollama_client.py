@@ -187,7 +187,9 @@ def query_ollama(
     format_json: bool = False,
     temperature: float = 0.2,
     timeout: Optional[int] = None,
-    model: Optional[str] = None
+    model: Optional[str] = None,
+    num_ctx: Optional[int] = None,
+    num_predict: Optional[int] = None,
 ) -> str:
     """
     Send prompt to local Ollama LLM and return text response.
@@ -196,15 +198,19 @@ def query_ollama(
     active_timeout = timeout or settings.OLLAMA_REQUEST_TIMEOUT
     endpoint = settings.ollama_generate_url
 
+    options: Dict[str, Any] = {
+        "temperature": temperature,
+        "num_ctx": int(num_ctx) if num_ctx is not None else 8192,
+        "repeat_penalty": 1.1,
+    }
+    if num_predict is not None:
+        options["num_predict"] = int(num_predict)
+
     payload = {
         "model": active_model,
         "prompt": prompt,
         "stream": False,
-        "options": {
-            "temperature": temperature,
-            "num_ctx": 8192,
-            "repeat_penalty": 1.1
-        }
+        "options": options,
     }
 
     if system_prompt:
@@ -247,7 +253,9 @@ def query_ollama_json(
     system_prompt: Optional[str] = None,
     temperature: float = 0.1,
     timeout: Optional[int] = None,
-    model: Optional[str] = None
+    model: Optional[str] = None,
+    num_ctx: Optional[int] = None,
+    num_predict: Optional[int] = None,
 ) -> Any:
     """
     Send prompt to local Ollama LLM with format='json' and parse JSON response.
@@ -258,6 +266,8 @@ def query_ollama_json(
         format_json=True,
         temperature=temperature,
         timeout=timeout,
-        model=model
+        model=model,
+        num_ctx=num_ctx,
+        num_predict=num_predict,
     )
     return extract_json_from_text(raw_response)

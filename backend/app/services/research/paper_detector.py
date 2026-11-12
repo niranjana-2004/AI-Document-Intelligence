@@ -27,6 +27,15 @@ _RESUME_OR_NON_ACADEMIC_MARKERS = [
     r"\bpersonal\s+details\b",
     r"\binvoice\s+number\b",
     r"\bsubtotal\b.*\btotal\b",
+    r"\bassignment\s+(?:#?\d+|submission|due\s+date)\b",
+    r"\bhomework\b",
+    r"\bcourse\s+syllabus\b",
+    r"\blecture\s+notes\b",
+    r"\bquarterly\s+(?:revenue|earnings|sales)\b",
+    r"\bfiscal\s+year\b",
+    r"\bapi\s+reference\b",
+    r"\binstallation\s+guide\b",
+    r"\buser\s+(?:manual|guide)\b",
 ]
 
 
@@ -35,6 +44,7 @@ def detect_research_paper(
     sections: List[Dict[str, Any]],
     full_text: str,
     manual_override: Optional[str] = None,
+    is_handwritten: bool = False,
 ) -> Dict[str, Any]:
     """
     Determine whether a document is likely an academic/research paper strictly using
@@ -79,8 +89,8 @@ def detect_research_paper(
     head_tail_lower = (text[:8000] + "\n" + text[-8000:]).lower()
 
     has_abstract = "abstract" in detected_roles or bool(re.search(r"(?:^|\n)\s*abstract\b[:\s—\-]*\n?", text[:6000], re.I))
-    has_keywords = "keywords" in detected_roles or bool(re.search(r"\b(?:keywords?|index\s+terms?)\s*[:—]", text[:6000], re.I))
-    has_intro = "introduction" in detected_roles
+    has_keywords = "keywords" in detected_roles or bool(re.search(r"\b(?:keywords?|index\s+terms?|ccs\s+concepts)\s*[:—\-]", text[:6000], re.I))
+    has_intro = "introduction" in detected_roles or bool(re.search(r"(?:^|\n)\s*(?:\d+\.?|[IVX]+\.)\s+introduction\b", text[:9000], re.I))
     has_related = "related_work" in detected_roles or bool(re.search(r"\b(?:related\s+work|literature\s+review)\b", head_tail_lower))
     has_method = "methodology" in detected_roles or bool(re.search(r"\b(?:methodology|proposed\s+(?:framework|method|system|architecture)|materials\s+and\s+methods)\b", text_lower))
     has_experiments = "experiments" in detected_roles or bool(re.search(r"\b(?:experimental\s+setup|dataset|training\s+details|hyperparameters?)\b", text_lower))
@@ -146,10 +156,10 @@ def detect_research_paper(
         signals.append("citations_present")
         score += 0.05
 
-    # Academic venue / thesis / DOI / ISSN / arXiv metadata
+    # Academic venue / thesis / DOI / ISSN / arXiv / IEEE / ACM metadata
     pub_cues = bool(
         re.search(
-            r"\b(?:doi:|issn\b|isbn\b|arxiv:|ieee\b|acm\b|springer\b|journal\s+of\b|proceedings\s+of\b|to\s+cite\s+this\s+article|a\s+thesis\s+submitted|master\s+of\s+(?:computer\s+)?science)\b",
+            r"\b(?:doi:|issn\b|isbn\b|arxiv:|ieee\b|acm\b|ccs\s+concepts|springer\b|transactions\s+on\b|conference\s+on\b|journal\s+of\b|proceedings\s+of\b|to\s+cite\s+this\s+article|a\s+thesis\s+submitted|master\s+of\s+(?:computer\s+)?science)\b",
             text[:6500],
             re.IGNORECASE,
         )
@@ -158,8 +168,8 @@ def detect_research_paper(
         signals.append("publication_or_thesis_metadata")
         score += 0.14
 
-    # Table / Figure / Equation references
-    fig_tab_count = len(re.findall(r"\b(?:Table|Figure|Fig\.|Algorithm|Equation)\s+\d+", text))
+    # Table / Figure / Equation references (including Table II, Fig. 2, Figure 3(a), Eq. (4))
+    fig_tab_count = len(re.findall(r"\b(?:Table|Figure|Fig\.|Algorithm|Equation|Eq\.)\s+(?:\(\d+[a-z]?\)|\d+(?:\.\d+)?(?:\([a-z0-9]+\))?|[IVX]{1,5}\b)", text))
     if fig_tab_count >= 2:
         signals.append("tables_or_figures")
         score += 0.07
@@ -173,13 +183,21 @@ def detect_research_paper(
         signals.append("author_affiliation_block")
         score += 0.05
 
-    # Counter-signals for resumes / CVs / invoices / non-academic prose
+    # Counter-signals for resumes / CVs / assignments / invoices / product docs / handwritten notes
     resume_hits = sum(1 for pat in _RESUME_OR_NON_ACADEMIC_MARKERS if re.search(pat, text_lower))
     if resume_hits >= 2:
         score -= 0.45
+    elif resume_hits == 1 and not pub_cues:
+        score -= 0.22
 
     if len(units) <= 2 and not has_abstract and not has_references and total_cites == 0:
         score = min(score, 0.42)
+
+    # Objective K: Prevent handwritten lecture/study notes from accidentally classifying as research papers
+    if is_handwritten:
+        score = min(score, 0.30)
+        if "handwritten_document_guard" not in missing_signals:
+            missing_signals.append("printed_academic_typesetting")
 
     confidence = round(max(0.02, min(0.99, score)), 2)
 

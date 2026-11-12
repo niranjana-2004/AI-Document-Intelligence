@@ -13,27 +13,43 @@ from app.services.research.paper_evidence_service import (
     extract_verbatim_excerpt,
     missing_field,
 )
-from app.services.research.paper_section_service import ChunkUnit
+from app.services.research.paper_section_service import ChunkUnit, is_toc_chunk, is_toc_line
 
 logger = logging.getLogger(__name__)
 
 _HEADER_BOILERPLATE_RE = re.compile(
-    r"^(?:journal\s+of\b|international\s+journal\b|proceedings\s+of\b|issn\b|isbn\b|doi\b|www\.|http|page\s*\|\s*\d+|to\s+cite\s+this|volume\s+\d+|issue\s+\d+|©|\d{4}$)",
+    r"^(?:journal\s+of\b|international\s+journal\b|proceedings\s+of\b|issn\b|isbn\b|doi\b|www\.|http|page\s*\|\s*\d+|to\s+cite\s+this|volume\s+\d+|issue\s+\d+|©|\*\s*work\s+supported|978-\d|acm\s+reference\s+format|\d{4}$)",
+    re.IGNORECASE,
+)
+
+MAX_LLM_CONTEXT_CHARS = 3600
+
+_ABBREV_DOT_RE = re.compile(
+    r"\b(Fig|Eq|Sec|Ref|Vol|No|Dr|Prof|vs|et\s+al|e\.g|i\.e)\.\s+",
     re.IGNORECASE,
 )
 
 
+def _split_sentences(text: str, split_newlines: bool = False) -> List[str]:
+    """Split text into sentences without breaking on academic abbreviations like Fig., Eq., or vs.."""
+    if not text:
+        return []
+    shielded = _ABBREV_DOT_RE.sub(lambda m: f"{m.group(1)}\u2024 ", text)
+    pattern = r"(?<=[.!?])\s+|\n+" if split_newlines else r"(?<=[.!?])\s+"
+    return [seg.replace("\u2024", ".") for seg in re.split(pattern, shielded)]
+
+
 def _first_sentences(text: str, keywords: List[str], max_sentences: int = 2) -> List[str]:
     clean = re.sub(r"\s+", " ", (text or "")).strip()
-    if not clean:
+    if not clean or is_toc_chunk(text):
         return []
-    sents = re.split(r"(?<=[.!?])\s+", clean)
+    sents = _split_sentences(clean)
     hits: List[str] = []
     for sent in sents:
         s_clean = sent.strip()
         if len(s_clean) < 25 or len(s_clean) > 420:
             continue
-        if re.search(r"\.{3,}|\bpage\s*\|\s*\d+", s_clean, re.I):
+        if is_toc_line(s_clean) or _HEADER_BOILERPLATE_RE.match(s_clean):
             continue
         low = s_clean.lower()
         if any(re.search(kw, low) for kw in keywords):
@@ -50,17 +66,25 @@ def _find_evidence_in_units(
     max_hits: int = 2,
 ) -> List[Tuple[ChunkUnit, str]]:
     """
-    Search ordered chunks prioritizing preferred section roles, returning
-    matching (ChunkUnit, sentence_or_excerpt) pairs.
+    Search ordered chunks prioritizing substantive preferred section roles,
+    skipping Table-of-Contents navigation blocks and references.
     """
-    ordered = (
-        sorted(units, key=lambda u: (0 if (preferred_roles and u.normalized_role in preferred_roles) else 1, u.chunk_index))
-        if preferred_roles
-        else units
-    )
+    def _unit_priority(u: ChunkUnit) -> Tuple[int, int, int]:
+        if is_toc_chunk(u.content) or u.normalized_role == "references":
+            return (3, 1, u.chunk_index)
+        if preferred_roles and u.normalized_role in preferred_roles:
+            is_front = 1 if u.normalized_role == "front_matter" else 0
+            return (0, is_front, u.chunk_index)
+        if u.normalized_role == "front_matter":
+            return (2, 1, u.chunk_index)
+        return (1, 0, u.chunk_index)
+
+    ordered = sorted(units, key=_unit_priority)
     results: List[Tuple[ChunkUnit, str]] = []
     seen_snippets: Set[str] = set()
     for u in ordered:
+        if u.normalized_role == "references" or is_toc_chunk(u.content):
+            continue
         sents = _first_sentences(u.content, keywords, max_sentences=max_hits)
         for s in sents:
             sig = s[:70].lower()
@@ -83,7 +107,9 @@ def _extract_basic_information(units: List[ChunkUnit], tracker: EvidenceTracker)
             "publication_info": missing_field(),
         }
 
-    front_units = [u for u in units if u.page <= 4][:8] or units[:4]
+    front_units = [u for u in units if u.page <= 4 and not is_toc_chunk(u.content)][:8] or [
+        u for u in units[:6] if not is_toc_chunk(u.content)
+    ] or units[:4]
     front_text = "\n".join(u.content for u in front_units[:3])
 
     # 1. Title detection
@@ -146,6 +172,18 @@ def _extract_basic_information(units: List[ChunkUnit], tracker: EvidenceTracker)
         if len(val) >= 5:
             src_u = next((u for u in front_units[:3] if "to cite this article" in u.content.lower()), front_units[0])
             authors_field = tracker.make_field(val, unit=src_u, fact_type="explicit", confidence=0.9)
+    else:
+        # IEEE / ACM style author block directly below title and above Abstract / affiliation
+        for u in front_units[:1]:
+            lines = [ln.strip() for ln in u.content.splitlines() if ln.strip()]
+            for ln in lines[1:8]:
+                if re.match(r"^(?:abstract|keywords?|index\s+terms?|ccs\s+concepts?|1\.?\s+intro|i\.\s+intro|department|university|institute|school|college|faculty)\b", ln, re.I):
+                    continue
+                if _HEADER_BOILERPLATE_RE.match(ln) or "@" in ln or len(ln) > 140:
+                    continue
+                if re.match(r"^[A-Z][A-Za-z.\-']+(?:\s+[A-Z][A-Za-z.\-']+){1,3}(?:\s*[,;]\s*[A-Z][A-Za-z.\-']+(?:\s+[A-Z][A-Za-z.\-']+){1,3})+(?:\s*,?\s*and\s+[A-Z][A-Za-z.\-']+(?:\s+[A-Z][A-Za-z.\-']+){1,3})?$", ln):
+                    authors_field = tracker.make_field(ln, unit=u, fact_type="explicit", confidence=0.88, excerpt_override=ln)
+                    break
 
     # 3. Affiliation detection
     affiliation_field = missing_field()
@@ -176,15 +214,18 @@ def _extract_basic_information(units: List[ChunkUnit], tracker: EvidenceTracker)
     abstract_field = missing_field()
     abs_units = [
         u
-        for u in units[:12]
-        if u.normalized_role == "abstract" or re.search(r"(?:^|\n)\s*abstract\b[:\s—\-]*", u.content, re.I)
+        for u in units[:14]
+        if not is_toc_chunk(u.content)
+        and (u.normalized_role == "abstract" or re.search(r"(?:^|\n)\s*abstract\b[:\s—\-]*", u.content, re.I))
     ]
     if abs_units:
         first_abs_u = abs_units[0]
         idx_start = units.index(first_abs_u)
         collected: List[str] = []
         for u in units[idx_start : min(len(units), idx_start + 3)]:
-            txt = u.content
+            if is_toc_chunk(u.content):
+                break
+            txt = "\n".join(ln for ln in (u.content or "").splitlines() if not is_toc_line(ln))
             m_abs = re.search(r"(?:^|\n)\s*abstract\b[:\s—\-]*([\s\S]+)", txt, re.I)
             seg = m_abs.group(1) if m_abs else txt
             # Stop if we hit next section heading
@@ -214,7 +255,7 @@ def _extract_basic_information(units: List[ChunkUnit], tracker: EvidenceTracker)
     # 5. Keywords detection
     keywords_field = missing_field()
     for u in front_units[:6]:
-        kw_m = re.search(r"\b(?:keywords?|index\s+terms?)\s*[:—\-]\s*([^\n]{5,240})", u.content, re.I)
+        kw_m = re.search(r"\b(?:keywords?|index\s+terms?|ccs\s+concepts?)\s*[:—\-]\s*([^\n]{5,240})", u.content, re.I)
         if kw_m:
             kw_val = re.sub(r"\s+", " ", kw_m.group(1)).strip(" .;")
             keywords_field = tracker.make_field(
@@ -264,22 +305,38 @@ def _extract_basic_information(units: List[ChunkUnit], tracker: EvidenceTracker)
     }
 
 
+_STRUCTURAL_NUM_MASK_RE = re.compile(
+    r"\b(?:Section|Sec\.|Sections|Figure|Figures|Fig\.|Figs\.|Table|Tables|Algorithm|Equation|Equations|Eq\.|Page|Pages|Vol\.|Volume|Issue|Reference|References|Ref\.|Refs\.|Chapter|Appendix)\s*(?:\(\s*\d+(?:\.\d+)*(?:[a-z])?\s*\)|\d+(?:\.\d+)*(?:\([a-z0-9]+\))?|[IVX]{1,5}\b)"
+    r"|\[\s*\d{1,3}(?:\s*,\s*\d{1,3})*\s*\]"
+    r"|(?:©\s*)?\b(?:19|20)\d{2}\b(?![\d.%]*\s*(?:samples?|records?|images?|instances?|documents?|lines?|ms|milliseconds?|s\b|sec|seconds?|%))",
+    re.IGNORECASE,
+)
+
+
+def _mask_structural_numbers(sentence: str) -> str:
+    """Replace Section/Figure/Table/Equation/Page/Reference/Year tokens before metric regex scanning."""
+    return _STRUCTURAL_NUM_MASK_RE.sub(" _STRUCT_REF_ ", sentence)
+
+
 def _extract_numerical_data(units: List[ChunkUnit], tracker: EvidenceTracker) -> List[Dict[str, Any]]:
     """
-    Extract reported quantitative metrics, dataset sizes, splits, parameter counts, and
-    latency/performance figures while preserving exact original values and units.
-    Also compute deterministic `derived` improvement deltas only when explicit pairs exist.
+    Extract reported quantitative metrics, p-values, confidence intervals, dataset sizes,
+    splits, parameter counts, and latency/performance figures while masking structural/reference
+    numbers (Section 3.2, Figure 4, Table 2, Eq. 5, [18], 2024).
     """
     findings: List[Dict[str, Any]] = []
     seen_keys: Set[Tuple[str, str, int]] = set()
 
     metric_patterns: List[Tuple[str, re.Pattern[str], Optional[str]]] = [
-        ("Accuracy", re.compile(r"\baccuracy\b[^.\n]{0,40}?[:=isof\s]+(\d{1,3}(?:\.\d+)?)\s*(%)", re.I), "%"),
-        ("Precision", re.compile(r"\bprecision\b[^.\n]{0,35}?[:=isof\s]+(\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), None),
-        ("Recall", re.compile(r"\brecall\b[^.\n]{0,35}?[:=isof\s]+(\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), None),
-        ("F1-Score", re.compile(r"\bf1[\-\s]?score\b[^.\n]{0,35}?[:=isof\s]+(\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), None),
-        ("AUC / ROC-AUC", re.compile(r"\b(?:roc[\-\s]?)?auc\b[^.\n]{0,30}?[:=isof\s]+(\d+(?:\.\d+)?)\s*(%|)", re.I), None),
+        ("Accuracy", re.compile(r"\baccuracy\b[^.\n]{0,42}?(?:is|=|:|of|achieved|reached|was)\s*(0\.\d{2,4}|\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), "%"),
+        ("Accuracy", re.compile(r"(\d{1,3}(?:\.\d+)?)\s*(%)\s+(?:overall\s+|classification\s+|test\s+)?accuracy\b", re.I), "%"),
+        ("Precision", re.compile(r"\bprecision\b[^.\n]{0,35}?(?:is|=|:|of|achieved|reached|was)\s*(0\.\d{2,4}|\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), None),
+        ("Recall", re.compile(r"\brecall\b[^.\n]{0,35}?(?:is|=|:|of|achieved|reached|was)\s*(0\.\d{2,4}|\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), None),
+        ("F1-Score", re.compile(r"\bf1[\-\s]?(?:score)?\b[^.\n]{0,35}?(?:is|=|:|of|achieved|reached|was)\s*(0\.\d{2,4}|\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), None),
+        ("AUC / ROC-AUC", re.compile(r"\b(?:roc[\-\s]?)?auc\b[^.\n]{0,30}?(?:is|=|:|of|achieved|reached|was)\s*(0\.\d{2,4}|\d{1,3}(?:\.\d+)?)\s*(%|)", re.I), None),
         ("Loss", re.compile(r"\b(?:training|validation|test|final)?\s*loss\b[^.\n]{0,25}?[:=]\s*(\d+\.\d+)", re.I), "loss"),
+        ("p-value", re.compile(r"\bp[\-\s]?value\b[^.\n]{0,20}?([<>=]{1,2}\s*0\.\d{1,5})\b|\bp\s*([<=]=?\s*0\.\d{1,5})\b", re.I), "p-value"),
+        ("Confidence Interval", re.compile(r"\b(\d{2,3}%\s*CI\s*[:=]?\s*[\[\(]\s*\d+(?:\.\d+)?\s*[-–,]\s*\d+(?:\.\d+)?\s*[\]\)])", re.I), "CI"),
         (
             "Dataset / Sample Count",
             re.compile(
@@ -316,24 +373,35 @@ def _extract_numerical_data(units: List[ChunkUnit], tracker: EvidenceTracker) ->
     ]
 
     for u in units:
-        if u.normalized_role == "references":
+        if u.normalized_role == "references" or is_toc_chunk(u.content):
             continue
-        sentences = re.split(r"(?<=[.!?])\s+|\n+", u.content)
+        sentences = _split_sentences(u.content, split_newlines=True)
         for sent in sentences:
             s_clean = re.sub(r"\s+", " ", sent).strip()
-            if len(s_clean) < 12 or len(s_clean) > 360 or re.search(r"\.{3,}", s_clean):
+            if len(s_clean) < 12 or len(s_clean) > 360 or is_toc_line(s_clean):
                 continue
 
+            scan_str = _mask_structural_numbers(s_clean)
+
             for m_name, pat, default_unit in metric_patterns:
-                for m in pat.finditer(s_clean):
-                    val_str = m.group(1).strip()
-                    raw_unit = m.group(2).strip() if m.lastindex and m.lastindex >= 2 else ""
+                for m in pat.finditer(scan_str):
+                    if default_unit == "p-value":
+                        raw_p = (m.group(1) or m.group(2) or "").strip()
+                        val_str = f"p {raw_p}" if not raw_p.lower().startswith("p") else raw_p
+                        raw_unit = "p-value"
+                    else:
+                        val_str = m.group(1).strip()
+                        raw_unit = m.group(2).strip() if m.lastindex and m.lastindex >= 2 and m.group(2) else ""
+
                     if default_unit == "count" and raw_unit:
                         unit_label = raw_unit.lower()
                         orig_val = val_str
                     elif default_unit == "parameters" and raw_unit:
                         unit_label = f"{raw_unit} parameters"
                         orig_val = f"{val_str} {raw_unit}"
+                    elif default_unit in {"p-value", "CI"}:
+                        unit_label = default_unit
+                        orig_val = val_str
                     elif raw_unit == "%":
                         unit_label = "%"
                         orig_val = f"{val_str}%"
@@ -341,7 +409,7 @@ def _extract_numerical_data(units: List[ChunkUnit], tracker: EvidenceTracker) ->
                         unit_label = raw_unit
                         orig_val = f"{val_str} {raw_unit}".strip()
                     else:
-                        unit_label = default_unit
+                        unit_label = "score" if val_str.startswith("0.") else default_unit
                         orig_val = val_str
 
                     dedup = (m_name, orig_val.lower(), u.page)
@@ -376,20 +444,25 @@ def _extract_numerical_data(units: List[ChunkUnit], tracker: EvidenceTracker) ->
                 if len(findings) >= 25:
                     break
 
-            # Deterministic paired comparison delta within same sentence (explicit % vs explicit %)
+            # Deterministic paired comparison delta within same sentence (Accuracy / Precision / Recall / F1)
+            # Allow decimal points inside intermediate metrics without crossing a true sentence boundary.
             pair_m = re.search(
-                r"\baccuracy\b[^.\n]{0,40}?\b(\d{2}(?:\.\d+)?)\s*%[^.\n]{0,60}?\b(?:baseline|compared\s+to|versus|vs\.?|from)\b[^.\n]{0,30}?\b(\d{2}(?:\.\d+)?)\s*%",
-                s_clean,
+                r"\b(accuracy|precision|recall|f1(?:-score)?)\b\s*(?:=|is|was|of|:)?\s*(\d{2}(?:\.\d+)?)\s*%(?:(?!(?<!\d)\.(?!\d))[^\n]){0,95}?\b(?:baseline|compared\s+to|versus|vs\.?|from|whereas|while|drops\s+to)\b(?:(?!(?<!\d)\.(?!\d))[^\n]){0,50}?\b(\d{2}(?:\.\d+)?)\s*%"
+                r"|\b(\d{2}(?:\.\d+)?)\s*%\s+(accuracy|precision|recall|f1(?:-score)?)\b(?:(?!(?<!\d)\.(?!\d))[^\n]){0,65}?\b(?:while|whereas|versus|vs\.?)\b(?:(?!(?<!\d)\.(?!\d))[^\n]){0,50}?\b(\d{2}(?:\.\d+)?)\s*%",
+                scan_str,
                 re.I,
             )
             if pair_m and len(findings) < 25:
-                v1, v2 = float(pair_m.group(1)), float(pair_m.group(2))
+                metric_lbl = (pair_m.group(1) or pair_m.group(5) or "Accuracy").strip().title()
+                v1_s = pair_m.group(2) or pair_m.group(4)
+                v2_s = pair_m.group(3) or pair_m.group(6)
+                v1, v2 = float(v1_s), float(v2_s)
                 if v1 != v2 and abs(v1 - v2) <= 50.0:
                     delta = round(v1 - v2, 2)
                     sign = "+" if delta > 0 else ""
                     delta_val = f"{sign}{delta} percentage points"
                     ev_id, src = tracker.register_evidence(
-                        claim=f"Accuracy delta ({delta_val} between {v1}% and {v2}%)",
+                        claim=f"{metric_lbl} delta ({delta_val} between {v1}% and {v2}%)",
                         unit=u,
                         fact_type="derived",
                         confidence=0.89,
@@ -398,7 +471,7 @@ def _extract_numerical_data(units: List[ChunkUnit], tracker: EvidenceTracker) ->
                     findings.append(
                         {
                             "id": f"num-{len(findings) + 1}",
-                            "metric_name": "Derived Accuracy Delta",
+                            "metric_name": f"Derived {metric_lbl} Delta",
                             "original_value": delta_val,
                             "unit": "percentage points",
                             "experimental_context": s_clean[:220],
@@ -419,19 +492,24 @@ def _extract_numerical_data(units: List[ChunkUnit], tracker: EvidenceTracker) ->
 def _extract_tables_and_figures(units: List[ChunkUnit]) -> Dict[str, Any]:
     items: List[Dict[str, Any]] = []
     seen: Set[Tuple[str, int]] = set()
-    ref_pat = re.compile(r"\b(Table|Figure|Fig\.|Algorithm|Equation|Eq\.)\s+(\d+(?:\.\d+)?)\b", re.IGNORECASE)
+    ref_pat = re.compile(
+        r"\b(Table|Figure|Fig\.|Algorithm|Equation|Eq\.)\s+(\(\d+[a-z]?\)|\d+(?:\.\d+)?(?:\([a-z0-9]+\))?|[IVX]{1,5}\b)",
+        re.IGNORECASE,
+    )
 
     for u in units:
-        if u.normalized_role in {"references"}:
+        if u.normalized_role in {"references"} or is_toc_chunk(u.content):
             continue
-        lines_and_sents = re.split(r"(?<=[.!?])\s+|\n", u.content)
+        lines_and_sents = _split_sentences(u.content, split_newlines=True)
         for seg in lines_and_sents:
             s_clean = re.sub(r"\s+", " ", seg).strip()
-            if len(s_clean) < 8 or re.search(r"\.{4,}", s_clean):
+            if len(s_clean) < 8 or is_toc_line(s_clean):
                 continue
             for m in ref_pat.finditer(s_clean):
                 raw_kind = m.group(1).lower().rstrip(".")
                 num = m.group(2)
+                if re.fullmatch(r"[ivx]+", num, re.IGNORECASE) and not re.fullmatch(r"[IVX]{1,5}", num):
+                    continue
                 if raw_kind in {"fig"}:
                     kind = "figure"
                     label = f"Figure {num}"
@@ -592,56 +670,121 @@ def _extract_section_fields_deterministic(
     }
 
 
-def _select_bounded_evidence_packet(units: List[ChunkUnit], max_chars: int = 7000) -> str:
+def _normalize_header_key(line: str) -> str:
+    """Normalize trailing/embedded page numbers when spotting repeated headers/footers."""
+    return re.sub(r"\b\d+\b", "#", re.sub(r"\s+", " ", line).strip().lower())
+
+
+def _clean_text_for_llm(units: List[ChunkUnit], target_unit: ChunkUnit, repeated_lines: Set[str]) -> str:
+    """Strip repeated running headers/footers, ToC navigation lines, and duplicate whitespace."""
+    kept: List[str] = []
+    seen_lines: Set[str] = set()
+    for raw_ln in (target_unit.content or "").splitlines():
+        ln = re.sub(r"\s+", " ", raw_ln).strip()
+        if not ln:
+            continue
+        low = ln.lower()
+        norm_key = _normalize_header_key(ln)
+        if low in repeated_lines or norm_key in repeated_lines or low in seen_lines:
+            continue
+        if _HEADER_BOILERPLATE_RE.match(ln) or is_toc_line(ln):
+            continue
+        seen_lines.add(low)
+        kept.append(ln)
+    return " ".join(kept)
+
+
+def _select_bounded_evidence_packet(units: List[ChunkUnit], max_chars: int = MAX_LLM_CONTEXT_CHARS) -> str:
     """
-    Build a section-balanced evidence packet for local Ollama without overflowing context
-    windows on long theses/papers.
+    Build a section-prioritized, deduplicated, conservative evidence packet for local Ollama
+    within MAX_LLM_CONTEXT_CHARS so CPU inference stays bounded without losing source citations.
     """
     if not units:
         return ""
 
+    # Identify repeated short running headers/footers/page numbers appearing across >= 2 pages
+    line_pages: Dict[str, Set[int]] = {}
+    for u in units:
+        for raw_ln in (u.content or "").splitlines():
+            ln = re.sub(r"\s+", " ", raw_ln).strip()
+            if 3 <= len(ln) <= 115:
+                line_pages.setdefault(_normalize_header_key(ln), set()).add(u.page)
+    repeated_lines = {ln for ln, pgs in line_pages.items() if len(pgs) >= 2}
+
+    # Priority order per Hardening Objective A:
+    # 1. front/title/abstract -> 2. introduction -> 3. methodology -> 4. experiments
+    # -> 5. results -> 6. conclusion -> 7. other
     role_buckets: Dict[str, List[ChunkUnit]] = {
-        "front": [],
+        "abstract_front": [],
         "intro": [],
         "method": [],
+        "experiments": [],
         "results": [],
         "conclusion": [],
         "other": [],
     }
     for u in units:
-        if u.page <= 2 or u.normalized_role in {"front_matter", "abstract", "keywords"}:
-            role_buckets["front"].append(u)
+        if u.normalized_role == "references" or is_toc_chunk(u.content):
+            continue
+        if u.normalized_role in {"abstract", "keywords"} or (u.page <= 2 and u.normalized_role == "front_matter"):
+            role_buckets["abstract_front"].append(u)
         elif u.normalized_role in {"introduction", "related_work"}:
             role_buckets["intro"].append(u)
-        elif u.normalized_role in {"methodology", "experiments"}:
+        elif u.normalized_role == "methodology":
             role_buckets["method"].append(u)
+        elif u.normalized_role == "experiments":
+            role_buckets["experiments"].append(u)
         elif u.normalized_role in {"results", "discussion"}:
             role_buckets["results"].append(u)
         elif u.normalized_role == "conclusion":
             role_buckets["conclusion"].append(u)
-        elif u.normalized_role != "references":
+        else:
             role_buckets["other"].append(u)
 
     selected: List[ChunkUnit] = []
     seen_idx: Set[int] = set()
-    # Interleave across key structural roles (up to ~3 chunks per bucket)
-    for bucket_name, quota in [("front", 3), ("intro", 2), ("method", 3), ("results", 3), ("conclusion", 2), ("other", 2)]:
-        for u in role_buckets[bucket_name][:quota]:
-            if u.chunk_index not in seen_idx:
-                seen_idx.add(u.chunk_index)
-                selected.append(u)
+    seen_content_sigs: Set[str] = set()
+    priority_quotas = [
+        ("abstract_front", 2),
+        ("intro", 2),
+        ("method", 2),
+        ("experiments", 2),
+        ("results", 2),
+        ("conclusion", 2),
+        ("other", 1),
+    ]
+    for bucket_name, quota in priority_quotas:
+        added = 0
+        for u in role_buckets[bucket_name]:
+            if u.chunk_index in seen_idx:
+                continue
+            cleaned = _clean_text_for_llm(units, u, repeated_lines)
+            if len(cleaned) < 25:
+                continue
+            sig = cleaned[:140].lower()
+            if sig in seen_content_sigs:
+                continue
+            seen_content_sigs.add(sig)
+            seen_idx.add(u.chunk_index)
+            selected.append(u)
+            added += 1
+            if added >= quota:
+                break
 
-    selected.sort(key=lambda x: x.chunk_index)
+    # Emit in section-priority order so high-value sections fit cleanly within budget
     parts: List[str] = []
     total_len = 0
     for u in selected:
         cid_label = str(u.chunk_id) if u.chunk_id is not None else f"idx-{u.chunk_index}"
-        snippet = re.sub(r"\s+", " ", u.content).strip()[:650]
-        block = f"[CHUNK {cid_label} | Page {u.page} | Section: {u.section_title}]\n{snippet}\n"
-        if total_len + len(block) > max_chars:
-            break
+        cleaned = _clean_text_for_llm(units, u, repeated_lines)
+        snippet = cleaned[:360]
+        if not snippet:
+            continue
+        block = f"[CHUNK {cid_label}|p.{u.page}|{u.section_title}] {snippet}"
+        if total_len + len(block) + 1 > max_chars:
+            continue
         parts.append(block)
-        total_len += len(block)
+        total_len += len(block) + 1
 
     return "\n".join(parts)
 
@@ -758,61 +901,31 @@ def extract_structured_research_analysis(
     if not skip_llm and units:
         evidence_packet = _select_bounded_evidence_packet(units)
         if evidence_packet:
-            prompt = f"""You are a precise academic information extraction engine.
-Read ONLY the provided document evidence chunks. Do NOT invent or assume anything not present in the chunks.
-If a field is not supported by the evidence, set its "value" to "{MISSING_FIELD_TEXT}".
-Classify each populated field as "explicit" (directly stated) or "inferred" (minimal high-level classification such as broad domain). Do not present inference as explicit fact.
-For every populated field, include the supporting integer chunk_id from the chunk header "[CHUNK <id> | ...]".
+            prompt = f"""Extract ONLY facts supported by CHUNKS below into JSON.
+Rules:
+1) If missing, set "value" to "{MISSING_FIELD_TEXT}". Never guess or invent numbers/citations.
+2) Do NOT claim you interpreted visual charts/diagrams; cite textual captions only.
+3) Mark fact_type as "explicit" (stated) or "inferred" (minimal high-level classification). Include integer chunk_id from [CHUNK <id>|...].
 
-Return valid JSON matching this exact top-level structure:
-{{
-  "basic_information": {{
-    "title": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "authors": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}}
-  }},
-  "research_context": {{
-    "research_domain": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "problem_statement": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "motivation": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "research_objective": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "research_questions": {{"value": "{MISSING_FIELD_TEXT}", "chunk_id": null, "fact_type": "explicit"}},
-    "hypothesis": {{"value": "{MISSING_FIELD_TEXT}", "chunk_id": null, "fact_type": "explicit"}}
-  }},
-  "methodology": {{
-    "methodology_type": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "proposed_approach": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "algorithms_models": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "architecture": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "framework_tools": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "dataset": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "dataset_size": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "preprocessing": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "experimental_setup": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}}
-  }},
-  "evaluation": {{
-    "evaluation_metrics": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "baseline_methods": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "experiments": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "results": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "comparisons": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}}
-  }},
-  "conclusion": {{
-    "main_conclusions": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "limitations": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}},
-    "future_work": {{"value": "...", "chunk_id": 1, "fact_type": "explicit"}}
-  }}
-}}
+Schema keys (each leaf is {{"value": str, "chunk_id": int|null, "fact_type": "explicit"|"inferred"}}):
+- basic_information: title, authors
+- research_context: research_domain, problem_statement, motivation, research_objective, research_questions, hypothesis
+- methodology: methodology_type, proposed_approach, algorithms_models, architecture, framework_tools, dataset, dataset_size, preprocessing, experimental_setup
+- evaluation: evaluation_metrics, baseline_methods, experiments, results, comparisons
+- conclusion: main_conclusions, limitations, future_work
 
-DOCUMENT EVIDENCE CHUNKS:
+CHUNKS:
 {evidence_packet}
 """
             t_llm = time.perf_counter()
             try:
                 ollama_json = query_ollama_json(
                     prompt=prompt,
-                    system_prompt="Extract strictly factual, chunk-grounded academic metadata as valid JSON.",
+                    system_prompt="Return strict valid JSON matching the requested schema keys.",
                     temperature=0.1,
                     timeout=35,
+                    num_ctx=4096,
+                    num_predict=550,
                 )
                 if isinstance(ollama_json, dict):
                     merged = _merge_ollama_structured_claims(ollama_json, det_sections, tracker)

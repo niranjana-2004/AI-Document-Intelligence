@@ -67,3 +67,23 @@ test('filterEvidenceByQuery filters by keyword and fact type', () => {
     assert.equal(filterEvidenceByQuery(map, 'p.6', 'all')[0].id, 'ev-2')
 })
 
+test('getDetectionMeta handles borderline, default non-research, and manual non-research override', () => {
+    const borderline = getDetectionMeta({ classification: 'borderline_technical', is_research_paper: false, confidence: 0.52 })
+    assert.equal(borderline.label, 'Borderline Technical Document')
+    assert.equal(borderline.tone, 'warning')
+    assert.equal(borderline.confidencePct, 52)
+
+    const manualNon = getDetectionMeta({
+        classification: 'non_research',
+        is_research_paper: false,
+        manual_override: 'non_research',
+        confidence: 0.25,
+    })
+    assert.equal(manualNon.label, 'Non-Research (Manual Override)')
+    assert.equal(manualNon.tone, 'neutral')
+
+    const defaultMissing = getFactTypeMeta('unknown_type')
+    assert.equal(defaultMissing.label, 'Not in Paper')
+    assert.equal(defaultMissing.description, 'Not explicitly stated in the paper.')
+})
+

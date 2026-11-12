@@ -24,8 +24,8 @@ class ChunkUnit:
 
 
 _ROLE_PATTERNS: List[Tuple[str, re.Pattern[str]]] = [
-    ("abstract", re.compile(r"^(?:[ivxlcdm]+\.\s*)?abstract\b", re.IGNORECASE)),
-    ("keywords", re.compile(r"^(?:keywords?|index\s+terms?)\b", re.IGNORECASE)),
+    ("abstract", re.compile(r"^(?:[ivxlcdm]+\.\s*|#+\s*)?abstract\b", re.IGNORECASE)),
+    ("keywords", re.compile(r"^(?:keywords?|index\s+terms?|ccs\s+concepts)\b", re.IGNORECASE)),
     (
         "introduction",
         re.compile(r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+)?(?:introduction|overview|background)\b", re.IGNORECASE),
@@ -40,39 +40,40 @@ _ROLE_PATTERNS: List[Tuple[str, re.Pattern[str]]] = [
     (
         "methodology",
         re.compile(
-            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+)?(?:methodology|methods?|proposed\s+(?:method|approach|system|framework|model|architecture)|system\s+(?:architecture|design|workflow)|materials?\s+and\s+methods?|approach|implementation|design)\b",
+            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+|[A-Z]\.\s+)?(?:methodology|methods?|proposed\s+(?:method|methodology|approach|system|framework|model|architecture|scheme)|system\s+(?:architecture|design|workflow)|materials?\s+and\s+methods?|approach|implementation|design|threat\s+model)\b",
             re.IGNORECASE,
         ),
     ),
     (
         "experiments",
         re.compile(
-            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+)?(?:experiments?|experimental\s+(?:setup|design|evaluation|methodology)|dataset(?:s)?\s*(?:and\s+setup)?|evaluation\s+(?:setup|methodology))\b",
+            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+|[A-Z]\.\s+)?(?:experiments?|experimental\s+(?:setup|design|evaluation|methodology)|dataset(?:s)?\s*(?:and\s+setup)?|evaluation\s+(?:setup|methodology))\b",
             re.IGNORECASE,
         ),
     ),
     (
         "results",
         re.compile(
-            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+)?(?:results?|results?\s+and\s+discussion|findings?|performance\s+(?:analysis|evaluation)|empirical\s+evaluation|evaluation)\b",
+            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+|[A-Z]\.\s+)?(?:results?|results?\s+and\s+discussion|findings?|performance\s+(?:analysis|evaluation)|empirical\s+evaluation|evaluation)\b",
             re.IGNORECASE,
         ),
     ),
-    ("discussion", re.compile(r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+)?(?:discussion|limitations?|threats?\s+to\s+validity)\b", re.IGNORECASE)),
+    ("discussion", re.compile(r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+|[A-Z]\.\s+)?(?:discussion|limitations?|threats?\s+to\s+validity)\b", re.IGNORECASE)),
     (
         "conclusion",
         re.compile(
-            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+)?(?:conclusions?(?:\s+and\s+future\s+work)?|future\s+work|summary\s+and\s+conclusions?)\b",
+            r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+|[A-Z]\.\s+)?(?:conclusions?(?:\s+and\s+future\s+work)?|future\s+work|summary\s+and\s+conclusions?)\b",
             re.IGNORECASE,
         ),
     ),
-    ("references", re.compile(r"^(?:\d+(?:\.\d+)*\.?\s+)?(?:references|bibliography|works\s+cited)\b", re.IGNORECASE)),
+    ("references", re.compile(r"^(?:\d+(?:\.\d+)*\.?\s+|[ivxlcdm]+\.\s+)?(?:references?|bibliography|works\s+cited)\b", re.IGNORECASE)),
     ("acknowledgements", re.compile(r"^(?:acknowledg(?:e)?ments?|dedication|abbreviations?)\b", re.IGNORECASE)),
     ("appendix", re.compile(r"^(?:appendix(?:\s+[a-z0-9]+)?)\b", re.IGNORECASE)),
 ]
 
 _STANDALONE_HEADINGS = {
     "abstract",
+    "ccs concepts",
     "introduction",
     "related work",
     "literature review",
@@ -98,6 +99,7 @@ _STANDALONE_HEADINGS = {
     "conclusion and future work",
     "conclusions and future work",
     "references",
+    "reference",
     "bibliography",
     "acknowledgements",
     "acknowledgments",
@@ -193,19 +195,74 @@ def normalize_section_role(heading: str) -> str:
     return "other"
 
 
-def _is_noise_or_toc_line(line: str, in_toc_block: bool) -> bool:
-    stripped = line.strip()
+_TOC_LEADER_RE = re.compile(r"\.{3,}|(?:\s*\.){3,}|\s+\.\s+\.\s*(?:\d+|[ivxlcdm]+)?$", re.IGNORECASE)
+_TOC_MULTI_ENTRY_RE = re.compile(
+    r"(?:^|\s)(?:\d{1,3}\s+\d+(?:\.\d+){1,2}\s+[A-Z][A-Za-z0-9,\-:&/\s]{4,}|chapter\s+\d+\b.{3,55}?\s+\d{1,3}\s+chapter\s+\d+)",
+    re.IGNORECASE,
+)
+_TOC_SECTION_PAGE_RE = re.compile(
+    r"^(?:chapter\s+)?(?:\d+(?:\.\d+){0,2}|[ivxlcdm]{1,5})\.?\s+[A-Za-z][A-Za-z0-9,\-:&/\(\)\s]{2,70}(?:\s+\.{1,}\s*|\s{2,}|\s+)(?:\d{1,4}|[ivxlcdm]{1,5})$",
+    re.IGNORECASE,
+)
+_FOOTNOTE_OR_COPYRIGHT_RE = re.compile(
+    r"^(?:page\s*\|\s*\d+|issn:|doi:|www\.|http|copyright\s+©|978-\d|©\s*20\d{2}\s+(?:ieee|acm)|acm\s+reference\s+format|\*\s*(?:work|corresponding\s+author))",
+    re.IGNORECASE,
+)
+
+
+def is_toc_line(line: str, in_toc_block: bool = False) -> bool:
+    """
+    Detect Table-of-Contents / List-of-Tables / navigation entries while preserving
+    legitimate scientific prose containing decimals, abbreviations, or citations.
+    """
+    stripped = (line or "").strip()
     if not stripped:
         return True
-    # Dotted Table of Contents leaders or lines ending with roman/arabic page refs in ToC
-    if re.search(r"\.{3,}|(\.\s){3,}", stripped):
+    if _TOC_LEADER_RE.search(stripped):
+        return True
+    if _TOC_MULTI_ENTRY_RE.search(stripped):
+        return True
+    if _TOC_SECTION_PAGE_RE.match(stripped) and not re.search(
+        r"\b(?:achieved|outperforms?|evaluat|using|shows?|demonstrates?|proposed|based\s+on|is|are|was|were)\b",
+        stripped,
+        re.IGNORECASE,
+    ):
         return True
     if in_toc_block and re.search(r"\s+(?:\d{1,3}|[ivxlcdm]{1,5})$", stripped, re.IGNORECASE):
         return True
-    # Page headers/footers/captions/metadata
-    if re.match(r"^(?:page\s*\|\s*\d+|issn:|doi:|www\.|http|copyright\s+©)", stripped, re.IGNORECASE):
+    return False
+
+
+def is_toc_chunk(text: str) -> bool:
+    """Return True when a chunk primarily represents Table of Contents / List of Figures/Tables."""
+    if not (text or "").strip():
+        return False
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        return False
+    first_low = lines[0].lower()
+    if any(
+        hdr in first_low
+        for hdr in ("table of contents", "list of tables", "list of figures", "list of algorithms")
+    ):
         return True
-    if re.match(r"^(?:table|figure|fig\.|algorithm|equation)\s+\d+", stripped, re.IGNORECASE):
+    toc_hits = sum(1 for ln in lines[:18] if is_toc_line(ln, in_toc_block=False))
+    if toc_hits >= 2 and toc_hits >= len(lines[:18]) * 0.4:
+        return True
+    # Collapsed single-line PDF ToC text containing repeated "page sec.sub Title . page sec.sub" runs
+    collapsed = re.sub(r"\s+", " ", text).strip()
+    if len(re.findall(r"\b\d{1,3}\s+\d+(?:\.\d+){1,2}\s+[A-Z]", collapsed)) >= 2:
+        return True
+    return False
+
+
+def _is_noise_or_toc_line(line: str, in_toc_block: bool) -> bool:
+    stripped = line.strip()
+    if is_toc_line(stripped, in_toc_block=in_toc_block):
+        return True
+    if _FOOTNOTE_OR_COPYRIGHT_RE.match(stripped):
+        return True
+    if re.match(r"^(?:table|figure|fig\.|algorithm|equation)\s+(?:\d+|[IVX]+\b)", stripped, re.IGNORECASE):
         return True
     return False
 
@@ -252,6 +309,11 @@ def _detect_heading_candidate(line: str, in_toc_block: bool) -> Optional[Tuple[s
     roman_match = re.match(r"^([IVXLCDM]{1,5})\.\s+([A-Z][A-Za-z0-9\s,&/\-]{2,70})$", stripped)
     if roman_match:
         return f"{roman_match.group(1)}. {roman_match.group(2).strip()}", 1
+
+    # IEEE lettered subsection headings: "A. Threat Model", "B. Experimental Evaluation"
+    alpha_match = re.match(r"^([A-Z])\.\s+([A-Z][A-Za-z0-9\s,&/\-]{3,65})$", stripped)
+    if alpha_match and len(alpha_match.group(2).split()) <= 8:
+        return f"{alpha_match.group(1)}. {alpha_match.group(2).strip()}", 2
 
     # Known standalone unnumbered academic headings: "Abstract", "Methodology", "Conclusion", "References"
     norm_clean = re.sub(r"[:\-]+$", "", stripped).strip().lower()

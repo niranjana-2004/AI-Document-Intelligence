@@ -16,7 +16,7 @@ from app.services.research.paper_section_service import (
     build_section_hierarchy,
 )
 
-RESEARCH_ANALYSIS_VERSION = "phase1_v1"
+RESEARCH_ANALYSIS_VERSION = "phase1_v1_hardened"
 
 
 def get_owned_document(db: Session, document_id: int, user_id: int) -> Document:
@@ -208,6 +208,7 @@ def analyze_research_paper(
         sections=sections,
         full_text=full_text,
         manual_override=effective_override,
+        is_handwritten=bool(document.is_handwritten),
     )
     detection_ms = round((time.perf_counter() - t_det) * 1000.0, 2)
 

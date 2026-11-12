@@ -69,13 +69,32 @@ def extract_verbatim_excerpt(chunk_text: str, anchor_text: str, max_len: int = 2
 
 
 def detect_figure_or_table_in_text(text: str) -> Optional[str]:
-    match = re.search(r"\b((?:Table|Figure|Fig\.|Algorithm|Equation|Eq\.)\s+\d+(?:\.\d+)?)\b", text or "", re.IGNORECASE)
+    match = re.search(
+        r"\b(Table|Figure|Fig\.|Algorithm|Equation|Eq\.)\s+(\(\d+[a-z]?\)|\d+(?:\.\d+)?(?:\([a-z0-9]+\))?|[IVX]{1,5}\b)",
+        text or "",
+        re.IGNORECASE,
+    )
     if not match:
         return None
-    raw = match.group(1)
-    raw = re.sub(r"\bfig\.\s*", "Figure ", raw, flags=re.IGNORECASE)
-    raw = re.sub(r"\beq\.\s*", "Equation ", raw, flags=re.IGNORECASE)
-    return raw[0].upper() + raw[1:]
+    kind_token = match.group(1)
+    num_token = match.group(2)
+    # Require uppercase Roman numeral if non-digit (avoid matching lowercase prose like "table in")
+    if re.fullmatch(r"[ivx]+", num_token, re.IGNORECASE) and not re.fullmatch(r"[IVX]{1,5}", num_token):
+        return None
+    kind_low = kind_token.lower().rstrip(".")
+    if kind_low in {"fig", "figure"}:
+        canon_kind = "Figure"
+    elif kind_low in {"eq", "equation"}:
+        canon_kind = "Equation"
+    elif kind_low == "table":
+        canon_kind = "Table"
+    else:
+        canon_kind = "Algorithm"
+    if canon_kind == "Equation" and not num_token.startswith("("):
+        clean_num = num_token
+    else:
+        clean_num = num_token
+    return f"{canon_kind} {clean_num}"
 
 
 class EvidenceTracker:

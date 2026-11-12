@@ -1,0 +1,1106 @@
+{
+  "dev_db_before": {
+    "documents": 102,
+    "conversations": 102,
+    "research_paper_analyses": 1
+  },
+  "ollama_status": {
+    "status": "connected",
+    "message": "Ollama is running and model 'llama3.2' is ready.",
+    "base_url": "http://127.0.0.1:11434",
+    "required_model": "llama3.2",
+    "available_models": [
+      "llama3.2:latest"
+    ],
+    "response_time_ms": 5.9,
+    "cached": false,
+    "timestamp": 1794498465.8575647
+  },
+  "real_documents": {
+    "doc_2_academic_journal_pdf": {
+      "origin": "real_cognidocs_db",
+      "category": "journal_article",
+      "document_id": 2,
+      "filename": "Fortifying+Cloud+Security+with+Advanced+Data+Encryption+Technique.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=2&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "keywords",
+          "introduction",
+          "related_work",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion",
+          "references",
+          "citation_density",
+          "publication_or_thesis_metadata",
+          "tables_or_figures",
+          "author_affiliation_block"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 8,
+      "sections_count": 16,
+      "populated_fields": 23,
+      "grounded_fields": 23,
+      "missing_fields": 7,
+      "fact_type_counts": {
+        "explicit": 23,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 7
+      },
+      "evidence_count": 35,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 3,
+      "tables_and_figures_labels": [
+        "Figure 1",
+        "Figure 2",
+        "Figure 3"
+      ],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 30.43,
+        "extraction_ms": 447.51,
+        "llm_ms": 0.0,
+        "total_ms": 494.72,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 570.72,
+      "repeat_post_cached": true,
+      "cache_wall_ms": 17.9
+    },
+    "doc_1_resume_pdf": {
+      "origin": "real_cognidocs_db",
+      "category": "resume",
+      "document_id": 1,
+      "filename": "Niranjana A S_Resume.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=1&page=...",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.02,
+        "classification": "non_research",
+        "manual_override": null,
+        "signals": []
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 2,
+      "sections_count": 0,
+      "populated_fields": 7,
+      "grounded_fields": 7,
+      "missing_fields": 23,
+      "fact_type_counts": {
+        "explicit": 7,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 23
+      },
+      "evidence_count": 11,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 4.72,
+        "extraction_ms": 76.59,
+        "llm_ms": 0.0,
+        "total_ms": 85.7,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 98.31,
+      "repeat_post_cached": true,
+      "cache_wall_ms": 11.53
+    },
+    "doc_3_project_report_docx": {
+      "origin": "real_cognidocs_db",
+      "category": "technical_report",
+      "document_id": 3,
+      "filename": "Project Report - LLM.docx",
+      "document_type": "DOCX",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=3&page=...",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.5,
+        "classification": "borderline_technical",
+        "manual_override": null,
+        "signals": [
+          "introduction",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 1,
+      "sections_count": 12,
+      "populated_fields": 19,
+      "grounded_fields": 19,
+      "missing_fields": 11,
+      "fact_type_counts": {
+        "explicit": 19,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 11
+      },
+      "evidence_count": 39,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 8,
+      "numerical_sample": [
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "115,320",
+          "unit": "images",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "44,582",
+          "unit": "lines",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "32,665",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "7,460",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "4,439",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "4,187",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "100",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Accuracy",
+          "value": "83.04%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 1
+        }
+      ],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 11.25,
+        "extraction_ms": 255.64,
+        "llm_ms": 0.0,
+        "total_ms": 272.06,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 285.78,
+      "repeat_post_cached": true,
+      "cache_wall_ms": 12.17
+    },
+    "doc_5_thesis_160_pages_pdf": {
+      "origin": "real_cognidocs_db",
+      "category": "thesis_and_toc_heavy",
+      "document_id": 5,
+      "filename": "Subhabrata Rana - Thesis.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=5&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "introduction",
+          "related_work",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion",
+          "references",
+          "citation_density",
+          "publication_or_thesis_metadata",
+          "tables_or_figures"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 160,
+      "sections_count": 86,
+      "populated_fields": 26,
+      "grounded_fields": 26,
+      "missing_fields": 4,
+      "fact_type_counts": {
+        "explicit": 26,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 4
+      },
+      "evidence_count": 46,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 1,
+      "numerical_sample": [
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "30,000",
+          "unit": "records",
+          "fact_type": "explicit",
+          "page": 99
+        }
+      ],
+      "tables_and_figures_count": 30,
+      "tables_and_figures_labels": [
+        "Figure 2.1",
+        "Figure 2.1",
+        "Table 2.1",
+        "Figure 2.2",
+        "Figure 2.2",
+        "Figure 2.3",
+        "Figure 2.3",
+        "Table 2.2"
+      ],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 193.83,
+        "extraction_ms": 2089.79,
+        "llm_ms": 0.0,
+        "total_ms": 2376.09,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 2394.57,
+      "repeat_post_cached": true,
+      "cache_wall_ms": 95.36
+    },
+    "doc_12_handwritten_notes_pdf": {
+      "origin": "real_cognidocs_db",
+      "category": "handwritten_notes",
+      "document_id": 12,
+      "filename": "text-to-handwriting.pdf",
+      "document_type": "HANDWRITTEN",
+      "is_handwritten": true,
+      "expected_route_target": "/handwritten/12?page=...",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.02,
+        "classification": "non_research",
+        "manual_override": null,
+        "signals": []
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 7,
+      "sections_count": 12,
+      "populated_fields": 6,
+      "grounded_fields": 6,
+      "missing_fields": 24,
+      "fact_type_counts": {
+        "explicit": 6,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 24
+      },
+      "evidence_count": 6,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 5.34,
+        "extraction_ms": 160.61,
+        "llm_ms": 0.0,
+        "total_ms": 169.17,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 182.4,
+      "repeat_post_cached": true,
+      "cache_wall_ms": 9.98
+    },
+    "doc_3_manual_override_paper": {
+      "origin": "real_cognidocs_db",
+      "category": "borderline_manual_override",
+      "document_id": 3,
+      "filename": "Project Report - LLM.docx",
+      "document_type": "DOCX",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=3&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.5,
+        "classification": "research_paper",
+        "manual_override": "research_paper",
+        "signals": [
+          "introduction",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 1,
+      "sections_count": 12,
+      "populated_fields": 19,
+      "grounded_fields": 19,
+      "missing_fields": 11,
+      "fact_type_counts": {
+        "explicit": 19,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 11
+      },
+      "evidence_count": 39,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 8,
+      "numerical_sample": [
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "115,320",
+          "unit": "images",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "44,582",
+          "unit": "lines",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "32,665",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "7,460",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "4,439",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "4,187",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "100",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Accuracy",
+          "value": "83.04%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 1
+        }
+      ],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 10.63,
+        "extraction_ms": 259.68,
+        "llm_ms": 0.0,
+        "total_ms": 275.94,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 289.09,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    },
+    "doc_2_live_ollama_hybrid": {
+      "origin": "real_cognidocs_db",
+      "category": "live_local_ollama_hybrid",
+      "document_id": 2,
+      "filename": "Fortifying+Cloud+Security+with+Advanced+Data+Encryption+Technique.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=2&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "keywords",
+          "introduction",
+          "related_work",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion",
+          "references",
+          "citation_density",
+          "publication_or_thesis_metadata",
+          "tables_or_figures",
+          "author_affiliation_block"
+        ]
+      },
+      "analysis_mode": "ollama_hybrid",
+      "pages_count": 8,
+      "sections_count": 16,
+      "populated_fields": 23,
+      "grounded_fields": 23,
+      "missing_fields": 7,
+      "fact_type_counts": {
+        "explicit": 23,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 7
+      },
+      "evidence_count": 45,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 3,
+      "tables_and_figures_labels": [
+        "Figure 1",
+        "Figure 2",
+        "Figure 3"
+      ],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 23.84,
+        "extraction_ms": 425.14,
+        "llm_ms": 24389.61,
+        "total_ms": 24861.05,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 24882.87,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    }
+  },
+  "synthetic_fixtures": {
+    "synthetic_ieee_two_column_paper": {
+      "origin": "synthetic_hardening_fixture",
+      "category": "ieee_two_column",
+      "document_id": 106,
+      "filename": "synthetic_ieee_packetguard.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=106&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "keywords",
+          "introduction",
+          "methodology",
+          "experiments",
+          "conclusion",
+          "references",
+          "citations_present",
+          "publication_or_thesis_metadata",
+          "tables_or_figures"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 3,
+      "sections_count": 7,
+      "populated_fields": 16,
+      "grounded_fields": 16,
+      "missing_fields": 14,
+      "fact_type_counts": {
+        "explicit": 16,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 14
+      },
+      "evidence_count": 21,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 6,
+      "numerical_sample": [
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "100",
+          "unit": "line",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "500,000",
+          "unit": "packets",
+          "fact_type": "explicit",
+          "page": 2
+        },
+        {
+          "metric": "Precision",
+          "value": "97.4%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "Recall",
+          "value": "96.1%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "F1-Score",
+          "value": "96.7%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "Derived Precision Delta",
+          "value": "+8.9 percentage points",
+          "unit": "percentage points",
+          "fact_type": "derived",
+          "page": 3
+        }
+      ],
+      "tables_and_figures_count": 2,
+      "tables_and_figures_labels": [
+        "Figure 2(a)",
+        "Table II"
+      ],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 5.43,
+        "extraction_ms": 55.33,
+        "llm_ms": 0.0,
+        "total_ms": 63.55,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 80.53,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    },
+    "synthetic_acm_ccs_paper": {
+      "origin": "synthetic_hardening_fixture",
+      "category": "acm_style",
+      "document_id": 107,
+      "filename": "synthetic_acm_verisql.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=107&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "keywords",
+          "introduction",
+          "methodology",
+          "results",
+          "conclusion",
+          "references",
+          "citations_present",
+          "publication_or_thesis_metadata"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 3,
+      "sections_count": 8,
+      "populated_fields": 11,
+      "grounded_fields": 11,
+      "missing_fields": 19,
+      "fact_type_counts": {
+        "explicit": 11,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 19
+      },
+      "evidence_count": 12,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 3,
+      "numerical_sample": [
+        {
+          "metric": "Accuracy",
+          "value": "99.8%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "p-value",
+          "value": "p < 0.01",
+          "unit": "p-value",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "Runtime / Latency",
+          "value": "1.8 ms",
+          "unit": "ms",
+          "fact_type": "explicit",
+          "page": 3
+        }
+      ],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 1.53,
+        "extraction_ms": 24.32,
+        "llm_ms": 0.0,
+        "total_ms": 29.64,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 47.24,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    },
+    "synthetic_toc_and_structural_traps": {
+      "origin": "synthetic_hardening_fixture",
+      "category": "toc_heavy_and_structural_traps",
+      "document_id": 108,
+      "filename": "synthetic_toc_traps_paper.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=108&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "introduction",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion",
+          "references",
+          "citations_present",
+          "publication_or_thesis_metadata",
+          "tables_or_figures"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 3,
+      "sections_count": 6,
+      "populated_fields": 13,
+      "grounded_fields": 13,
+      "missing_fields": 17,
+      "fact_type_counts": {
+        "explicit": 13,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 17
+      },
+      "evidence_count": 14,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 5,
+      "numerical_sample": [
+        {
+          "metric": "Dataset / Sample Count",
+          "value": "5,000",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "Accuracy",
+          "value": "87.2%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "F1-Score",
+          "value": "0.91",
+          "unit": "score",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "p-value",
+          "value": "p < 0.05",
+          "unit": "p-value",
+          "fact_type": "explicit",
+          "page": 3
+        },
+        {
+          "metric": "Confidence Interval",
+          "value": "95% CI [0.88, 0.94]",
+          "unit": "CI",
+          "fact_type": "explicit",
+          "page": 3
+        }
+      ],
+      "tables_and_figures_count": 7,
+      "tables_and_figures_labels": [
+        "Figure 4",
+        "Table 2",
+        "Equation (5)",
+        "Figure 3(a)",
+        "Table II",
+        "Equation (4)",
+        "Algorithm 1"
+      ],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 1.38,
+        "extraction_ms": 20.1,
+        "llm_ms": 0.0,
+        "total_ms": 23.84,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 39.43,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    },
+    "synthetic_minimal_missing_fields": {
+      "origin": "synthetic_hardening_fixture",
+      "category": "missing_fields",
+      "document_id": 109,
+      "filename": "synthetic_minimal_paper.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=109&page=...",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.65,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "introduction",
+          "methodology",
+          "conclusion",
+          "references"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 2,
+      "sections_count": 5,
+      "populated_fields": 6,
+      "grounded_fields": 6,
+      "missing_fields": 24,
+      "fact_type_counts": {
+        "explicit": 6,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 24
+      },
+      "evidence_count": 5,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 0.58,
+        "extraction_ms": 11.33,
+        "llm_ms": 0.0,
+        "total_ms": 14.96,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 31.91,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    },
+    "synthetic_student_assignment": {
+      "origin": "synthetic_hardening_fixture",
+      "category": "non_research_assignment",
+      "document_id": 110,
+      "filename": "cs401_assignment3.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=110&page=...",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.02,
+        "classification": "non_research",
+        "manual_override": null,
+        "signals": [
+          "abstract"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 1,
+      "sections_count": 0,
+      "populated_fields": 1,
+      "grounded_fields": 1,
+      "missing_fields": 29,
+      "fact_type_counts": {
+        "explicit": 1,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 29
+      },
+      "evidence_count": 1,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 1.59,
+        "extraction_ms": 7.74,
+        "llm_ms": 0.0,
+        "total_ms": 12.47,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 31.03,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    },
+    "synthetic_product_documentation": {
+      "origin": "synthetic_hardening_fixture",
+      "category": "non_research_product_doc",
+      "document_id": 111,
+      "filename": "enterprise_gateway_manual.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "expected_route_target": "/documents?doc=111&page=...",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.02,
+        "classification": "non_research",
+        "manual_override": null,
+        "signals": []
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 1,
+      "sections_count": 0,
+      "populated_fields": 2,
+      "grounded_fields": 2,
+      "missing_fields": 28,
+      "fact_type_counts": {
+        "explicit": 2,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 28
+      },
+      "evidence_count": 2,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 0.32,
+        "extraction_ms": 6.56,
+        "llm_ms": 0.0,
+        "total_ms": 9.85,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 30.88,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    },
+    "synthetic_handwritten_academic_notes": {
+      "origin": "synthetic_hardening_fixture",
+      "category": "handwritten_notes_safeguard",
+      "document_id": 112,
+      "filename": "lecture_notes_scan.png",
+      "document_type": "HANDWRITTEN",
+      "is_handwritten": true,
+      "expected_route_target": "/handwritten/112?page=...",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.14,
+        "classification": "non_research",
+        "manual_override": null,
+        "signals": [
+          "introduction",
+          "methodology",
+          "references"
+        ]
+      },
+      "analysis_mode": "deterministic_fallback",
+      "pages_count": 1,
+      "sections_count": 0,
+      "populated_fields": 4,
+      "grounded_fields": 4,
+      "missing_fields": 26,
+      "fact_type_counts": {
+        "explicit": 4,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 26
+      },
+      "evidence_count": 5,
+      "evidence_coverage": 1.0,
+      "numerical_data_count": 1,
+      "numerical_sample": [
+        {
+          "metric": "Accuracy",
+          "value": "90%",
+          "unit": "%",
+          "fact_type": "explicit",
+          "page": 1
+        }
+      ],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_labels": [],
+      "safety_checks": {
+        "toc_leak_count": 0,
+        "toc_leaks": [],
+        "structural_number_false_positives": [],
+        "unsupported_visual_claim_count": 0,
+        "wrong_evidence_navigation_count": 0
+      },
+      "timings": {
+        "detection_ms": 0.5,
+        "extraction_ms": 8.11,
+        "llm_ms": 0.0,
+        "total_ms": 12.46,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 33.78,
+      "repeat_post_cached": null,
+      "cache_wall_ms": null
+    }
+  },
+  "aggregate_metrics": {
+    "total_evaluated_runs": 14,
+    "real_document_runs": 7,
+    "synthetic_fixture_runs": 7,
+    "toc_false_positive_count": 0,
+    "structural_number_false_positive_count": 0,
+    "unsupported_visual_claim_count": 0,
+    "wrong_evidence_navigation_count": 0
+  },
+  "dev_db_after": {
+    "documents": 102,
+    "conversations": 102,
+    "research_paper_analyses": 1
+  }
+}
