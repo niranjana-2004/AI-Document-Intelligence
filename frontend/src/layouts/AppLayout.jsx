@@ -8,6 +8,7 @@ import {
     Search,
     ArrowLeftRight,
     Network,
+    FlaskConical,
     User,
     Info,
     LogOut,
@@ -219,6 +220,19 @@ function AppLayout({ children }) {
                         </span>
                         <span className="nav-label-with-badge">
                             <span>Mind Map</span>
+                            <span className="nav-badge-ai badge-mindmap">AI</span>
+                        </span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/research-analyzer"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                        <span className="nav-icon" aria-hidden="true">
+                            <FlaskConical size={18} />
+                        </span>
+                        <span className="nav-label-with-badge">
+                            <span>Research Paper</span>
                             <span className="nav-badge-ai badge-mindmap">AI</span>
                         </span>
                     </NavLink>

@@ -103,3 +103,22 @@ export async function synthesizeVoiceSpeech(text, options = {}) {
         processingMs: response.headers.get('X-TTS-Processing-Ms') || null,
     }
 }
+
+export async function analyzeResearchPaper(documentId, options = {}) {
+    return apiRequest(`/documents/${documentId}/research-analysis`, {
+        method: 'POST',
+        body: JSON.stringify({
+            force_refresh: Boolean(options.forceRefresh),
+            classification_override: options.classificationOverride || null,
+            skip_llm: Boolean(options.skipLlm),
+        }),
+        signal: options.signal,
+    })
+}
+
+export async function getResearchPaperAnalysis(documentId, options = {}) {
+    return apiRequest(`/documents/${documentId}/research-analysis`, {
+        method: 'GET',
+        signal: options.signal,
+    })
+}

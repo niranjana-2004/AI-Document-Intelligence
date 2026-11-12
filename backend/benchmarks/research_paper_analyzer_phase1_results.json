@@ -1,0 +1,2118 @@
+{
+  "dev_db_before": {
+    "documents": 102,
+    "conversations": 102
+  },
+  "ollama_status": {
+    "status": "connected",
+    "message": "Ollama is running and model 'llama3.2' is ready.",
+    "base_url": "http://127.0.0.1:11434",
+    "required_model": "llama3.2",
+    "available_models": [
+      "llama3.2:latest"
+    ],
+    "response_time_ms": 16.7,
+    "cached": false,
+    "timestamp": 1794495689.6441786
+  },
+  "tests": {
+    "Test_A_real_academic_pdf": {
+      "document_id": 2,
+      "filename": "Fortifying+Cloud+Security+with+Advanced+Data+Encryption+Technique.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "status": "completed",
+      "analysis_mode": "deterministic_fallback",
+      "cached": false,
+      "pages_count": 8,
+      "sections_count": 15,
+      "evidence_count": 37,
+      "evidence_coverage": 1.0,
+      "evidence_total": 37,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 3,
+      "tables_and_figures_sample": [
+        {
+          "label": "Figure 1",
+          "kind": "figure",
+          "page": 3,
+          "section": "3. PROPOSED METHDOLOGY"
+        },
+        {
+          "label": "Figure 2",
+          "kind": "figure",
+          "page": 5,
+          "section": "4. RESULT AND DISCUSSION"
+        },
+        {
+          "label": "Figure 3",
+          "kind": "figure",
+          "page": 6,
+          "section": "5. CONCLUSION"
+        }
+      ],
+      "visual_parsing_limitation": "Table/figure references are extracted from document text and captions only; embedded chart imagery and visual grid structures are not parsed directly in Phase 1.",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "keywords",
+          "introduction",
+          "related_work",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion",
+          "citation_density",
+          "publication_or_thesis_metadata",
+          "tables_or_figures",
+          "author_affiliation_block"
+        ],
+        "missing_signals": [
+          "references"
+        ],
+        "rationale": "Strong academic structure detected (12 content signals including abstract, keywords, introduction, related_work)."
+      },
+      "section_titles_sample": [
+        {
+          "title": "ABSTRACT",
+          "role": "abstract",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "1. INTRODUCTION",
+          "role": "introduction",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "2. LITERATURE SURVEY",
+          "role": "related_work",
+          "p_start": 2,
+          "children": 0
+        },
+        {
+          "title": "3. PROPOSED METHDOLOGY",
+          "role": "other",
+          "p_start": 3,
+          "children": 5
+        },
+        {
+          "title": "4. RESULT AND DISCUSSION",
+          "role": "results",
+          "p_start": 5,
+          "children": 0
+        },
+        {
+          "title": "5. CONCLUSION",
+          "role": "conclusion",
+          "p_start": 6,
+          "children": 0
+        },
+        {
+          "title": "6. REFERENCE",
+          "role": "other",
+          "p_start": 6,
+          "children": 0
+        }
+      ],
+      "fact_type_counts": {
+        "explicit": 23,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 7
+      },
+      "populated_fields": 23,
+      "grounded_fields": 23,
+      "missing_fields": 7,
+      "fields": {
+        "basic_information": {
+          "title": {
+            "value_preview": "Fortifying Cloud Security with Advanced Data Encryption",
+            "fact_type": "explicit",
+            "confidence": 0.87,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "authors": {
+            "value_preview": "Karthikeyan Parthasarathy, Naresh Kumar Reddy Panga, Jyothi Bobba, Ramya Lakshmi Bolla",
+            "fact_type": "explicit",
+            "confidence": 0.9,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "affiliation": {
+            "value_preview": "College, Sathyamangalam, India",
+            "fact_type": "explicit",
+            "confidence": 0.86,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "abstract": {
+            "value_preview": "The rapid growth of cloud computing has introduced several challenges regarding the securing of sensitive data. Traditional encryption methods such as those pro",
+            "fact_type": "explicit",
+            "confidence": 0.93,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "keywords": {
+            "value_preview": "Cloud security, Homomorphic encryption, Performance metrics, Data privacy, Encryption overhead",
+            "fact_type": "explicit",
+            "confidence": 0.92,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "publication_info": {
+            "value_preview": "Journal of Science and Technology | ISSN: 2456-5660 Volume 10, Issue 03 (March -2025) | DOI:https://doi.org/10.46243/jst.2025.v10.i03.pp20-",
+            "fact_type": "explicit",
+            "confidence": 0.91,
+            "source_count": 1,
+            "first_page": 1
+          }
+        },
+        "research_context": {
+          "research_domain": {
+            "value_preview": "Hemnath 6 \u201cFortifying Cloud Security with Advanced Data Encryption Technique\u2019\u2019 Journal of Science and Technology, Vol.",
+            "fact_type": "explicit",
+            "confidence": 0.83,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "problem_statement": {
+            "value_preview": "[13] Key management and scalability of encryption are some of the issues addressed to cover the entire spectrum of cloud security's present state. [15] PROBLEM ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "motivation": {
+            "value_preview": "[1] While organizations increasingly utilize cloud computing for data storage and processing, their exposure to cyber threats and subsequent rise in ri [9] As c",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "research_objective": {
+            "value_preview": "[7] Exploring several encryption algorithms and assessing their performances, security and scalability with respect to cloud environment, this research aims at ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "research_questions": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "hypothesis": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "methodology": {
+          "methodology_type": {
+            "value_preview": "The process involves the selection of a cloud service model (IaaS, PaaS, or SaaS) and subseq uently choosing a cloud deployment model (public, private, hybrid, ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 5
+          },
+          "proposed_approach": {
+            "value_preview": "A comprehensive security analysis is undertaken toward measuring the resistance of such encryption under numerous attack scenarios, and the effect of quantum co",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "algorithms_models": {
+            "value_preview": "Traditional encryption methods such as those proposed by AES and RSA are unable to efficiently perform with the scale of large cloud environments as they have h",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "architecture": {
+            "value_preview": "PROPOSED METHDOLOGY Figure 1: illustrates the workflow of a cloud security system, starting with data collection, where relevant data is gathered from various s",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 3
+          },
+          "framework_tools": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "dataset": {
+            "value_preview": "The dataset can also comprise data from cloud service providers, IoT devices, or security logs. PROPOSED METHDOLOGY Figure 1: illustrates the workflow of a clou",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 4
+          },
+          "dataset_size": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "preprocessing": {
+            "value_preview": "3.2 DATA PREPROCESSING The purification of the collected data has to yield effective encryption tests on it. Further, the framework includes some prior processi",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 4
+          },
+          "experimental_setup": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "evaluation": {
+          "evaluation_metrics": {
+            "value_preview": "However, they are still associated with adding computational overhead, and that will definitely pose various challenges for real-time cloud data processing. Key",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "baseline_methods": {
+            "value_preview": "Most organizations use AES and RSA as their traditional methods for encrypting sensitive information in the cloud [16]. Finally, lightweight encryption methods ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "experiments": {
+            "value_preview": "Figure 1: Cloud Security 3.1 DATA COLLECTION Data Collection encompasses the collection of pertinent cloud data that can be used to represent real -world scenar",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 3
+          },
+          "results": {
+            "value_preview": "RESULT AND DISCUSSION Figure 2: shows the Encryption Execution Time for two different encryption methods: AES (Advanced Encryption Standard) and RSA (Rivest -Sh",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 5
+          },
+          "numerical_findings": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "comparisons": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "conclusion": {
+          "main_conclusions": {
+            "value_preview": "This paper presents a thorough study of performan ce in conjunction with security trade -offs and, the overall development of a secure and efficient cloud data ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "limitations": {
+            "value_preview": "However, these techniques suffer from certain limitations and constraints imposed by large - scale cloud environments since they are highly computationally expe",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "future_work": {
+            "value_preview": "The next step is encryption, spec The next step is encryption, specifically using homomorphic encryption, which allows secure computation on encrypted data with",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 3
+          }
+        }
+      },
+      "timings": {
+        "detection_ms": 33.28,
+        "extraction_ms": 263.6,
+        "llm_ms": 0.0,
+        "total_ms": 321.76,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 473.58,
+      "repeat_post_cached": true,
+      "repeat_post_ms": 34.81,
+      "get_cached_status": 200,
+      "get_cached_ms": 31.04
+    },
+    "Test_B_real_non_research_pdf": {
+      "document_id": 1,
+      "filename": "Niranjana A S_Resume.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "status": "completed",
+      "analysis_mode": "deterministic_fallback",
+      "cached": false,
+      "pages_count": 2,
+      "sections_count": 0,
+      "evidence_count": 11,
+      "evidence_coverage": 1.0,
+      "evidence_total": 11,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_sample": [],
+      "visual_parsing_limitation": "Table/figure references are extracted from document text and captions only; embedded chart imagery and visual grid structures are not parsed directly in Phase 1.",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.02,
+        "classification": "non_research",
+        "manual_override": null,
+        "signals": [],
+        "missing_signals": [
+          "abstract",
+          "introduction",
+          "methodology",
+          "results",
+          "references"
+        ],
+        "rationale": "Content lacks academic paper indicators (abstract, methodology, citations, references)."
+      },
+      "section_titles_sample": [],
+      "fact_type_counts": {
+        "explicit": 7,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 23
+      },
+      "populated_fields": 7,
+      "grounded_fields": 7,
+      "missing_fields": 23,
+      "fields": {
+        "basic_information": {
+          "title": {
+            "value_preview": "Aspiring AI and Data Science professional seeking a role in a reputed organization to apply skills",
+            "fact_type": "explicit",
+            "confidence": 0.87,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "authors": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "affiliation": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "abstract": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "keywords": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "publication_info": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "research_context": {
+          "research_domain": {
+            "value_preview": "Aspiring AI and Data Science professional seeking a role in a reputed organization to apply skills in machine learning, deep learning, NLP, and data visualizati",
+            "fact_type": "explicit",
+            "confidence": 0.83,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "problem_statement": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "motivation": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "research_objective": {
+            "value_preview": "Title: Customer Churn Prediction in Music Streaming Platforms (4 months & 6 members) Aim: Developed a Machine Learning based web application to predict customer",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "research_questions": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "hypothesis": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "methodology": {
+          "methodology_type": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "proposed_approach": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "algorithms_models": {
+            "value_preview": "Tools and Technologies used: Python, Flask, HTML, CSS, JavaScript, PostgreSQL, Logistic Regression, Random Forest, XGBoost, LightGBM, Stacking Technical Functio",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "architecture": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "framework_tools": {
+            "value_preview": "Proficient in Python, SQL, and Power BI to develop AI-driven, data-centric solutions for solving real-world problems and advanced analytics. Tools and Technolog",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "dataset": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "dataset_size": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "preprocessing": {
+            "value_preview": "INTERNSHIPS DONE Organization Name: Infotact Solutions Period: 25th June 2025 \u2013 25th August 2025 Department: Data Science & Machine Learning Role: Data Science ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 2
+          },
+          "experimental_setup": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "evaluation": {
+          "evaluation_metrics": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "baseline_methods": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "experiments": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "results": {
+            "value_preview": "Created web interface for user input and result display. AWARDS AND ACHIEVEMENTS Event Volunteer -Savishkaara Tech Fest (2023-2024) Event Coordinator for NerdSc",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "numerical_findings": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "comparisons": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "conclusion": {
+          "main_conclusions": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "limitations": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "future_work": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        }
+      },
+      "timings": {
+        "detection_ms": 8.21,
+        "extraction_ms": 56.93,
+        "llm_ms": 0.0,
+        "total_ms": 72.07,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 93.37,
+      "repeat_post_cached": true,
+      "repeat_post_ms": 18.29,
+      "get_cached_status": 200,
+      "get_cached_ms": 17.98
+    },
+    "Test_C_technical_report_docx": {
+      "document_id": 3,
+      "filename": "Project Report - LLM.docx",
+      "document_type": "DOCX",
+      "is_handwritten": false,
+      "status": "completed",
+      "analysis_mode": "deterministic_fallback",
+      "cached": false,
+      "pages_count": 1,
+      "sections_count": 12,
+      "evidence_count": 39,
+      "evidence_coverage": 1.0,
+      "evidence_total": 39,
+      "numerical_data_count": 8,
+      "numerical_sample": [
+        {
+          "metric_name": "Dataset / Sample Count",
+          "original_value": "115,320",
+          "unit": "images",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric_name": "Dataset / Sample Count",
+          "original_value": "44,582",
+          "unit": "lines",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric_name": "Dataset / Sample Count",
+          "original_value": "32,665",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric_name": "Dataset / Sample Count",
+          "original_value": "7,460",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric_name": "Dataset / Sample Count",
+          "original_value": "4,439",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        },
+        {
+          "metric_name": "Dataset / Sample Count",
+          "original_value": "4,187",
+          "unit": "samples",
+          "fact_type": "explicit",
+          "page": 1
+        }
+      ],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_sample": [],
+      "visual_parsing_limitation": "Table/figure references are extracted from document text and captions only; embedded chart imagery and visual grid structures are not parsed directly in Phase 1.",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.5,
+        "classification": "borderline_technical",
+        "manual_override": null,
+        "signals": [
+          "introduction",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion"
+        ],
+        "missing_signals": [
+          "abstract",
+          "references"
+        ],
+        "rationale": "Technical document shares partial structural cues (such as numbered sections or quantitative setup) but lacks full academic conventions (abstract, references). You can manually classify it as a research paper if desired."
+      },
+      "section_titles_sample": [
+        {
+          "title": "1. Introduction",
+          "role": "introduction",
+          "p_start": 1,
+          "children": 2
+        },
+        {
+          "title": "2. Dataset Used",
+          "role": "experiments",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "3. System Workflow",
+          "role": "methodology",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "4. Significance / Relevance",
+          "role": "other",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "3. System Workflow",
+          "role": "methodology",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "4. Significance / Relevance",
+          "role": "other",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "5. Modules of the Project",
+          "role": "other",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "6. Technologies Used",
+          "role": "other",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "7. Results",
+          "role": "results",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "8. Conclusion",
+          "role": "conclusion",
+          "p_start": 1,
+          "children": 0
+        }
+      ],
+      "fact_type_counts": {
+        "explicit": 19,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 11
+      },
+      "populated_fields": 19,
+      "grounded_fields": 19,
+      "missing_fields": 11,
+      "fields": {
+        "basic_information": {
+          "title": {
+            "value_preview": "1.1 Problem Statement",
+            "fact_type": "explicit",
+            "confidence": 0.87,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "authors": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "affiliation": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "abstract": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "keywords": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "publication_info": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "research_context": {
+          "research_domain": {
+            "value_preview": "It supports applications in digital education, AI-assisted learning, handwritten document digitization, intelligent study assistants, OCR, and Natural Language ",
+            "fact_type": "explicit",
+            "confidence": 0.83,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "problem_statement": {
+            "value_preview": "However, handwritten information is difficult to search, process, summarize, and reuse digitally. The proposed project, AI-Powered Handwritten Notes Summarizati",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "motivation": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "research_objective": {
+            "value_preview": "1.2 Objective The main objective of this project is to develop an AI-based system for handwritten text recognition and intelligent study assistance. The project",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "research_questions": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "hypothesis": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "methodology": {
+          "methodology_type": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "proposed_approach": {
+            "value_preview": "Modules of the Project The project is divided into several interconnected modules, with each module performing a specific function in the overall handwritten-no",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "algorithms_models": {
+            "value_preview": "By combining TrOCR for handwriting recognition with Qwen for language understanding and generation, the system converts handwritten pages into interactive digit",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "architecture": {
+            "value_preview": "Finally, the project evaluates the generated outputs and integrates the complete workflow into an interactive handwritten-notes assistant. Modules of the Projec",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "framework_tools": {
+            "value_preview": "Technologies Used \u2022 Programming Language: Python \u2022 Deep Learning: PyTorch \u2013 Model training and inference.",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "dataset": {
+            "value_preview": "Dataset Used The project uses the IAM Handwriting Word Database, obtained through the Kaggle dataset reference: nibinv23/iam-handwriting-word-database. The IAM ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "dataset_size": {
+            "value_preview": "The dataset contains: Total images: 115,320 Valid images: 115,318 Invalid images: 2 Average image width: 155.76 pixels Average image height: 70.05 pixels Total ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "preprocessing": {
+            "value_preview": "The system also includes image analysis, adaptive preprocessing, automatic It also focuses on analyzing and preprocessing handwritten note images, detecting ind",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "experimental_setup": {
+            "value_preview": "\u2022 GPU Acceleration: CUDA \u2013 GPU-based model processing. Training is performed using GPU acceleration when available, with validation and checkpointing performed ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          }
+        },
+        "evaluation": {
+          "evaluation_metrics": {
+            "value_preview": "After five epochs of fine-tuning, the best validation loss was 0.231884, and evaluation on 4,187 clean test samples from three unseen writers resulted in a CER ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "baseline_methods": {
+            "value_preview": "After five epochs of fine-tuning, the best validation loss was 0.231884, and evaluation on 4,187 clean test samples from three unseen writers resulted in a CER ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "experiments": {
+            "value_preview": "The writer-independent evaluation also improves the reliability of the system by testing its ability to recognize handwriting from writers not used during train",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "results": {
+            "value_preview": "\u2022 Visualization: Matplotlib \u2013 Data and result visualization. Results The project achieved promising results in handwritten text recognition and intelligent note",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "numerical_findings": {
+            "value_preview": "Dataset / Sample Count: 115,320 (p.1); Dataset / Sample Count: 44,582 (p.1); Dataset / Sample Count: 32,665 (p.1); Dataset / Sample Count: 7,460 (p.1); Dataset ",
+            "fact_type": "explicit",
+            "confidence": 0.9,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "comparisons": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "conclusion": {
+          "main_conclusions": {
+            "value_preview": "The system then uses the extracted OCR text with the Qwen3-4B-Instruct-2507 model to generate academic summaries, five study questions, and grounded answers to ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "limitations": {
+            "value_preview": "However, the system has some limitations, including remaining OCR errors, sensitivity to poor image quality and handwriting variations, high computational requi",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "future_work": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        }
+      },
+      "timings": {
+        "detection_ms": 18.6,
+        "extraction_ms": 292.04,
+        "llm_ms": 0.0,
+        "total_ms": 321.66,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 352.04,
+      "repeat_post_cached": true,
+      "repeat_post_ms": 30.08,
+      "get_cached_status": 200,
+      "get_cached_ms": 31.27
+    },
+    "Test_E_long_thesis_160_pages": {
+      "document_id": 5,
+      "filename": "Subhabrata Rana - Thesis.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "status": "completed",
+      "analysis_mode": "deterministic_fallback",
+      "cached": false,
+      "pages_count": 160,
+      "sections_count": 96,
+      "evidence_count": 48,
+      "evidence_coverage": 1.0,
+      "evidence_total": 48,
+      "numerical_data_count": 1,
+      "numerical_sample": [
+        {
+          "metric_name": "Dataset / Sample Count",
+          "original_value": "30,000",
+          "unit": "records",
+          "fact_type": "explicit",
+          "page": 99
+        }
+      ],
+      "tables_and_figures_count": 30,
+      "tables_and_figures_sample": [
+        {
+          "label": "Figure 2.1",
+          "kind": "figure",
+          "page": 26,
+          "section": "2.4 Cryptographic Primitives"
+        },
+        {
+          "label": "Figure 2.1",
+          "kind": "figure",
+          "page": 27,
+          "section": "2.4.2 Envelope Encryption"
+        },
+        {
+          "label": "Table 2.1",
+          "kind": "table",
+          "page": 28,
+          "section": "2.4.2 Envelope Encryption"
+        },
+        {
+          "label": "Figure 2.2",
+          "kind": "figure",
+          "page": 29,
+          "section": "2.4.4 KMS for Hybrid Cryptography"
+        },
+        {
+          "label": "Figure 2.2",
+          "kind": "figure",
+          "page": 30,
+          "section": "2.4.4 KMS for Hybrid Cryptography"
+        },
+        {
+          "label": "Figure 2.3",
+          "kind": "figure",
+          "page": 30,
+          "section": "2.4.4 KMS for Hybrid Cryptography"
+        }
+      ],
+      "visual_parsing_limitation": "Table/figure references are extracted from document text and captions only; embedded chart imagery and visual grid structures are not parsed directly in Phase 1.",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "introduction",
+          "related_work",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion",
+          "references",
+          "citation_density",
+          "publication_or_thesis_metadata",
+          "tables_or_figures"
+        ],
+        "missing_signals": [],
+        "rationale": "Strong academic structure detected (11 content signals including abstract, introduction, related_work, methodology)."
+      },
+      "section_titles_sample": [
+        {
+          "title": "Abstract",
+          "role": "abstract",
+          "p_start": 2,
+          "children": 0
+        },
+        {
+          "title": "Acknowledgements",
+          "role": "acknowledgements",
+          "p_start": 4,
+          "children": 0
+        },
+        {
+          "title": "1 Introduction 1",
+          "role": "introduction",
+          "p_start": 6,
+          "children": 0
+        },
+        {
+          "title": "2 Background 4",
+          "role": "introduction",
+          "p_start": 6,
+          "children": 2
+        },
+        {
+          "title": "3 Related Work 32",
+          "role": "related_work",
+          "p_start": 7,
+          "children": 1
+        },
+        {
+          "title": "4 Design and Implementation 37",
+          "role": "methodology",
+          "p_start": 7,
+          "children": 1
+        },
+        {
+          "title": "5 Performance Analysis 66",
+          "role": "results",
+          "p_start": 8,
+          "children": 1
+        },
+        {
+          "title": "5 Performance Analysis 66",
+          "role": "results",
+          "p_start": 8,
+          "children": 1
+        },
+        {
+          "title": "6 Storage Analysis 85",
+          "role": "other",
+          "p_start": 8,
+          "children": 0
+        },
+        {
+          "title": "7 Security Analysis 87",
+          "role": "other",
+          "p_start": 9,
+          "children": 0
+        },
+        {
+          "title": "8 Future Work 107",
+          "role": "conclusion",
+          "p_start": 9,
+          "children": 0
+        },
+        {
+          "title": "9 Conclusion 115",
+          "role": "conclusion",
+          "p_start": 9,
+          "children": 4
+        },
+        {
+          "title": "Introduction",
+          "role": "introduction",
+          "p_start": 17,
+          "children": 0
+        },
+        {
+          "title": "Background",
+          "role": "introduction",
+          "p_start": 20,
+          "children": 14
+        },
+        {
+          "title": "Related Work",
+          "role": "related_work",
+          "p_start": 48,
+          "children": 12
+        }
+      ],
+      "fact_type_counts": {
+        "explicit": 27,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 3
+      },
+      "populated_fields": 27,
+      "grounded_fields": 27,
+      "missing_fields": 3,
+      "fields": {
+        "basic_information": {
+          "title": {
+            "value_preview": "CephVault: A Secure Key Management System (KMS) for",
+            "fact_type": "explicit",
+            "confidence": 0.87,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "authors": {
+            "value_preview": "Subhabrata Rana\nBachelor",
+            "fact_type": "explicit",
+            "confidence": 0.91,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "affiliation": {
+            "value_preview": "Maulana Abul Kalam Azad University of Technology, India, 2010; Supervisor(s): Kenneth B. Kent, PhD., Faculty of Computer Science; Examining Board: Kalikinkar Ma",
+            "fact_type": "explicit",
+            "confidence": 0.86,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "abstract": {
+            "value_preview": "Organizations are leveraging cluster storage solutions to address expansive storage requirements. Ceph is a reliable and massively scalable cluster solution tha",
+            "fact_type": "explicit",
+            "confidence": 0.93,
+            "source_count": 1,
+            "first_page": 2
+          },
+          "keywords": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "publication_info": {
+            "value_preview": "A Thesis Submitted in Partial Fullfilment of the Requirements for the Degree of",
+            "fact_type": "explicit",
+            "confidence": 0.91,
+            "source_count": 1,
+            "first_page": 1
+          }
+        },
+        "research_context": {
+          "research_domain": {
+            "value_preview": "CephVault: A Secure Key Management System (KMS) for Ceph by Subhabrata Rana Bachelor of Technology in Computer Science and Engineering, Maulana Abul Kalam Azad ",
+            "fact_type": "explicit",
+            "confidence": 0.83,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "problem_statement": {
+            "value_preview": "[7] are difficult to break, so ad- versaries find it convenient to attack the Key Management System (KMS) to retrieve encryption keys. 36 4.1 Countermeasures to",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 17
+          },
+          "motivation": {
+            "value_preview": "She is the one who believed in me and motivated me to pursue a research-based master\u2019s degree, which I could hardly dare to dream of. A weak KMS can lead to una",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 3
+          },
+          "research_objective": {
+            "value_preview": "In this work, we propose a secure Key Management System (KMS), CephVault that can support key generation for various encryption schemes and key lengths required",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "research_questions": {
+            "value_preview": "Kolbe, \u201cApologize or justify? What is the encryption key management lifecycle?",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 132
+          },
+          "hypothesis": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "methodology": {
+          "methodology_type": {
+            "value_preview": "2.9 Ceph Architecture Ceph is an open-source, distributed, software-defined file system that can provide a storage solution for the object, block, and file type",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 39
+          },
+          "proposed_approach": {
+            "value_preview": "In this work, we propose a secure Key Management System (KMS), CephVault that can support key generation for various encryption schemes and key lengths required",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "algorithms_models": {
+            "value_preview": "Ceph introduces a new approach, Controlled Replication Under Scalable Hashing (CRUSH), where, rather than performing a lookup operation, the client can compute ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 39
+          },
+          "architecture": {
+            "value_preview": "2.9 Ceph Architecture Ceph is an open-source, distributed, software-defined file system that can provide a storage solution for the object, block, and file type",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 39
+          },
+          "framework_tools": {
+            "value_preview": "2.9 Ceph Architecture Ceph is an open-source, distributed, software-defined file system that can provide a storage solution for the object, block, and file type",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 39
+          },
+          "dataset": {
+            "value_preview": "\u0088 Evaluate CephVault With Benchmark Tools:Ceph provides a benchmarking tool, namely RADOS Bench, that helps to measure the performance of the OSDs. In the futur",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 129
+          },
+          "dataset_size": {
+            "value_preview": "Self-Tests We performed conditional tests as per FIPS 140-2 guide- lines: we tested a plaintext DEK and the ciphertext gen- erated after encrypting the plaintex",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 112
+          },
+          "preprocessing": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "experimental_setup": {
+            "value_preview": "5 5 Performance Analysis 66 5.1 Experimental Setup . 56 4.7 Hardware-Supported Envelope Encryption .",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 8
+          }
+        },
+        "evaluation": {
+          "evaluation_metrics": {
+            "value_preview": "Chapter 5 Performance Analysis This chapter discusses performance overhead introduced by CephVault. The latency in the network might impact the performance of t",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 82
+          },
+          "baseline_methods": {
+            "value_preview": "2.4.4 KMS for Hybrid Cryptography Employing traditional symmetric or asymmetric cryptography to secure data en- counters many limitations associated with these ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 29
+          },
+          "experiments": {
+            "value_preview": "5 5 Performance Analysis 66 5.1 Experimental Setup . 5.1 Experimental Setup CephVault was deployed on a 45Drives Storinator, an enterprise open-source storage s",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 8
+          },
+          "results": {
+            "value_preview": "We demonstrate that the proposed solution provides better features and security than other KMSs, making CephVault a competitive and preferable When the public k",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "numerical_findings": {
+            "value_preview": "Dataset / Sample Count: 30,000 (p.99)",
+            "fact_type": "explicit",
+            "confidence": 0.9,
+            "source_count": 1,
+            "first_page": 99
+          },
+          "comparisons": {
+            "value_preview": "Hence- forth, our initial expectation that the per-user mode would outperform the per-object mode has proven to be unfounded for software-based cryptography. , ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 89
+          }
+        },
+        "conclusion": {
+          "main_conclusions": {
+            "value_preview": "17 2.3 Summary of Security Requirements for a Cryptographic Module [1] . Table 2.3 describes the summary of the security standards for a cryptography module.",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 11
+          },
+          "limitations": {
+            "value_preview": "30 3.1 KMSs Supporting Ceph: Contributions, and Limitations . 34 3.2 KMSs Not Supporting Ceph: Contributions, and Limitations .",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 11
+          },
+          "future_work": {
+            "value_preview": "106 8 Future Work 107 8.1 Future Directions For Development . Chapter 8 Future Work Future research directions can be targeted to provide enhanced security and ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 9
+          }
+        }
+      },
+      "timings": {
+        "detection_ms": 318.79,
+        "extraction_ms": 963.47,
+        "llm_ms": 0.0,
+        "total_ms": 1489.09,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 1518.25,
+      "repeat_post_cached": true,
+      "repeat_post_ms": 175.96,
+      "get_cached_status": 200,
+      "get_cached_ms": 172.81
+    },
+    "Test_HW_handwritten_pdf": {
+      "document_id": 12,
+      "filename": "text-to-handwriting.pdf",
+      "document_type": "HANDWRITTEN",
+      "is_handwritten": true,
+      "status": "completed",
+      "analysis_mode": "deterministic_fallback",
+      "cached": false,
+      "pages_count": 7,
+      "sections_count": 12,
+      "evidence_count": 6,
+      "evidence_coverage": 1.0,
+      "evidence_total": 6,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 0,
+      "tables_and_figures_sample": [],
+      "visual_parsing_limitation": "Table/figure references are extracted from document text and captions only; embedded chart imagery and visual grid structures are not parsed directly in Phase 1.",
+      "paper_detection": {
+        "is_research_paper": false,
+        "confidence": 0.02,
+        "classification": "non_research",
+        "manual_override": null,
+        "signals": [],
+        "missing_signals": [
+          "abstract",
+          "introduction",
+          "methodology",
+          "results",
+          "references"
+        ],
+        "rationale": "Content lacks academic paper indicators (abstract, methodology, citations, references)."
+      },
+      "section_titles_sample": [
+        {
+          "title": "Nicaragua A S KHENIANCA45142 Notes on",
+          "role": "other",
+          "p_start": 1,
+          "children": 8
+        },
+        {
+          "title": "then drop it or answer with an LRT losing # this well is of times per second consumer's",
+          "role": "other",
+          "p_start": 6,
+          "children": 2
+        }
+      ],
+      "fact_type_counts": {
+        "explicit": 6,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 24
+      },
+      "populated_fields": 6,
+      "grounded_fields": 6,
+      "missing_fields": 24,
+      "fields": {
+        "basic_information": {
+          "title": {
+            "value_preview": "Hard to trace: I spoofed source addresses hide the real attacker litigation",
+            "fact_type": "explicit",
+            "confidence": 0.92,
+            "source_count": 1,
+            "first_page": 2
+          },
+          "authors": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "affiliation": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "abstract": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "keywords": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "publication_info": {
+            "value_preview": "Afterwards inherits the legitimate user's laceers (for example a logged-in Telety FTI-or web session) without needing the password. The identifies packets by U ",
+            "fact_type": "explicit",
+            "confidence": 0.91,
+            "source_count": 1,
+            "first_page": 3
+          }
+        },
+        "research_context": {
+          "research_domain": {
+            "value_preview": "Cryptographic protection.",
+            "fact_type": "explicit",
+            "confidence": 0.83,
+            "source_count": 1,
+            "first_page": 5
+          },
+          "problem_statement": {
+            "value_preview": "RFC 5961 accepts a rest only of the sequence number exactly another, Otherwise sends a challenge M.K.",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 1,
+            "first_page": 5
+          },
+          "motivation": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "research_objective": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "research_questions": {
+            "value_preview": "or predicts these values, the # fewer cannot tell the attacker's packets From the real client's How the attack works I-half? Impact \" Dispped ## Connections lon",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 3
+          },
+          "hypothesis": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "methodology": {
+          "methodology_type": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "proposed_approach": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "algorithms_models": {
+            "value_preview": "Cryptographic protection.",
+            "fact_type": "explicit",
+            "confidence": 0.83,
+            "source_count": 1,
+            "first_page": 5
+          },
+          "architecture": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "framework_tools": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "dataset": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "dataset_size": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "preprocessing": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "experimental_setup": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "evaluation": {
+          "evaluation_metrics": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "baseline_methods": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "experiments": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "results": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "numerical_findings": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "comparisons": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "conclusion": {
+          "main_conclusions": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "limitations": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "future_work": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        }
+      },
+      "timings": {
+        "detection_ms": 10.81,
+        "extraction_ms": 157.87,
+        "llm_ms": 0.0,
+        "total_ms": 176.22,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 198.89,
+      "repeat_post_cached": true,
+      "repeat_post_ms": 25.28,
+      "get_cached_status": 200,
+      "get_cached_ms": 17.61
+    },
+    "Test_C_manual_override": {
+      "status_code": 200,
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.5,
+        "classification": "research_paper",
+        "manual_override": "research_paper",
+        "signals": [
+          "introduction",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion"
+        ],
+        "missing_signals": [
+          "abstract",
+          "references"
+        ],
+        "rationale": "Manually classified as a research paper (automatic content score 50%)."
+      },
+      "populated_fields": 19
+    },
+    "Test_A_live_ollama_hybrid": {
+      "document_id": 2,
+      "filename": "Fortifying+Cloud+Security+with+Advanced+Data+Encryption+Technique.pdf",
+      "document_type": "PDF",
+      "is_handwritten": false,
+      "status": "completed",
+      "analysis_mode": "deterministic_fallback",
+      "cached": false,
+      "pages_count": 8,
+      "sections_count": 15,
+      "evidence_count": 37,
+      "evidence_coverage": 1.0,
+      "evidence_total": 37,
+      "numerical_data_count": 0,
+      "numerical_sample": [],
+      "tables_and_figures_count": 3,
+      "tables_and_figures_sample": [
+        {
+          "label": "Figure 1",
+          "kind": "figure",
+          "page": 3,
+          "section": "3. PROPOSED METHDOLOGY"
+        },
+        {
+          "label": "Figure 2",
+          "kind": "figure",
+          "page": 5,
+          "section": "4. RESULT AND DISCUSSION"
+        },
+        {
+          "label": "Figure 3",
+          "kind": "figure",
+          "page": 6,
+          "section": "5. CONCLUSION"
+        }
+      ],
+      "visual_parsing_limitation": "Table/figure references are extracted from document text and captions only; embedded chart imagery and visual grid structures are not parsed directly in Phase 1.",
+      "paper_detection": {
+        "is_research_paper": true,
+        "confidence": 0.99,
+        "classification": "research_paper",
+        "manual_override": null,
+        "signals": [
+          "abstract",
+          "keywords",
+          "introduction",
+          "related_work",
+          "methodology",
+          "experiments",
+          "results",
+          "conclusion",
+          "citation_density",
+          "publication_or_thesis_metadata",
+          "tables_or_figures",
+          "author_affiliation_block"
+        ],
+        "missing_signals": [
+          "references"
+        ],
+        "rationale": "Strong academic structure detected (12 content signals including abstract, keywords, introduction, related_work)."
+      },
+      "section_titles_sample": [
+        {
+          "title": "ABSTRACT",
+          "role": "abstract",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "1. INTRODUCTION",
+          "role": "introduction",
+          "p_start": 1,
+          "children": 0
+        },
+        {
+          "title": "2. LITERATURE SURVEY",
+          "role": "related_work",
+          "p_start": 2,
+          "children": 0
+        },
+        {
+          "title": "3. PROPOSED METHDOLOGY",
+          "role": "other",
+          "p_start": 3,
+          "children": 5
+        },
+        {
+          "title": "4. RESULT AND DISCUSSION",
+          "role": "results",
+          "p_start": 5,
+          "children": 0
+        },
+        {
+          "title": "5. CONCLUSION",
+          "role": "conclusion",
+          "p_start": 6,
+          "children": 0
+        },
+        {
+          "title": "6. REFERENCE",
+          "role": "other",
+          "p_start": 6,
+          "children": 0
+        }
+      ],
+      "fact_type_counts": {
+        "explicit": 23,
+        "derived": 0,
+        "inferred": 0,
+        "missing": 7
+      },
+      "populated_fields": 23,
+      "grounded_fields": 23,
+      "missing_fields": 7,
+      "fields": {
+        "basic_information": {
+          "title": {
+            "value_preview": "Fortifying Cloud Security with Advanced Data Encryption",
+            "fact_type": "explicit",
+            "confidence": 0.87,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "authors": {
+            "value_preview": "Karthikeyan Parthasarathy, Naresh Kumar Reddy Panga, Jyothi Bobba, Ramya Lakshmi Bolla",
+            "fact_type": "explicit",
+            "confidence": 0.9,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "affiliation": {
+            "value_preview": "College, Sathyamangalam, India",
+            "fact_type": "explicit",
+            "confidence": 0.86,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "abstract": {
+            "value_preview": "The rapid growth of cloud computing has introduced several challenges regarding the securing of sensitive data. Traditional encryption methods such as those pro",
+            "fact_type": "explicit",
+            "confidence": 0.93,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "keywords": {
+            "value_preview": "Cloud security, Homomorphic encryption, Performance metrics, Data privacy, Encryption overhead",
+            "fact_type": "explicit",
+            "confidence": 0.92,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "publication_info": {
+            "value_preview": "Journal of Science and Technology | ISSN: 2456-5660 Volume 10, Issue 03 (March -2025) | DOI:https://doi.org/10.46243/jst.2025.v10.i03.pp20-",
+            "fact_type": "explicit",
+            "confidence": 0.91,
+            "source_count": 1,
+            "first_page": 1
+          }
+        },
+        "research_context": {
+          "research_domain": {
+            "value_preview": "Hemnath 6 \u201cFortifying Cloud Security with Advanced Data Encryption Technique\u2019\u2019 Journal of Science and Technology, Vol.",
+            "fact_type": "explicit",
+            "confidence": 0.83,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "problem_statement": {
+            "value_preview": "[13] Key management and scalability of encryption are some of the issues addressed to cover the entire spectrum of cloud security's present state. [15] PROBLEM ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "motivation": {
+            "value_preview": "[1] While organizations increasingly utilize cloud computing for data storage and processing, their exposure to cyber threats and subsequent rise in ri [9] As c",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "research_objective": {
+            "value_preview": "[7] Exploring several encryption algorithms and assessing their performances, security and scalability with respect to cloud environment, this research aims at ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "research_questions": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "hypothesis": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "methodology": {
+          "methodology_type": {
+            "value_preview": "The process involves the selection of a cloud service model (IaaS, PaaS, or SaaS) and subseq uently choosing a cloud deployment model (public, private, hybrid, ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 5
+          },
+          "proposed_approach": {
+            "value_preview": "A comprehensive security analysis is undertaken toward measuring the resistance of such encryption under numerous attack scenarios, and the effect of quantum co",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 1
+          },
+          "algorithms_models": {
+            "value_preview": "Traditional encryption methods such as those proposed by AES and RSA are unable to efficiently perform with the scale of large cloud environments as they have h",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "architecture": {
+            "value_preview": "PROPOSED METHDOLOGY Figure 1: illustrates the workflow of a cloud security system, starting with data collection, where relevant data is gathered from various s",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 1,
+            "first_page": 3
+          },
+          "framework_tools": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "dataset": {
+            "value_preview": "The dataset can also comprise data from cloud service providers, IoT devices, or security logs. PROPOSED METHDOLOGY Figure 1: illustrates the workflow of a clou",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 4
+          },
+          "dataset_size": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "preprocessing": {
+            "value_preview": "3.2 DATA PREPROCESSING The purification of the collected data has to yield effective encryption tests on it. Further, the framework includes some prior processi",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 4
+          },
+          "experimental_setup": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "evaluation": {
+          "evaluation_metrics": {
+            "value_preview": "However, they are still associated with adding computational overhead, and that will definitely pose various challenges for real-time cloud data processing. Key",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "baseline_methods": {
+            "value_preview": "Most organizations use AES and RSA as their traditional methods for encrypting sensitive information in the cloud [16]. Finally, lightweight encryption methods ",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "experiments": {
+            "value_preview": "Figure 1: Cloud Security 3.1 DATA COLLECTION Data Collection encompasses the collection of pertinent cloud data that can be used to represent real -world scenar",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 3
+          },
+          "results": {
+            "value_preview": "RESULT AND DISCUSSION Figure 2: shows the Encryption Execution Time for two different encryption methods: AES (Advanced Encryption Standard) and RSA (Rivest -Sh",
+            "fact_type": "explicit",
+            "confidence": 0.85,
+            "source_count": 2,
+            "first_page": 5
+          },
+          "numerical_findings": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          },
+          "comparisons": {
+            "value_preview": "Not explicitly stated in the paper.",
+            "fact_type": "missing",
+            "confidence": 0.0,
+            "source_count": 0,
+            "first_page": null
+          }
+        },
+        "conclusion": {
+          "main_conclusions": {
+            "value_preview": "This paper presents a thorough study of performan ce in conjunction with security trade -offs and, the overall development of a secure and efficient cloud data ",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 1
+          },
+          "limitations": {
+            "value_preview": "However, these techniques suffer from certain limitations and constraints imposed by large - scale cloud environments since they are highly computationally expe",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 2
+          },
+          "future_work": {
+            "value_preview": "The next step is encryption, spec The next step is encryption, specifically using homomorphic encryption, which allows secure computation on encrypted data with",
+            "fact_type": "explicit",
+            "confidence": 0.84,
+            "source_count": 2,
+            "first_page": 3
+          }
+        }
+      },
+      "timings": {
+        "detection_ms": 33.6,
+        "extraction_ms": 209.74,
+        "llm_ms": 35011.81,
+        "total_ms": 35283.04,
+        "cache_retrieval_ms": 0.0
+      },
+      "wall_ms": 35314.51
+    }
+  },
+  "security_checks": {
+    "unauthenticated_get_status": 401,
+    "cross_user_post_status": 404
+  },
+  "dev_db_after": {
+    "documents": 102,
+    "conversations": 102
+  }
+}

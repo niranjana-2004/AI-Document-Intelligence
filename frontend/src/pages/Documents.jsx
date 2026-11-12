@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
     UploadCloud,
@@ -11,6 +11,7 @@ import {
     RotateCw,
     Trash2,
     Sparkles,
+    FlaskConical,
     AlertTriangle,
     Eye,
     ChevronLeft,
@@ -749,6 +750,15 @@ function Documents() {
                                                 <Sparkles size={14} />
                                                 <span>{summaryLoading && summaryDocId === doc.id ? 'Loading...' : 'Summary'}</span>
                                             </button>
+
+                                            <Link
+                                                to={`/research-analyzer?doc=${doc.id}`}
+                                                className="document-action"
+                                                aria-label={`Analyze research structure of ${doc.filename}`}
+                                            >
+                                                <FlaskConical size={14} />
+                                                <span>Analyze Paper</span>
+                                            </Link>
                                         </div>
                                     </motion.article>
                                 )
