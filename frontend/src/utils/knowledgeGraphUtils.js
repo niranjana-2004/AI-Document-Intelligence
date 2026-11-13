@@ -119,6 +119,8 @@ export function filterKnowledgeGraph(nodes, edges, options = {}) {
         selectedConfidenceTiers = [],
         focusNodeKey = null,
         isolateNeighborhood = false,
+        scopeFilter = 'all', // 'all' | 'shared' | 'doc_specific'
+        activeDocumentId = null,
     } = options
 
     const q = String(searchQuery || '').trim().toLowerCase()
@@ -131,10 +133,26 @@ export function filterKnowledgeGraph(nodes, edges, options = {}) {
         : null
 
     let visibleNodes = (nodes || []).filter((n) => {
+        const nodeKey = n.node_key || n.entity_key
+        const label = n.label || n.canonical_name
         if (typeSet.size > 0 && !typeSet.has(n.node_type)) return false
-        if (neighborhood && !neighborhood.nodeKeys.has(n.node_key)) return false
+        if (neighborhood && !neighborhood.nodeKeys.has(nodeKey)) return false
+
+        // Scope filter for cross-document graphs
+        if (scopeFilter === 'shared' && !n.is_shared) return false
+        if (scopeFilter === 'doc_specific' && n.is_shared) return false
+
+        // Document filter for specific document isolation
+        if (activeDocumentId) {
+            const docIdNum = Number(activeDocumentId)
+            const inDocs = (n.documents || []).some((d) => d.document_id === docIdNum)
+            const inOccs = (n.occurrences || []).some((o) => o.document_id === docIdNum)
+            const inSingleDoc = n.document_id === docIdNum
+            if (!inDocs && !inOccs && !inSingleDoc) return false
+        }
+
         if (q) {
-            const labelMatch = String(n.label || '').toLowerCase().includes(q)
+            const labelMatch = String(label || '').toLowerCase().includes(q)
             const aliasMatch = (n.aliases || []).some((a) => String(a).toLowerCase().includes(q))
             const typeMatch = String(n.node_type || '').toLowerCase().includes(q)
             if (!labelMatch && !aliasMatch && !typeMatch) return false
@@ -142,7 +160,7 @@ export function filterKnowledgeGraph(nodes, edges, options = {}) {
         return true
     })
 
-    const visibleNodeKeys = new Set(visibleNodes.map((n) => n.node_key))
+    const visibleNodeKeys = new Set(visibleNodes.map((n) => n.node_key || n.entity_key))
 
     // If search matched nodes, optionally retain directly connected edges among visible nodes
     const visibleEdges = (edges || []).filter((e) => {
@@ -150,10 +168,15 @@ export function filterKnowledgeGraph(nodes, edges, options = {}) {
         if (relSet.size > 0 && !relSet.has(e.relationship)) return false
         if (tierSet.size > 0 && !tierSet.has(e.confidence_tier)) return false
         if (neighborhood && !neighborhood.edgeKeys.has(getEdgeKey(e))) return false
+        if (activeDocumentId) {
+            const docIdNum = Number(activeDocumentId)
+            const hasDoc = (e.supporting_document_ids || []).includes(docIdNum)
+            const inSingleDoc = e.document_id === docIdNum
+            if (!hasDoc && !inSingleDoc) return false
+        }
         return true
     })
 
-    // In search mode without neighborhood isolation, ensure search-matched nodes still stay visible
     return {
         nodes: visibleNodes,
         edges: visibleEdges,
@@ -175,12 +198,15 @@ export function computeKnowledgeGraphLayout(nodes, edges, mode = 'clustered') {
     const cellW = NODE_WIDTH + 68
     const cellH = NODE_HEIGHT + 74
 
+    const getNodeKey = (n) => n.node_key || n.entity_key
+
     if (mode === 'hierarchical') {
         const inDegree = new Map()
         const outAdj = new Map()
         for (const n of list) {
-            inDegree.set(n.node_key, 0)
-            outAdj.set(n.node_key, [])
+            const k = getNodeKey(n)
+            inDegree.set(k, 0)
+            outAdj.set(k, [])
         }
         for (const e of edges || []) {
             if (inDegree.has(e.source_key) && inDegree.has(e.target_key) && e.source_key !== e.target_key) {
@@ -192,15 +218,17 @@ export function computeKnowledgeGraphLayout(nodes, edges, mode = 'clustered') {
         const level = new Map()
         const queue = []
         for (const n of list) {
-            if ((inDegree.get(n.node_key) || 0) === 0) {
-                level.set(n.node_key, 0)
-                queue.push(n.node_key)
+            const k = getNodeKey(n)
+            if ((inDegree.get(k) || 0) === 0) {
+                level.set(k, 0)
+                queue.push(k)
             }
         }
         if (queue.length === 0) {
             const topNode = [...list].sort((a, b) => (b.importance_score || 0) - (a.importance_score || 0))[0]
-            level.set(topNode.node_key, 0)
-            queue.push(topNode.node_key)
+            const topK = getNodeKey(topNode)
+            level.set(topK, 0)
+            queue.push(topK)
         }
 
         let head = 0
@@ -217,7 +245,8 @@ export function computeKnowledgeGraphLayout(nodes, edges, mode = 'clustered') {
 
         const buckets = new Map()
         for (const n of list) {
-            const lvl = level.has(n.node_key) ? level.get(n.node_key) : 1
+            const k = getNodeKey(n)
+            const lvl = level.has(k) ? level.get(k) : 1
             if (!buckets.has(lvl)) buckets.set(lvl, [])
             buckets.get(lvl).push(n)
         }
@@ -236,7 +265,8 @@ export function computeKnowledgeGraphLayout(nodes, edges, mode = 'clustered') {
             const colNodes = buckets.get(lvl).sort((a, b) => (b.importance_score || 0) - (a.importance_score || 0))
             const startY = Math.max(padY, (totalH - colNodes.length * rowGap) / 2)
             colNodes.forEach((n, rowIdx) => {
-                positions.set(n.node_key, {
+                const k = getNodeKey(n)
+                positions.set(k, {
                     x: padX + colIdx * colGap + NODE_WIDTH / 2,
                     y: startY + rowIdx * rowGap + NODE_HEIGHT / 2,
                 })
@@ -268,7 +298,8 @@ export function computeKnowledgeGraphLayout(nodes, edges, mode = 'clustered') {
     for (const [, groupNodes] of sortedGroups) {
         groupNodes.sort((a, b) => (b.importance_score || 0) - (a.importance_score || 0))
         for (const n of groupNodes) {
-            positions.set(n.node_key, {
+            const k = getNodeKey(n)
+            positions.set(k, {
                 x: padX + cursorCol * cellW + NODE_WIDTH / 2,
                 y: padY + cursorRow * cellH + NODE_HEIGHT / 2,
             })
@@ -292,11 +323,12 @@ export function computeKnowledgeGraphLayout(nodes, edges, mode = 'clustered') {
     if (mode === 'force' && list.length > 1) {
         const coords = new Map()
         for (const n of list) {
-            const p = positions.get(n.node_key)
-            coords.set(n.node_key, { x: p.x, y: p.y })
+            const k = getNodeKey(n)
+            const p = positions.get(k)
+            coords.set(k, { x: p.x, y: p.y })
         }
 
-        const keys = list.map((n) => n.node_key)
+        const keys = list.map((n) => getNodeKey(n))
         const idealDist = 235
         const kRepel = 42000
 

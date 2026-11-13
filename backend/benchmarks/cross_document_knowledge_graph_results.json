@@ -1,0 +1,114 @@
+{
+  "networking_benchmark": {
+    "documents_selected": [
+      12,
+      14,
+      16
+    ],
+    "cold_latency_seconds": 18.4058,
+    "warm_latency_seconds": 0.0757,
+    "cache_speedup": 243.2,
+    "total_entities": 33,
+    "shared_entities": 2,
+    "document_specific_entities": 31,
+    "total_edges": 40,
+    "cross_document_edges": 1,
+    "average_confidence": 0.711,
+    "grounded_edge_ratio": 1.0,
+    "shared_entities_sample": [
+      {
+        "name": "TCP",
+        "type": "Protocol",
+        "docs_count": 3,
+        "mentions": 9,
+        "documents": [
+          "text-to-handwriting.pdf",
+          "test_base_networking.txt",
+          "test_added_networking.txt"
+        ],
+        "confidence": 0.98
+      },
+      {
+        "name": "TCP establishes a reliable",
+        "type": "Concept",
+        "docs_count": 2,
+        "mentions": 2,
+        "documents": [
+          "test_base_networking.txt",
+          "test_added_networking.txt"
+        ],
+        "confidence": 0.76
+      }
+    ],
+    "diagnostics": {
+      "documents_selected": 3,
+      "concepts_loaded": 36,
+      "raw_candidate_pairs": 19,
+      "filtered_candidate_pairs": 19,
+      "verified_pairs": 4,
+      "accepted_merges": 4,
+      "rejected_merges": 15,
+      "shared_entities": 2,
+      "document_specific_entities": 31,
+      "cross_document_edges": 1,
+      "evidence_links": 70,
+      "entity_resolution_latency_ms": 119.07,
+      "total_generation_latency_ms": 18304.77,
+      "cache_hit": false
+    }
+  },
+  "ai_healthcare_benchmark": {
+    "documents_selected": [
+      7,
+      8
+    ],
+    "cold_latency_seconds": 0.2289,
+    "total_entities": 2,
+    "shared_entities": 2,
+    "cross_document_edges": 1,
+    "shared_entities_sample": [
+      {
+        "name": "Artificial Intelligence in Healthcare Artificial",
+        "type": "Concept",
+        "docs_count": 2,
+        "mentions": 4,
+        "documents": [
+          "test.txt",
+          "testdoc.txt"
+        ]
+      },
+      {
+        "name": "Natural Language Processing",
+        "type": "Concept",
+        "docs_count": 2,
+        "mentions": 2,
+        "documents": [
+          "test.txt",
+          "testdoc.txt"
+        ]
+      }
+    ],
+    "diagnostics": {
+      "documents_selected": 2,
+      "concepts_loaded": 4,
+      "raw_candidate_pairs": 2,
+      "filtered_candidate_pairs": 2,
+      "verified_pairs": 2,
+      "accepted_merges": 2,
+      "rejected_merges": 0,
+      "shared_entities": 2,
+      "document_specific_entities": 0,
+      "cross_document_edges": 1,
+      "evidence_links": 2,
+      "entity_resolution_latency_ms": 0.04,
+      "total_generation_latency_ms": 212.45,
+      "cache_hit": false
+    }
+  },
+  "evidence_grounding_audit": {
+    "total_occurrences_audited": 57,
+    "grounded_in_document_text": true,
+    "verbatim_excerpt_valid": true,
+    "page_number_valid": true
+  }
+}

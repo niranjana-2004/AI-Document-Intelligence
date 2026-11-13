@@ -166,3 +166,53 @@ export async function deleteKnowledgeGraph(documentId) {
         method: 'DELETE',
     })
 }
+
+export async function generateCrossDocumentKnowledgeGraph(options = {}) {
+    return apiRequest('/documents/knowledge-graph/cross-document', {
+        method: 'POST',
+        body: JSON.stringify({
+            document_ids: options.documentIds || [],
+            force_refresh: Boolean(options.forceRefresh),
+            include_low_confidence: Boolean(options.includeLowConfidence),
+            skip_llm: Boolean(options.skipLlm),
+            max_nodes: options.maxNodes ?? 60,
+            only_shared: Boolean(options.onlyShared),
+        }),
+        signal: options.signal,
+    })
+}
+
+export async function getCrossDocumentKnowledgeGraph(graphId, options = {}) {
+    const params = new URLSearchParams()
+    if (options.includeLowConfidence) params.append('include_low_confidence', 'true')
+    if (options.onlyShared) params.append('only_shared', 'true')
+    const qs = params.toString()
+    return apiRequest(`/documents/knowledge-graph/cross-document/${graphId}${qs ? `?${qs}` : ''}`, {
+        method: 'GET',
+        signal: options.signal,
+    })
+}
+
+export async function listCrossDocumentEntities(graphId, options = {}) {
+    const params = new URLSearchParams()
+    if (options.onlyShared) params.append('only_shared', 'true')
+    if (options.query) params.append('q', options.query)
+    const qs = params.toString()
+    return apiRequest(`/documents/knowledge-graph/cross-document/${graphId}/entities${qs ? `?${qs}` : ''}`, {
+        method: 'GET',
+        signal: options.signal,
+    })
+}
+
+export async function getCrossDocumentEntity(graphId, entityKey, options = {}) {
+    return apiRequest(`/documents/knowledge-graph/cross-document/${graphId}/entity/${encodeURIComponent(entityKey)}`, {
+        method: 'GET',
+        signal: options.signal,
+    })
+}
+
+export async function deleteCrossDocumentKnowledgeGraph(graphId) {
+    return apiRequest(`/documents/knowledge-graph/cross-document/${graphId}`, {
+        method: 'DELETE',
+    })
+}

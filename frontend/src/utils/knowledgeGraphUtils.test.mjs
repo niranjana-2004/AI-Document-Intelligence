@@ -32,6 +32,29 @@ test('filterKnowledgeGraph filters by node type, relationship, and search query'
     assert.equal(bySearch.nodes[0].node_key, 'tcb')
 })
 
+test('filterKnowledgeGraph supports cross-document scopeFilter and activeDocumentId', () => {
+    const crossEntities = [
+        { entity_key: 'ent_tcp', canonical_name: 'TCP', is_shared: true, documents: [{ document_id: 12 }, { document_id: 2 }] },
+        { entity_key: 'ent_sliding_window', canonical_name: 'Sliding Window', is_shared: false, documents: [{ document_id: 12 }] },
+        { entity_key: 'ent_homomorphic_enc', canonical_name: 'Homomorphic Encryption', is_shared: false, documents: [{ document_id: 2 }] },
+    ]
+    const crossEdges = [
+        { source_key: 'ent_tcp', target_key: 'ent_sliding_window', relationship: 'uses', supporting_document_ids: [12] },
+        { source_key: 'ent_tcp', target_key: 'ent_homomorphic_enc', relationship: 'related_to', supporting_document_ids: [2] },
+    ]
+
+    const onlyShared = filterKnowledgeGraph(crossEntities, crossEdges, { scopeFilter: 'shared' })
+    assert.equal(onlyShared.nodes.length, 1)
+    assert.equal(onlyShared.nodes[0].entity_key, 'ent_tcp')
+
+    const doc12Only = filterKnowledgeGraph(crossEntities, crossEdges, { activeDocumentId: 12 })
+    assert.equal(doc12Only.nodes.length, 2)
+    assert.ok(doc12Only.nodes.some((n) => n.entity_key === 'ent_tcp'))
+    assert.ok(doc12Only.nodes.some((n) => n.entity_key === 'ent_sliding_window'))
+    assert.equal(doc12Only.edges.length, 1)
+    assert.equal(doc12Only.edges[0].target_key, 'ent_sliding_window')
+})
+
 test('getNeighborhood returns exact 1-hop subgraph', () => {
     const { nodeKeys, edgeKeys } = getNeighborhood(SAMPLE_EDGES, 'tcp_handshake')
     assert.ok(nodeKeys.has('tcp_handshake'))
