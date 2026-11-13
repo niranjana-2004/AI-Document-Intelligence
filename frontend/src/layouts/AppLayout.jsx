@@ -9,6 +9,7 @@ import {
     ArrowLeftRight,
     Network,
     GitBranch,
+    Compass,
     FlaskConical,
     User,
     Info,
@@ -235,6 +236,19 @@ function AppLayout({ children }) {
                         <span className="nav-label-with-badge">
                             <span>Knowledge Graph</span>
                             <span className="nav-badge-ai badge-mindmap">AI</span>
+                        </span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/knowledge-explorer"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                        <span className="nav-icon" aria-hidden="true">
+                            <Compass size={18} />
+                        </span>
+                        <span className="nav-label-with-badge">
+                            <span>Knowledge Explorer</span>
+                            <span className="nav-badge-ai badge-mindmap">Phase 3</span>
                         </span>
                     </NavLink>
 

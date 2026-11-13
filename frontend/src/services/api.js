@@ -216,3 +216,37 @@ export async function deleteCrossDocumentKnowledgeGraph(graphId) {
         method: 'DELETE',
     })
 }
+
+export async function queryKnowledgeIntelligence(payload, options = {}) {
+    return apiRequest('/documents/knowledge-intelligence/query', {
+        method: 'POST',
+        body: JSON.stringify({
+            query: payload.query,
+            document_ids: payload.documentIds || [],
+            focus_entity: payload.focusEntity || null,
+            force_refresh: Boolean(payload.forceRefresh),
+            include_low_confidence: Boolean(payload.includeLowConfidence),
+            skip_llm: Boolean(payload.skipLlm),
+            max_evidence_items: payload.maxEvidenceItems ?? 20,
+        }),
+        signal: options.signal,
+    })
+}
+
+export async function getEntityIntelligenceDrilldown(entityKey, documentIds = [], options = {}) {
+    const params = new URLSearchParams()
+    if (documentIds && documentIds.length > 0) {
+        params.append('document_ids', documentIds.join(','))
+    }
+    const qs = params.toString()
+    return apiRequest(`/documents/knowledge-intelligence/entity/${encodeURIComponent(entityKey)}${qs ? `?${qs}` : ''}`, {
+        method: 'GET',
+        signal: options.signal,
+    })
+}
+
+export async function clearKnowledgeIntelligenceCache() {
+    return apiRequest('/documents/knowledge-intelligence/cache', {
+        method: 'DELETE',
+    })
+}

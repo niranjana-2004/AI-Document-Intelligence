@@ -21,6 +21,7 @@ import HandwrittenStudio from './pages/HandwrittenStudio'
 import DocumentComparison from './pages/DocumentComparison'
 import MindMap from './pages/MindMap'
 import KnowledgeGraph from './pages/KnowledgeGraph'
+import KnowledgeExplorer from './pages/KnowledgeExplorer'
 import ResearchPaperAnalyzer from './components/research/ResearchPaperAnalyzer'
 import AskAI from './pages/AskAI'
 import Search from './pages/Search'
@@ -120,6 +121,17 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <AppLayout>
                 <KnowledgeGraph />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/knowledge-explorer"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <KnowledgeExplorer />
               </AppLayout>
             </ProtectedRoute>
           }

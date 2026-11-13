@@ -18,6 +18,7 @@ from app.api.routes.voice import router as voice_router
 from app.api.routes.research_paper import router as research_paper_router
 from app.api.routes.knowledge_graph import router as knowledge_graph_router
 from app.api.routes.cross_document_knowledge_graph import router as cross_document_knowledge_graph_router
+from app.api.routes.knowledge_intelligence import router as knowledge_intelligence_router
 
 app = FastAPI(
     title="AI Document Intelligence API",
@@ -48,6 +49,7 @@ from app.models.chat_cache import ensure_chat_cache_schema
 from app.models.research_paper_analysis import ensure_research_paper_analysis_schema
 from app.models.knowledge_graph import ensure_knowledge_graph_schema
 from app.models.cross_document_knowledge_graph import ensure_cross_document_knowledge_graph_schema
+from app.models.knowledge_intelligence_cache import ensure_knowledge_intelligence_schema
 ensure_handwritten_analysis_schema(engine)
 ensure_document_comparison_schema(engine)
 ensure_mind_map_schema(engine)
@@ -55,6 +57,7 @@ ensure_chat_cache_schema(engine)
 ensure_research_paper_analysis_schema(engine)
 ensure_knowledge_graph_schema(engine)
 ensure_cross_document_knowledge_graph_schema(engine)
+ensure_knowledge_intelligence_schema(engine)
 
 app.include_router(documents_router)
 app.include_router(auth_router)
@@ -65,6 +68,7 @@ app.include_router(voice_router)
 app.include_router(research_paper_router)
 app.include_router(knowledge_graph_router)
 app.include_router(cross_document_knowledge_graph_router)
+app.include_router(knowledge_intelligence_router)
 
 
 @app.get("/")
