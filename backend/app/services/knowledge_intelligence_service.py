@@ -459,6 +459,8 @@ def retrieve_multi_source_evidence(
                     excerpt_hash = hashlib.md5(f"{doc.id}:{hwp.page_number}:{cleaned_text[:60]}".encode("utf-8")).hexdigest()
                     if excerpt_hash not in seen_keys:
                         seen_keys.add(excerpt_hash)
+                        raw_conf = float(hwp.confidence_score or 0.88)
+                        norm_conf = min(1.0, max(0.0, raw_conf / 100.0 if raw_conf > 1.0 else raw_conf))
                         evidence_items.append(
                             IntelligenceEvidenceItem(
                                 id=f"hw-{hwp.id or len(evidence_items)+1}",
@@ -470,7 +472,7 @@ def retrieve_multi_source_evidence(
                                 excerpt=cleaned_text,
                                 entity=t_norm.title(),
                                 relationship=None,
-                                confidence=float(hwp.confidence_score or 0.88),
+                                confidence=round(norm_conf, 2),
                                 section="Handwritten Note",
                             )
                         )
@@ -878,6 +880,10 @@ def execute_knowledge_intelligence_query(
     """
     t_start = time.perf_counter()
     timings: Dict[str, float] = {}
+
+    clean_query = (request.query or "").strip()
+    if len(clean_query) < 2:
+        raise HTTPException(status_code=400, detail="Query must contain at least 2 non-whitespace characters.")
 
     # 1. Enforce strict document ownership
     requested_ids = sorted(list(set(request.document_ids)))
