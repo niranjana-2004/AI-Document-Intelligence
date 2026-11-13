@@ -157,12 +157,34 @@ def find_term_matches_in_text(terms: Sequence[str], text: str) -> bool:
     return False
 
 
+_INDEX_STOPWORDS: Set[str] = {
+    "the", "a", "an", "and", "or", "of", "in", "to", "for", "with", "on", "at",
+    "by", "from", "as", "is", "are", "was", "were", "be", "been", "that", "this",
+    "it", "into", "over", "under", "within", "between",
+}
+
+
+def build_sentence_inverted_index(spans: Sequence[SentenceSpan]) -> Dict[str, List[int]]:
+    """Build a lightweight in-memory token index over sentence spans for fast candidate filtering."""
+    index: Dict[str, List[int]] = {}
+    for i, span in enumerate(spans):
+        tokens = set(re.findall(r"[a-z0-9\-]{2,}", span.lower_text))
+        for tok in tokens:
+            lst = index.get(tok)
+            if lst is None:
+                index[tok] = [i]
+            else:
+                lst.append(i)
+    return index
+
+
 def find_entity_evidence(
     label: str,
     aliases: Sequence[str],
     spans: Sequence[SentenceSpan],
     units: Sequence[ChunkUnit],
     max_items: int = 4,
+    sentence_index: Optional[Dict[str, List[int]]] = None,
 ) -> Tuple[List[Dict[str, Any]], List[int]]:
     """Collect grounded `EvidenceRef` dicts and source pages for a node label/aliases."""
     terms = [label, *[a for a in aliases if a and a.lower() != label.lower()]]
@@ -174,7 +196,28 @@ def find_entity_evidence(
     seen_keys: Set[Tuple[Optional[int], int, str]] = set()
     pages: Set[int] = set()
 
-    for span in spans:
+    # If inverted index provided, evaluate only matching candidate spans first
+    candidate_spans: Optional[List[SentenceSpan]] = None
+    if sentence_index is not None and spans:
+        cand_indices: Set[int] = set()
+        for term in terms:
+            words = [w for w in re.findall(r"[a-z0-9\-]{2,}", term.lower()) if w not in _INDEX_STOPWORDS and len(w) >= 2]
+            if words:
+                sorted_words = sorted(words, key=lambda w: len(sentence_index.get(w, [])))
+                matched = set(sentence_index.get(sorted_words[0], []))
+                for w in sorted_words[1:]:
+                    matched &= set(sentence_index.get(w, []))
+                cand_indices.update(matched)
+            else:
+                raw_words = re.findall(r"[a-z0-9\-]+", term.lower())
+                for rw in raw_words:
+                    cand_indices.update(sentence_index.get(rw, []))
+        if cand_indices:
+            candidate_spans = [spans[i] for i in sorted(cand_indices) if 0 <= i < len(spans)]
+
+    scan_target = candidate_spans if (candidate_spans is not None and candidate_spans) else spans
+
+    for span in scan_target:
         if any(pat.search(span.lower_text) for pat in patterns):
             excerpt = clean_excerpt_text(span.text, max_len=260)
             key = (span.chunk_id, span.page, excerpt[:80])
@@ -191,6 +234,26 @@ def find_entity_evidence(
                 )
             if len(evidence) >= max_items:
                 break
+
+    # If candidate span filtering missed (e.g. edge case token split), fallback to full spans
+    if not evidence and candidate_spans is not None and len(candidate_spans) < len(spans):
+        for span in spans:
+            if any(pat.search(span.lower_text) for pat in patterns):
+                excerpt = clean_excerpt_text(span.text, max_len=260)
+                key = (span.chunk_id, span.page, excerpt[:80])
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    pages.add(span.page)
+                    evidence.append(
+                        {
+                            "chunk_id": span.chunk_id,
+                            "page": span.page,
+                            "section": span.section,
+                            "excerpt": excerpt,
+                        }
+                    )
+                if len(evidence) >= max_items:
+                    break
 
     if not evidence:
         # Fallback to full chunk scan in case term spanned line breaks weirdly
@@ -219,16 +282,35 @@ def find_pair_evidence(
     spans: Sequence[SentenceSpan],
     units: Sequence[ChunkUnit],
     max_items: int = 4,
+    src_span_indices: Optional[Sequence[int]] = None,
+    tgt_span_indices: Optional[Sequence[int]] = None,
 ) -> Dict[str, Any]:
     """
     Locate concrete shared evidence linking subject and object:
       - same-sentence matches (strongest)
       - adjacent sentence window (<= 2 sentences apart within same chunk)
       - same-chunk co-occurrence (weakest structural co-occurrence)
+    When `src_span_indices` and `tgt_span_indices` are passed, skips full regex scanning.
     """
-    src_patterns = [build_term_pattern(t) for t in src_terms if (t or "").strip()]
-    tgt_patterns = [build_term_pattern(t) for t in tgt_terms if (t or "").strip()]
-    if not src_patterns or not tgt_patterns:
+    if src_span_indices is None or tgt_span_indices is None:
+        src_patterns = [build_term_pattern(t) for t in src_terms if (t or "").strip()]
+        tgt_patterns = [build_term_pattern(t) for t in tgt_terms if (t or "").strip()]
+        if not src_patterns or not tgt_patterns:
+            return {
+                "evidence": [],
+                "source_pages": [],
+                "min_distance": 999,
+                "same_sentence_count": 0,
+                "shared_chunk_count": 0,
+                "spans_matched": [],
+            }
+        resolved_src = [i for i, s in enumerate(spans) if any(p.search(s.lower_text) for p in src_patterns)] if src_span_indices is None else list(src_span_indices)
+        resolved_tgt = [i for i, s in enumerate(spans) if any(p.search(s.lower_text) for p in tgt_patterns)] if tgt_span_indices is None else list(tgt_span_indices)
+    else:
+        resolved_src = list(src_span_indices)
+        resolved_tgt = list(tgt_span_indices)
+
+    if not resolved_src or not resolved_tgt:
         return {
             "evidence": [],
             "source_pages": [],
@@ -238,15 +320,7 @@ def find_pair_evidence(
             "spans_matched": [],
         }
 
-    src_span_indices: List[int] = []
-    tgt_span_indices: List[int] = []
-    for i, span in enumerate(spans):
-        if any(p.search(span.lower_text) for p in src_patterns):
-            src_span_indices.append(i)
-        if any(p.search(span.lower_text) for p in tgt_patterns):
-            tgt_span_indices.append(i)
-
-    same_sent = sorted(set(src_span_indices) & set(tgt_span_indices))
+    same_sent = sorted(set(resolved_src) & set(resolved_tgt))
     min_dist = 0 if same_sent else 999
 
     matched_items: List[Tuple[int, SentenceSpan, str]] = []
@@ -255,9 +329,9 @@ def find_pair_evidence(
         matched_items.append((0, sp, clean_excerpt_text(sp.text, max_len=280)))
 
     # Adjacent sentences within same chunk
-    if len(matched_items) < max_items and src_span_indices and tgt_span_indices:
-        tgt_set = set(tgt_span_indices)
-        for s_idx in src_span_indices:
+    if len(matched_items) < max_items and resolved_src and resolved_tgt:
+        tgt_set = set(resolved_tgt)
+        for s_idx in resolved_src:
             s_span = spans[s_idx]
             for offset in (-2, -1, 1, 2):
                 n_idx = s_idx + offset
@@ -272,16 +346,16 @@ def find_pair_evidence(
 
     # Same-chunk fallback if still empty
     shared_chunks: Set[int] = set()
-    src_chunks = {spans[i].chunk_index for i in src_span_indices}
-    tgt_chunks = {spans[i].chunk_index for i in tgt_span_indices}
+    src_chunks = {spans[i].chunk_index for i in resolved_src if 0 <= i < len(spans)}
+    tgt_chunks = {spans[i].chunk_index for i in resolved_tgt if 0 <= i < len(spans)}
     shared_chunks = src_chunks & tgt_chunks
 
     if not matched_items and shared_chunks:
         min_dist = 3
         for unit in units:
             if unit.chunk_index in shared_chunks:
-                s_lines = [spans[i].text for i in src_span_indices if spans[i].chunk_index == unit.chunk_index]
-                t_lines = [spans[i].text for i in tgt_span_indices if spans[i].chunk_index == unit.chunk_index]
+                s_lines = [spans[i].text for i in resolved_src if 0 <= i < len(spans) and spans[i].chunk_index == unit.chunk_index]
+                t_lines = [spans[i].text for i in resolved_tgt if 0 <= i < len(spans) and spans[i].chunk_index == unit.chunk_index]
                 joined = f"{s_lines[0]} ... {t_lines[0]}" if (s_lines and t_lines) else (unit.content or "")
                 matched_items.append(
                     (

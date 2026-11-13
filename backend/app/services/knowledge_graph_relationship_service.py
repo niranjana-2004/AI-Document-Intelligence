@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from app.schemas.knowledge_graph import (
@@ -141,12 +142,14 @@ def _verify_candidates_with_ollama(
     Sends at most 2 compact batches of <= 15 candidates each (`timeout=35s`).
     """
     verifications: Dict[Tuple[str, str], Dict[str, Any]] = {}
-    metrics = {
+    metrics: Dict[str, Any] = {
         "llm_batches": 0,
         "llm_verified_count": 0,
         "llm_rejected_invalid_rel": 0,
         "llm_rejected_ungrounded": 0,
         "llm_fallback_used": 0,
+        "llm_total_latency_ms": 0.0,
+        "llm_max_latency_ms": 0.0,
     }
 
     system_prompt = (
@@ -178,6 +181,7 @@ def _verify_candidates_with_ollama(
             + "\n".join(prompt_items)
         )
 
+        t_llm = time.perf_counter()
         try:
             raw = query_ollama_json(
                 prompt=user_prompt,
@@ -187,6 +191,10 @@ def _verify_candidates_with_ollama(
                 num_ctx=4096,
                 num_predict=550,
             )
+            lat_ms = round((time.perf_counter() - t_llm) * 1000, 2)
+            metrics["llm_total_latency_ms"] = round(metrics["llm_total_latency_ms"] + lat_ms, 2)
+            metrics["llm_max_latency_ms"] = max(metrics["llm_max_latency_ms"], lat_ms)
+
             if not raw or not isinstance(raw, dict):
                 metrics["llm_fallback_used"] += 1
                 continue
@@ -244,11 +252,16 @@ def build_grounded_relationships(
             "generation_method": "deterministic",
             "diagnostics": {
                 "candidate_pairs": 0,
+                "raw_candidate_pairs": 0,
+                "filtered_candidate_pairs": 0,
+                "verified_pairs": 0,
+                "accepted_edges": 0,
                 "explicit_edges": 0,
                 "derived_edges": 0,
                 "rejected_self_loops": 0,
                 "rejected_invalid_relationships": 0,
                 "rejected_evidence_free": 0,
+                "rejected_evidence_free_pairs": 0,
             },
         }
 
@@ -391,6 +404,8 @@ def build_grounded_relationships(
             spans,
             units,
             max_items=4,
+            src_span_indices=node_sent_indices.get(cand["source_key"], []),
+            tgt_span_indices=node_sent_indices.get(cand["target_key"], []),
         )
         cleaned_ev = sanitize_evidence_list(pair_ev["evidence"], valid_chunk_ids, max_page)
         if not cleaned_ev:
@@ -533,6 +548,11 @@ def build_grounded_relationships(
         "generation_method": generation_method,
         "diagnostics": {
             "candidate_pairs": len(grounded_candidates),
+            "raw_candidate_pairs": len(raw_candidates),
+            "filtered_candidate_pairs": len(raw_candidates) - rejected_self_loops - rejected_invalid,
+            "verified_pairs": len(grounded_candidates),
+            "accepted_edges": len(edges),
+            "rejected_evidence_free_pairs": rejected_evidence_free,
             "rejected_self_loops": rejected_self_loops,
             "rejected_invalid_relationships": rejected_invalid + llm_metrics["llm_rejected_invalid_rel"],
             "rejected_evidence_free": rejected_evidence_free,

@@ -115,10 +115,8 @@ def replace_knowledge_graph(
         db.query(KnowledgeGraphNode).filter(KnowledgeGraphNode.graph_id.in_(existing_ids)).delete(
             synchronize_session=False
         )
-        db.query(KnowledgeGraph).filter(KnowledgeGraph.id.in_(existing_ids)).delete(
-            synchronize_session=False
-        )
-        db.expire_all()
+        for old_g in existing:
+            db.delete(old_g)
         db.flush()
 
     now = datetime.now(timezone.utc)

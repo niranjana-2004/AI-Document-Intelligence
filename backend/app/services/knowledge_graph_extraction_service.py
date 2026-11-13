@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 from sqlalchemy.orm import Session
 
@@ -15,6 +14,7 @@ from app.services.document_mind_map_service import (
 from app.services.embedding_services import generate_embedding
 from app.services.knowledge_graph_evidence_service import (
     SentenceSpan,
+    build_sentence_inverted_index,
     build_term_pattern,
     find_entity_evidence,
     sanitize_evidence_list,
@@ -113,6 +113,55 @@ GENERIC_FILLER_LABELS: Set[str] = {
     "research",
     "user",
     "users",
+    "it",
+    "its",
+    "how",
+    "because",
+    "if",
+    "when",
+    "where",
+    "which",
+    "what",
+    "who",
+    "whom",
+    "whose",
+    "why",
+    "this",
+    "that",
+    "these",
+    "those",
+    "there",
+    "then",
+    "thus",
+    "hence",
+    "therefore",
+    "although",
+    "while",
+    "after",
+    "before",
+    "also",
+    "however",
+    "furthermore",
+    "moreover",
+    "meanwhile",
+    "news",
+    "take",
+    "takes",
+    "each",
+    "every",
+    "some",
+    "many",
+    "such",
+    "other",
+    "others",
+    "one",
+    "two",
+    "first",
+    "second",
+    "third",
+    "members",
+    "hood",
+    "much",
 }
 
 NOISE_TOKENS: Set[str] = {
@@ -126,6 +175,8 @@ NOISE_TOKENS: Set[str] = {
     "references",
     "future work",
     "limitations",
+    "khenianca",
+    "venice vocabulary",
 }
 
 _ACRONYM_DEF_RE = re.compile(
@@ -136,9 +187,8 @@ _HEADING_RE = re.compile(
     re.MULTILINE,
 )
 _CAP_PHRASE_RE = re.compile(
-    r"\b([A-Z][A-Za-z0-9\-]{1,}(?:\s+(?:of|for)\s*[A-Z][A-Za-z0-9\-]{1,}|\s+[A-Z][A-Za-z0-9\-]{1,}){0,3})\b"
+    r"\b([A-Z][A-Za-z0-9\-]{1,}(?:\s+(?:of|for|on|in|to|with)?\s*[A-Z][A-Za-z0-9\-]{1,}){0,4})\b"
 )
-_SINGLE_CAP_WORD_RE = re.compile(r"\b([A-Z][a-zA-Z0-9\-]{2,24})\b")
 _DEF_SUBJECT_RE = re.compile(
     r"(?:^|[.!?]\s+)([A-Z][A-Za-z0-9\-/ ]{2,45}?)\s+(?:is\s+(?:a|an|the)|refers\s+to|means|represents)\s+",
     re.MULTILINE,
@@ -150,27 +200,6 @@ _ACRONYM_STOPWORDS = {
     "WHAT", "HOW", "WHY", "ARE", "WAS", "NOT", "BUT", "CAN", "ALL", "NEW",
     "PAGE", "PDF", "DOCX", "TXT", "FIG", "TABLE", "SECTION", "PART", "NOTE",
     "NOTES", "STEP", "ONE", "TWO", "THREE", "FOUR", "FIVE", "USA", "MIN",
-    "IN", "AT", "IT", "ON", "TO", "BY", "OF", "IS", "AS", "OR", "AN", "BE",
-    "SO", "NO", "IF", "WE", "HE", "MY", "DO", "GO", "DOI", "VOL", "ISSN",
-    "ISBN", "PP", "ET", "AL", "BIG", "ITS", "OUR", "HAS", "HAD", "MAY",
-}
-
-CAPITALIZED_STOPWORDS = {
-    "because", "therefore", "however", "although", "unless", "until", "while",
-    "since", "during", "before", "after", "between", "through", "across",
-    "about", "against", "around", "over", "under", "above", "below", "within",
-    "without", "such", "this", "that", "these", "those", "some", "many",
-    "most", "more", "each", "every", "both", "all", "any", "few", "other",
-    "another", "same", "different", "several", "various", "also", "then",
-    "thus", "hence", "here", "there", "where", "when", "which", "what", "who",
-    "how", "why", "their", "they", "them", "its", "our", "your", "has", "have",
-    "had", "was", "were", "are", "can", "may", "will", "would", "should",
-    "could", "must", "real", "true", "false", "good", "best", "first",
-    "second", "third", "last", "next", "new", "old", "high", "low", "large",
-    "small", "accessed", "available", "journal", "volume", "issue", "march",
-    "jan", "january", "feb", "february", "apr", "april", "june", "july",
-    "aug", "august", "sep", "september", "oct", "october", "nov", "november",
-    "dec", "december", "fig", "doi", "science", "proceedings",
 }
 
 
@@ -184,9 +213,7 @@ def _clean_candidate_label(raw: str) -> str:
 
 
 def _canonical_dedup_key(label: str) -> str:
-    norm = normalize_concept_label(label).lower()
-    norm = re.sub(r"[\-_]+", " ", norm)
-    norm = re.sub(r"\s+", " ", norm).strip()
+    norm = normalize_concept_label(label)
     if norm.endswith("s") and len(norm) > 5 and not norm.endswith(("ss", "us", "is", "os")):
         singular = norm[:-1]
         if singular:
@@ -198,26 +225,24 @@ def _is_generic_or_noisy(label: str) -> bool:
     if not label or len(label) < 2 or len(label) > 85:
         return True
     lowered = label.lower().strip()
-    if lowered in GENERIC_FILLER_LABELS or lowered in NOISE_TOKENS or lowered in CAPITALIZED_STOPWORDS:
+    if lowered in GENERIC_FILLER_LABELS:
         return True
-    if label.upper() in _ACRONYM_STOPWORDS and not label.isupper():
-        return True
-    if label.upper() in _ACRONYM_STOPWORDS:
+    if any(noise in lowered for noise in NOISE_TOKENS):
         return True
     words = lowered.split()
     if len(words) > 7:
         return True
-    if words and words[0] in {"the", "a", "an", "each", "every", "some", "many", "any"}:
+    if words and words[0] in {"the", "a", "an", "each", "every", "some", "many", "any", "it", "how", "because", "if", "this", "that"}:
         trimmed = " ".join(words[1:])
-        if not trimmed or trimmed in GENERIC_FILLER_LABELS:
+        if not trimmed or trimmed in GENERIC_FILLER_LABELS or len(words) <= 2:
             return True
     alpha_count = sum(1 for c in label if c.isalpha())
     if alpha_count < 2:
         return True
-    if any(ch in label for ch in ("http://", "https://", "www.", "@")):
+    if any(ch in label for ch in ("http://", "https://", "www.", "@", "\"", ";", "=")):
         return True
     # Drop all-stopwords fragments
-    if all(w in {"the", "and", "or", "for", "of", "in", "on", "to", "with", "is", "are", "by", "from"} for w in words):
+    if all(w in {"the", "and", "or", "for", "of", "in", "on", "to", "with", "is", "are", "by", "from", "at", "as", "be"} for w in words):
         return True
     return False
 
@@ -320,10 +345,10 @@ def _merge_research_paper_candidates(
     if not analysis:
         return False
 
-    research_context = analysis.research_context or {}
-    methodology = analysis.methodology or {}
-    evaluation = analysis.evaluation or {}
-    conclusion = analysis.conclusion or {}
+    research_context = getattr(analysis, "research_context", None) or getattr(analysis, "research_context_json", None) or {}
+    methodology = getattr(analysis, "methodology", None) or getattr(analysis, "methodology_json", None) or {}
+    evaluation = getattr(analysis, "evaluation", None) or getattr(analysis, "evaluation_json", None) or {}
+    conclusion = getattr(analysis, "conclusion", None) or getattr(analysis, "conclusion_json", None) or {}
 
     added = False
 
@@ -383,7 +408,10 @@ def extract_grounded_nodes(
     if document.is_handwritten:
         hw_concepts = (
             db.query(HandwrittenConcept)
-            .filter(HandwrittenConcept.document_id == document.id)
+            .filter(
+                HandwrittenConcept.document_id == document.id,
+                HandwrittenConcept.user_id == document.user_id,
+            )
             .all()
         )
         for row in hw_concepts[:25]:
@@ -401,10 +429,10 @@ def extract_grounded_nodes(
     # 2. Acronym definitions: "Denial-of-Service (DoS)" -> primary + alias
     for full_form, acronym in _ACRONYM_DEF_RE.findall(full_clean_text):
         full_clean = _clean_candidate_label(full_form)
-        # Trim leading lowercase connector/descriptor words ("key called Key Encryption Key" -> "Key Encryption Key")
-        full_clean = re.sub(r"^(?:[a-z]+\s+)+", "", full_clean).strip()
         if _is_generic_or_noisy(full_clean) or acronym in _ACRONYM_STOPWORDS:
             continue
+        # Trim leading lowercase determiners like "a "
+        full_clean = re.sub(r"^(?:a|an|the|in|for|of|with)\s+", "", full_clean, flags=re.IGNORECASE).strip()
         if not _is_generic_or_noisy(full_clean):
             acronym_map[acronym.upper()] = _canonical_dedup_key(full_clean)
             _add_candidate(
@@ -434,15 +462,17 @@ def extract_grounded_nodes(
             _add_candidate(pool, label=subj_clean, priority=2.7, source="definition")
 
     # 5. Reused Cognidocs baseline concept extractor + capitalized phrases + technical acronyms
-    unit_proxies = [SimpleNamespace(content=u.content, page_number=u.page) for u in units]
-    for concept_item in extract_standard_concepts_fallback(full_clean_text, unit_proxies)[:35]:
-        _add_candidate(
-            pool,
-            label=str(concept_item.get("name") or ""),
-            description=concept_item.get("definition"),
-            priority=1.3,
-            source="mindmap_fallback",
-        )
+    dummy_chunks = [
+        type("ChunkAdapter", (), {"content": u.content, "page_number": u.page})()
+        for u in units
+    ]
+    try:
+        for c_dict in extract_standard_concepts_fallback(full_clean_text, dummy_chunks):
+            c_name = c_dict.get("name") if isinstance(c_dict, dict) else str(c_dict)
+            if c_name:
+                _add_candidate(pool, label=c_name, priority=1.3, source="mindmap_fallback")
+    except Exception:
+        pass
 
     phrase_counts: Dict[str, int] = {}
     for phrase in _CAP_PHRASE_RE.findall(full_clean_text):
@@ -453,17 +483,6 @@ def extract_grounded_nodes(
         phrase_counts[k] = phrase_counts.get(k, 0) + 1
         if phrase_counts[k] >= 2 or len(cleaned.split()) >= 2:
             _add_candidate(pool, label=cleaned, priority=1.1 + min(1.5, 0.25 * phrase_counts[k]), source="cap_phrase")
-
-    single_cap_counts: Dict[str, int] = {}
-    for word in _SINGLE_CAP_WORD_RE.findall(full_clean_text):
-        if word.upper() in _ACRONYM_STOPWORDS or _is_generic_or_noisy(word):
-            continue
-        k = _canonical_dedup_key(word)
-        single_cap_counts[k] = single_cap_counts.get(k, 0) + 1
-    for word in _SINGLE_CAP_WORD_RE.findall(full_clean_text):
-        k = _canonical_dedup_key(word)
-        if single_cap_counts.get(k, 0) >= 2 and not _is_generic_or_noisy(word):
-            _add_candidate(pool, label=word, priority=1.25 + min(1.2, 0.25 * single_cap_counts[k]), source="single_cap")
 
     acronym_counts: Dict[str, int] = {}
     for acr in _TECH_ACRONYM_RE.findall(full_clean_text):
@@ -496,19 +515,16 @@ def extract_grounded_nodes(
     max_page = max((int(u.page or 1) for u in units), default=1)
     grounded_candidates: List[Dict[str, Any]] = []
     rejected_ungrounded = 0
+    sentence_index = build_sentence_inverted_index(spans)
 
-    # Pre-rank candidate pool cleanly so very long documents (e.g. 160-page theses) ground top candidates fast
-    ranked_pool = sorted(pool.items(), key=lambda kv: (-kv[1]["priority"], len(kv[1]["label"])))[
-        : max(max_nodes * 4, 140)
-    ]
-
-    for key, item in ranked_pool:
+    for key, item in pool.items():
         evidence, pages = find_entity_evidence(
             item["label"],
             item["aliases"],
             spans,
             units,
             max_items=4,
+            sentence_index=sentence_index,
         )
         evidence = sanitize_evidence_list(evidence, valid_chunk_ids, max_page)
         if not evidence:
@@ -564,17 +580,16 @@ def extract_grounded_nodes(
             if not cand_tokens or not keep_tokens:
                 continue
             token_overlap = len(cand_tokens & keep_tokens) / max(len(cand_tokens | keep_tokens), 1)
-            both_multiword = len(cand_tokens) >= 2 and len(keep_tokens) >= 2
             contains_same = (
                 cand["normalized_label"] in keeper["normalized_label"]
                 or keeper["normalized_label"] in cand["normalized_label"]
             )
-            # Never merge complementary or distinct sub-concepts (e.g. SYN vs SYN Flood vs SYN Cookies, Client vs Server)
+            # Never merge complementary/contrasting terms like Client vs Server, SYN vs SYN-ACK, Precision vs Recall
             sim = cosine_similarity(vec, dedup_vecs[idx]) if (vec and dedup_vecs[idx]) else 0.0
             should_merge = (
                 cand["normalized_label"] == keeper["normalized_label"]
-                or (both_multiword and contains_same and token_overlap >= 0.66 and sim >= 0.84)
-                or (both_multiword and token_overlap >= 0.75 and sim >= 0.90)
+                or (contains_same and token_overlap >= 0.5 and sim >= 0.80)
+                or (token_overlap >= 0.65 and sim >= 0.88)
             )
             if should_merge:
                 merged_into = keeper

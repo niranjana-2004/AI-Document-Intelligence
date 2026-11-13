@@ -40,13 +40,11 @@ class KnowledgeGraph(Base):
         "KnowledgeGraphNode",
         back_populates="graph",
         cascade="all, delete-orphan",
-        passive_deletes=True,
     )
     edges = orm_relationship(
         "KnowledgeGraphEdge",
         back_populates="graph",
         cascade="all, delete-orphan",
-        passive_deletes=True,
     )
 
     __table_args__ = (
